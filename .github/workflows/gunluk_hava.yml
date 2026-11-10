@@ -1,8 +1,9 @@
-name: Günlük bölge hava durumu
+name: Bölge hava durumu (sabah bugün, akşam yarın)
 
 on:
   schedule:
-    - cron: "17 4 * * *"   # her gün 07:17 (Türkiye saati)
+    - cron: "17 4 * * *"   # her gün 07:17 (Türkiye saati) -> BUGÜN
+    - cron: "13 17 * * *"  # her gün 20:13 (Türkiye saati) -> YARIN
   workflow_dispatch:        # Actions sekmesinden elle çalıştırma
     inputs:
       gun:
@@ -25,11 +26,15 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -y -q fonts-inter
           pip install -r requirements.txt
       - name: Görselleri üret
-        run: python -u hava_bot.py --gun ${{ inputs.gun || '1' }} --cikti yayin/gunluk
+        run: |
+          if [ "${{ github.event.schedule }}" = "13 17 * * *" ]; then GUN=2; else GUN=${{ inputs.gun || '1' }}; fi
+          if [ "$GUN" = "2" ]; then KLASOR=yayin/aksam; else KLASOR=yayin/gunluk; fi
+          echo "KLASOR=$KLASOR" >> $GITHUB_ENV
+          python -u hava_bot.py --gun $GUN --cikti $KLASOR
       - name: Görselleri depoya kaydet
         run: |
           git config user.name "hava-bot"
           git config user.email "hava-bot@users.noreply.github.com"
-          git add yayin/gunluk
-          git commit -m "Günlük hava $(date +%F)" || echo "değişiklik yok"
+          git add $KLASOR
+          git commit -m "Hava görselleri ($KLASOR) $(date +%F)" || echo "değişiklik yok"
           git push

@@ -407,8 +407,9 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     return yol
 
 
-def caption(tarih, tum):
-    sat = [f"🌤 Türkiye Bölge Bölge Hava Durumu – {tarih.strftime('%d.%m.%Y')}", ""]
+def caption(tarih, tum, gun=1):
+    bas = {1: "Bugün hava nasıl?", 2: "Yarın hava nasıl?"}.get(gun, "Hava nasıl?")
+    sat = [f"🌤 {bas} Türkiye bölge bölge hava durumu – {tarih.strftime('%d.%m.%Y')}", ""]
     hepsi = [v for vs in tum.values() for v in vs if v["max"] is not None]
     if hepsi:
         sicak = max(hepsi, key=lambda v: v["max"])
@@ -451,7 +452,7 @@ def main():
         print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, a.gun), flush=True)
 
     with open(os.path.join(a.cikti, "caption.txt"), "w", encoding="utf-8") as f:
-        f.write(caption(tarih, tum))
+        f.write(caption(tarih, tum, a.gun))
     with open(os.path.join(a.cikti, "veri.json"), "w", encoding="utf-8") as f:
         json.dump(tum, f, ensure_ascii=False, indent=1)
     if hatalar:
