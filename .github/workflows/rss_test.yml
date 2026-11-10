@@ -1,0 +1,12 @@
+name: Haber akışı testi
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in "https://www.aa.com.tr/tr/rss/default?cat=guncel" "https://www.iha.com.tr/rss" "https://www.dha.com.tr/rss" "https://www.trthaber.com/xml_mobile.php?tur=xml_genel&kategori=gundem&adet=50" "https://www.ntv.com.tr/turkiye.rss" "https://www.haberturk.com/rss/kategori/gundem.xml" "https://www.anka.com.tr/rss"; do
+            echo "=== $u"; curl -s -L -m 20 -A "Mozilla/5.0" "$u" -o f -w "HTTP %{http_code} %{content_type}\n"; wc -c < f
+            grep -o -E "<title>[^<]{5,140}" f | head -3
+            grep -o -i -E "<title>[^<]*(sel |sele |heyelan|çığ|kar yağışı|fırtına|hortum|su baskını|sağanak|dolu )[^<]*" f | head -3
+          done
