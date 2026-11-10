@@ -16,7 +16,7 @@ from hava_bot import font, metni_sigdir, MGM, HEADERS
 
 W, H = 1080, 1920  # hikâye formatı
 DURUM_DOSYA = "durum.json"
-KGM_URL = "https://www.kgm.gov.tr/Sayfalar/KGM/SiteTr/YolDurumu/TrafigeKapaliYollar.aspx"
+KGM_URL = "https://yol.kgm.gov.tr/KapaliYollar/api/workings/search"  # yol.kgm.gov.tr/kapaliyollar haritasının veri servisi
 
 PLAKA = ["", "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin",
          "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale",
@@ -97,23 +97,26 @@ def mgm_uyarilar():
 
 def kgm_kapali_yollar():
     try:
-        sayfa = http_get(KGM_URL)
+        veri = json.loads(http_get(KGM_URL))
     except Exception as e:
         print("KGM alınamadı:", e)
         return []
     yollar = []
-    for satir in re.findall(r"<tr[^>]*>(.*?)</tr>", sayfa, flags=re.S | re.I):
-        hucreler = [html.unescape(re.sub(r"<[^>]+>|\s+", " ", h)).strip()
-                    for h in re.findall(r"<td[^>]*>(.*?)</td>", satir, flags=re.S | re.I)]
-        hucreler = [h for h in hucreler if h]
-        if len(hucreler) < 2:
-            continue
-        tum = " ".join(hucreler)
-        kucuk = tum.lower()
-        if not any(k in kucuk for k in HAVA_KELIME):
+    for k in veri.get("data") or []:
+        sebep = (k.get("reason") or "").strip()
+        if not any(w in sebep.lower() for w in HAVA_KELIME):
             continue  # yapım/bakım kaynaklı kapanmaları atla
-        il = next((p for p in PLAKA[1:] if p.lower() in kucuk or p.upper() in tum), "")
-        yollar.append({"id": "kgm-" + hashlib.md5(tum.encode()).hexdigest(), "il": il, "metin": tum[:220]})
+        il = ""
+        try:  # yol no "53-35" -> ilk kısım il plaka kodu
+            p = int(str(k.get("roadNo") or "").split("-")[0])
+            il = PLAKA[p] if 0 < p < len(PLAKA) else ""
+        except ValueError:
+            pass
+        ad = re.sub(r"\s+", " ", k.get("shortDescription") or "").strip()
+        acik = re.sub(r"\s+", " ", k.get("explanation") or "").strip()
+        km = f" ({k['startKm']}-{k['endKm']}. km)" if k.get("endKm") else ""
+        metin = f"{ad + ': ' if ad else ''}{acik}{km} – {sebep} nedeniyle kapalı"
+        yollar.append({"id": f"kgm-{k.get('id')}-{sebep}", "il": il, "metin": metin[:220], "sebep": sebep})
     return yollar
 
 
