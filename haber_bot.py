@@ -47,8 +47,8 @@ def bulunma(il):
 
 
 CUMLE = {
-    "ÇIĞ": "çığ düştü", "HEYELAN": "heyelan meydana geldi", "SEL": "sel ve su baskını yaşandı",
-    "HORTUM": "hortum etkili oldu", "FIRTINA": "fırtına hayatı olumsuz etkiledi", "KAR": "kar yağışı ulaşımı etkiliyor",
+    "ÇIĞ": "çığ düştü", "HEYELAN": "heyelan meydana geldi", "SEL": "sel meydana geldi",
+    "HORTUM": "hortum etkili oldu", "FIRTINA": "fırtına etkili oldu", "KAR": "kar yağışı etkili oluyor",
     "DOLU": "dolu yağışı etkili oldu", "YILDIRIM": "yıldırım düştü",
 }
 
