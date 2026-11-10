@@ -92,7 +92,7 @@ def il_tahmin(il, gun):
     t = mgm_get(f"/tahminler/gunluk?istno={istno}")
     t = t[0] if isinstance(t, list) else t
     # MGM'de "Gün1" her zaman bugün değil (akşam saatlerinde yarın olabiliyor) -> tarihe göre seç
-    hedef = (datetime.datetime.utcnow() + datetime.timedelta(hours=3)).date() + datetime.timedelta(days=gun - 1)
+    hedef = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date() + datetime.timedelta(days=gun - 1)
     k = None
     for i in range(1, 6):
         if str(t.get(f"tarihGun{i}", ""))[:10] == hedef.isoformat():
@@ -428,7 +428,7 @@ def main():
     a = ap.parse_args()
 
     os.makedirs(a.cikti, exist_ok=True)
-    tarih = (datetime.datetime.utcnow() + datetime.timedelta(hours=3)).date() + datetime.timedelta(days=a.gun - 1)
+    tarih = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date() + datetime.timedelta(days=a.gun - 1)
     getir = demo_tahmin if a.demo else il_tahmin
     if not a.demo:
         merkezleri_yukle()

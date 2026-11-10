@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "17 4 * * *"   # her gün 07:17 (Türkiye saati)
   workflow_dispatch:        # Actions sekmesinden elle çalıştırma
+    inputs:
+      gun:
+        description: "1 = bugün, 2 = yarın"
+        default: "1"
 
 permissions:
   contents: write
@@ -21,7 +25,7 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -y -q fonts-inter
           pip install -r requirements.txt
       - name: Görselleri üret
-        run: python -u hava_bot.py --cikti yayin/gunluk
+        run: python -u hava_bot.py --gun ${{ inputs.gun || '1' }} --cikti yayin/gunluk
       - name: Görselleri depoya kaydet
         run: |
           git config user.name "hava-bot"
