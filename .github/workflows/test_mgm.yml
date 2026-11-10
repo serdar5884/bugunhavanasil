@@ -4,18 +4,7 @@ jobs:
   t:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
       - run: |
-          python -u - <<'PY'
-          import urllib.request, time, socket
-          H={"Origin":"https://www.mgm.gov.tr","Referer":"https://www.mgm.gov.tr/","User-Agent":"Mozilla/5.0"}
-          for u in ["https://servis.mgm.gov.tr/web/merkezler/iller","https://servis.mgm.gov.tr/web/tahminler/gunluk?istno=90601"]:
-              t=time.time()
-              try:
-                  r=urllib.request.urlopen(urllib.request.Request(u,headers=H),timeout=20).read()
-                  print("OK",len(r),round(time.time()-t,2),u)
-              except Exception as e:
-                  print("HATA",repr(e),round(time.time()-t,2),u)
-          print(socket.getaddrinfo("servis.mgm.gov.tr",443))
-          PY
+          sudo apt-get install -y -q fonts-inter >/dev/null 2>&1; fc-list | grep -i inter | head -5
+          curl -s -L -m 25 -A "Mozilla/5.0" https://www.kgm.gov.tr/ -o /tmp/h; wc -c /tmp/h
+          grep -o -i 'href="[^"]*' /tmp/h | grep -i -E "yol|kapal|durum" | sort -u | head -40

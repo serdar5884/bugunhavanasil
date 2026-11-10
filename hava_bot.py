@@ -65,7 +65,7 @@ def mgm_get(yol, deneme=3):
     for i in range(deneme):
         try:
             req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=15) as r:
                 return json.loads(r.read().decode("utf-8"))
         except Exception as e:
             if i == deneme - 1:
@@ -73,19 +73,35 @@ def mgm_get(yol, deneme=3):
             time.sleep(2)
 
 
+_MERKEZ = {}
+
+
+def merkezleri_yukle():
+    """81 il merkezini tek istekte alır: {il adı: günlük tahmin istasyon no}."""
+    if not _MERKEZ:
+        for m in mgm_get("/merkezler/iller"):
+            _MERKEZ[m["il"]] = m["gunlukTahminIstNo"]
+    return _MERKEZ
+
+
 def il_tahmin(il, gun):
-    merkez = mgm_get("/merkezler?il=" + urllib.parse.quote(il))
-    m = merkez[0] if isinstance(merkez, list) else merkez
-    istno = m["gunlukTahminIstNo"]
+    istno = merkezleri_yukle().get(il)
+    if istno is None:
+        m = mgm_get("/merkezler?il=" + urllib.parse.quote(il))
+        istno = (m[0] if isinstance(m, list) else m)["gunlukTahminIstNo"]
     t = mgm_get(f"/tahminler/gunluk?istno={istno}")
     t = t[0] if isinstance(t, list) else t
-    return {
-        "il": il,
-        "hadise": t.get(f"hadiseGun{gun}"),
-        "min": t.get(f"enDusukGun{gun}"),
-        "max": t.get(f"enYuksekGun{gun}"),
-        "ruzgar": t.get(f"ruzgarHizGun{gun}"),
-    }
+    # MGM'de "Gün1" her zaman bugün değil (akşam saatlerinde yarın olabiliyor) -> tarihe göre seç
+    hedef = (datetime.datetime.utcnow() + datetime.timedelta(hours=3)).date() + datetime.timedelta(days=gun - 1)
+    k = None
+    for i in range(1, 6):
+        if str(t.get(f"tarihGun{i}", ""))[:10] == hedef.isoformat():
+            k = i
+            break
+    if k is None:
+        raise RuntimeError(f"{il}: {hedef} tarihli tahmin yok")
+    return {"il": il, "hadise": t.get(f"hadiseGun{k}"), "min": t.get(f"enDusukGun{k}"),
+            "max": t.get(f"enYuksekGun{k}"), "ruzgar": t.get(f"ruzgarHizGun{k}")}
 
 
 def demo_tahmin(il, gun):
@@ -104,6 +120,8 @@ FONT_DIR = "/usr/share/fonts/opentype/inter/"
 def font(stil, boyut):
     adaylar = [os.path.join(os.path.dirname(__file__), "fonts", f"Inter-{stil}.otf"),
                os.path.join(FONT_DIR, f"Inter-{stil}.otf"),
+               os.path.join(FONT_DIR, f"Inter-{stil}.ttf"),
+               f"/usr/share/fonts/truetype/inter/Inter-{stil}.ttf",
                "C:/Windows/Fonts/segoeuib.ttf" if stil in ("Bold", "ExtraBold") else "C:/Windows/Fonts/segoeui.ttf",
                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
     for a in adaylar:
@@ -410,20 +428,26 @@ def main():
     a = ap.parse_args()
 
     os.makedirs(a.cikti, exist_ok=True)
-    tarih = datetime.date.today() + datetime.timedelta(days=a.gun - 1)
+    tarih = (datetime.datetime.utcnow() + datetime.timedelta(hours=3)).date() + datetime.timedelta(days=a.gun - 1)
     getir = demo_tahmin if a.demo else il_tahmin
-    tum, hatalar = {}, []
-    for bolge, iller in BOLGELER.items():
-        tum[bolge] = []
-        for il in iller:
-            try:
-                tum[bolge].append(getir(il, a.gun))
-            except Exception as e:
-                hatalar.append(f"{il}: {e}")
-                tum[bolge].append({"il": il, "hadise": None, "min": None, "max": None, "ruzgar": None})
-            if not a.demo:
-                time.sleep(0.3)  # MGM'yi yormamak için
-        print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, a.gun))
+    if not a.demo:
+        merkezleri_yukle()
+    from concurrent.futures import ThreadPoolExecutor
+    hatalar = []
+
+    def guvenli(il):
+        try:
+            return getir(il, a.gun)
+        except Exception as e:
+            hatalar.append(f"{il}: {e}")
+            return {"il": il, "hadise": None, "min": None, "max": None, "ruzgar": None}
+
+    tum = {}
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        for bolge, iller in BOLGELER.items():
+            tum[bolge] = list(ex.map(guvenli, iller))
+    for bolge in BOLGELER:
+        print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, a.gun), flush=True)
 
     with open(os.path.join(a.cikti, "caption.txt"), "w", encoding="utf-8") as f:
         f.write(caption(tarih, tum))

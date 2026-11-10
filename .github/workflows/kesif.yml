@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python uyari_bot.py --kesif
+      - run: python -u uyari_bot.py --kesif
       - name: Kaydet
         run: |
           git config user.name "hava-bot"
