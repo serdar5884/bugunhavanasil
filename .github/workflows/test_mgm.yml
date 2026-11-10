@@ -6,8 +6,11 @@ jobs:
     steps:
       - run: |
           B=https://yol.kgm.gov.tr/KapaliYollar
-          for f in 9.cacb6dfb 487.082333ea 541.e03bc4fa; do
-            curl -s -m 20 $B/js/$f.js -o $f.js; echo "== $f $(wc -c < $f.js)"
-            grep -o -E '"[^"]{0,40}(https?:|/api|Api|Service|\.ashx|\.json|Kapali|kapali|getir|Getir|Liste)[^"]{0,160}"' $f.js | sort -u | head -25
-            grep -o -E '(get|post)\([^)]{0,200}\)' $f.js | head -10
+          curl -s -m 20 $B/js/9.cacb6dfb.js -o a.js; curl -s -m 20 $B/js/app.7cff8deb.js -o b.js
+          grep -o -E '.{0,300}workings/search.{0,300}' a.js
+          echo ====; grep -o -E '.{0,150}baseURL.{0,150}' a.js b.js
+          echo ====; grep -o -E '.{0,80}[^A-Za-z]I=.{0,120}' a.js | head -3
+          for base in https://yol.kgm.gov.tr/KapaliYollar https://yol.kgm.gov.tr/kapaliyollar https://yol.kgm.gov.tr; do
+            echo "-- $base"; curl -s -m 20 "$base/api/workings/search" -w "\nHTTP %{http_code}\n" | head -c 800; echo
+            curl -s -m 20 "$base/api/enums" -w "\nHTTP %{http_code}\n" | head -c 600; echo
           done
