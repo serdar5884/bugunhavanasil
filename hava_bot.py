@@ -357,7 +357,8 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     d.text((M, 52), "BUGÜN HAVA NASIL?" if gun_no == 1 else "YARIN HAVA NASIL?" if gun_no == 2 else "HAVA NASIL?",
            font=font("Bold", 32), fill=(255, 255, 255, 215))
     baslik = bolge.upper() + " BÖLGESİ"
-    d.text((M, 90), baslik, font=metni_sigdir(d, baslik, "ExtraBold", 64, W - 2 * M), fill="white")
+    bosluk = 250 if sahne in ("gunesli", "parcali") else 0  # güneşe yer bırak
+    d.text((M, 90), baslik, font=metni_sigdir(d, baslik, "ExtraBold", 64, W - 2 * M - bosluk), fill="white")
     gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
              "Eylül", "Ekim", "Kasım", "Aralık"]
