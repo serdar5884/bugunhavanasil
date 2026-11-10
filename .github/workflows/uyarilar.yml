@@ -1,4 +1,4 @@
-name: Meteorolojik uyarılar ve kapalı yollar
+name: Uyarılar, kapalı yollar ve son dakika hava haberleri
 
 on:
   schedule:
@@ -28,7 +28,9 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -y -q fonts-inter
           pip install -r requirements.txt
       - name: Yeni uyarıları kontrol et
-        run: python -u uyari_bot.py --cikti yayin/uyari
+        run: |
+          python -u uyari_bot.py --cikti yayin/uyari
+          python -u haber_bot.py --cikti yayin/uyari
       - name: Sonuçları kaydet
         run: |
           git config user.name "hava-bot"
