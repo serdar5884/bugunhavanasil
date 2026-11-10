@@ -12,7 +12,7 @@ Kullanım:
 """
 import argparse, datetime, hashlib, html, json, os, re, time, urllib.request
 from PIL import Image, ImageDraw
-from hava_bot import font, metni_sigdir, MGM, HEADERS
+from hava_bot import font, metni_sigdir, MGM, HEADERS, paylas_satiri
 
 W, H = 1080, 1920  # hikâye formatı
 DURUM_DOSYA = "durum.json"
@@ -203,8 +203,9 @@ def uyari_gorseli(u, yol):
     not_ = "Tedbirli olun, resmi kurumların açıklamalarını takip edin."
     f_n = font("Medium", 34)
     d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 230), not_, font=f_n, fill=(255, 255, 255, 220))
-    d.text((M, H - 140), "Kaynak: Meteoroloji Genel Müdürlüğü (MeteoUYARI)", font=font("Regular", 30),
+    d.text((M, H - 150), "Kaynak: Meteoroloji Genel Müdürlüğü (MeteoUYARI)", font=font("Regular", 30),
            fill=(255, 255, 255, 170))
+    paylas_satiri(d, M, H - 95, 34)
     img.save(yol, quality=93)
 
 
@@ -233,7 +234,8 @@ def yollar_gorseli(yollar, yol):
         y += h + 22
     if len(yollar) > 7:
         d.text((M, y), f"+ {len(yollar) - 7} yol daha", font=font("SemiBold", 36), fill=(255, 255, 255, 200))
-    d.text((M, H - 140), "Kaynak: Karayolları Genel Müdürlüğü", font=font("Regular", 30), fill=(255, 255, 255, 170))
+    d.text((M, H - 150), "Kaynak: Karayolları Genel Müdürlüğü", font=font("Regular", 30), fill=(255, 255, 255, 170))
+    paylas_satiri(d, M, H - 95, 34)
     img.save(yol, quality=93)
 
 
@@ -256,7 +258,8 @@ def uyari_caption(u):
     return (f"⚠️ {ad} KODLU UYARI: {', '.join(u['hadise'])}\n\n"
             f"📍 {', '.join(u['iller'])}\n\n"
             "Lütfen tedbirli olun, resmi kurumların açıklamalarını takip edin.\n"
-            "Kaynak: Meteoroloji Genel Müdürlüğü\n\n#meteorolojikuyarı #havadurumu #"
+            "Kaynak: Meteoroloji Genel Müdürlüğü\n\n"
+            "📤 Uyarıdan haberi olmayan yakınlarınla paylaş.\n🔔 Takip et: @bugun.hava.nasil\n\n#meteorolojikuyarı #havadurumu #"
             + "".join(c for c in ad.lower() if c.isalpha()) + "kod")
 
 

@@ -336,6 +336,29 @@ def sahne_ciz(sahne, bolge):
     return img.convert("RGB")
 
 
+HESAP = "@bugun.hava.nasil"
+PAYLAS_METIN = "Sevdiklerinle paylaş"
+
+
+def paylas_ikon(d, x, y, s, renk=(255, 205, 0)):
+    """Basit 'paylaş' (kağıt uçak) ikonu."""
+    d.polygon([(x, y + s * .45), (x + s, y), (x + s * .62, y + s), (x + s * .45, y + s * .58)], fill=renk)
+    d.polygon([(x + s * .45, y + s * .58), (x + s, y), (x + s * .52, y + s * .82)], fill=tuple(int(c * .75) for c in renk))
+
+
+def paylas_satiri(d, x, y, boyut=30, sag_hizali_W=None):
+    """'[ikon] Sevdiklerinle paylaş · @bugun.hava.nasil' satırı. sag_hizali_W verilirse sağa yaslar."""
+    f1, f2 = font("Bold", boyut), font("SemiBold", boyut)
+    m1, m2 = PAYLAS_METIN + "  ·  ", HESAP
+    gen = boyut * 1.2 + d.textlength(m1, font=f1) + d.textlength(m2, font=f2)
+    if sag_hizali_W:
+        x = sag_hizali_W - gen
+    paylas_ikon(d, x, y + boyut * .12, boyut * .85)
+    x += boyut * 1.2
+    d.text((x, y), m1, font=f1, fill=(255, 205, 0))
+    d.text((x + d.textlength(m1, font=f1), y), m2, font=f2, fill="white")
+
+
 def metni_sigdir(d, metin, f_stil, boyut, max_w):
     while boyut > 14:
         f = font(f_stil, boyut)
@@ -409,8 +432,8 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         d.text((sag - mw - sw - 8, y0 + kart_h * .1), sicak, font=f_sic, fill="white")
         d.text((sag - mw, y0 + kart_h * .22), mn, font=f_min, fill=(255, 255, 255, 190))
 
-    d.text((M, H - 56), "Kaynak: Meteoroloji Genel Müdürlüğü (mgm.gov.tr)",
-           font=font("Regular", 24), fill=(255, 255, 255, 170))
+    d.text((M, H - 52), "Kaynak: MGM (mgm.gov.tr)", font=font("Regular", 24), fill=(255, 255, 255, 170))
+    paylas_satiri(d, 0, H - 56, 28, sag_hizali_W=W - M)
     ascii_ad = bolge.translate(str.maketrans("çğıöşüÇĞİÖŞÜ ", "cgiosuCGIOSU_"))
     yol = os.path.join(cikti, f"{list(BOLGELER).index(bolge) + 1:02d}_{ascii_ad}.jpg")
     img.save(yol, quality=93)
@@ -427,6 +450,8 @@ def caption(tarih, tum, gun=1):
         sat += [f"🔥 En sıcak: {sicak['il']} {sicak['max']}°C",
                 f"❄️ En soğuk: {soguk['il']} {soguk['min']}°C", ""]
     sat += ["Kendi bölgeni bulmak için kaydır 👉", "",
+            "📤 Bu gönderiyi sevdiklerinle paylaş, hava durumunu her gün kaçırma!",
+            "🔔 Takip et: @bugun.hava.nasil", "",
             "Kaynak: Meteoroloji Genel Müdürlüğü (MGM)", "",
             "#havadurumu #hava #türkiye #meteoroloji #mgm #istanbul #ankara #izmir"]
     return "\n".join(sat)
