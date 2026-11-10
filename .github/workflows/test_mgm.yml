@@ -6,9 +6,8 @@ jobs:
     steps:
       - run: |
           B=https://yol.kgm.gov.tr/KapaliYollar
-          curl -s -m 20 $B/js/app.7cff8deb.js -o app.js
-          grep -o -E '.{0,200}js/.{0,400}' app.js | head -5
-          echo =====
-          curl -s -m 30 $B/js/vendor.906de3c4.js -o v.js; wc -c v.js
-          grep -o -E '"(https?:)?//[^"]{4,150}"' v.js | grep -v -E "w3.org|github|mozilla|reactjs|vuejs|quasar|unpkg|jsdelivr" | sort -u | head -30
-          grep -o -E '"/?[A-Za-z]*[Aa]pi[A-Za-z/_-]*"' v.js app.js | sort -u | head -30
+          for f in 9.cacb6dfb 487.082333ea 541.e03bc4fa; do
+            curl -s -m 20 $B/js/$f.js -o $f.js; echo "== $f $(wc -c < $f.js)"
+            grep -o -E '"[^"]{0,40}(https?:|/api|Api|Service|\.ashx|\.json|Kapali|kapali|getir|Getir|Liste)[^"]{0,160}"' $f.js | sort -u | head -25
+            grep -o -E '(get|post)\([^)]{0,200}\)' $f.js | head -10
+          done
