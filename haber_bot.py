@@ -14,7 +14,7 @@ Kullanım:
 import argparse, datetime, hashlib, html, json, os, re
 from PIL import Image, ImageDraw
 from hava_bot import font
-from uyari_bot import PLAKA, http_get, _sar, _zemin, DURUM_DOSYA, W, H
+from uyari_bot import PLAKA, http_get, _sar, _zemin, DURUM_DOSYA, W, H, gonderi_surumu
 
 KAYNAKLAR = [
     ("AA", "https://www.aa.com.tr/tr/rss/default?cat=guncel"),
@@ -35,7 +35,10 @@ OLAYLAR = [
     ("YILDIRIM", (200, 170, 40), r"\byıldırım (düştü|isabet)"),
 ]
 HARIC = r"uyarı|uyarısı|hava durumu|tahmin|meteoroloji|bugün hava|yarın hava|hafta sonu hava|maç|lig\b|derbi|fırtına gibi|siyasi"
-GUNLUK_SINIR = 8  # bir günde en fazla bu kadar haber hikâyesi
+GUNLUK_SINIR = 8
+# Can kaybı varsa hikâyeye ek olarak gönderi de paylaşılır (sadece bu olaylarda)
+CAN_KAYBI_OLAYLAR = {"SEL", "ÇIĞ"}
+CAN_KAYBI = r"şehit|hayatını kaybetti|hayatını kaybeden|hayatını yitir|can verdi|can kaybı|cansız beden|öldü\b|ölü sayısı|ölen\b|ölümüne|cenaze"  # bir günde en fazla bu kadar haber hikâyesi
 
 
 def bulunma(il):
@@ -96,7 +99,8 @@ def hava_haberi_mi(h):
     il = next((p for p in PLAKA[1:] if re.search(rf"\b{p}\b", tum)), None)
     if not il:
         return None
-    return {"olay": olay[0], "renk": olay[1], "il": il}
+    can = olay[0] in CAN_KAYBI_OLAYLAR and bool(re.search(CAN_KAYBI, metin + " " + h["ozet"].lower()))
+    return {"olay": olay[0], "renk": olay[1], "il": il, "can_kaybi": can}
 
 
 def haber_gorseli(x, yol):
@@ -123,7 +127,10 @@ def haber_gorseli(x, yol):
     d.rounded_rectangle([W / 2 - iw / 2 - 40, 790, W / 2 + iw / 2 + 40, 920], radius=30, fill=renk)
     d.text((W / 2 - iw / 2, 800), il, font=f_il, fill="white")
     # kendi cümlemiz
-    cumle = f"{bulunma(x['il'])} {CUMLE[x['olay']]}."
+    if x.get("can_kaybi"):
+        cumle = f"{bulunma(x['il'])} {'sel' if x['olay'] == 'SEL' else 'çığ'} felaketi: can kaybı yaşandı."
+    else:
+        cumle = f"{bulunma(x['il'])} {CUMLE[x['olay']]}."
     f_c = font("SemiBold", 52)
     y = 1010
     for s in _sar(d, cumle, f_c, W - 2 * M):
@@ -146,7 +153,7 @@ def main():
     a = ap.parse_args()
 
     if a.demo:
-        adaylar = [{"kaynak": "AA", "baslik": "Rize'de sel", "ozet": "", "link": "x", "olay": "SEL", "renk": OLAYLAR[2][1], "il": "Rize"},
+        adaylar = [{"kaynak": "AA", "baslik": "Rize'de sel", "ozet": "", "link": "x", "olay": "SEL", "renk": OLAYLAR[2][1], "il": "Rize", "can_kaybi": True},
                    {"kaynak": "TRT Haber", "baslik": "x", "ozet": "", "link": "y", "olay": "ÇIĞ", "renk": OLAYLAR[0][1], "il": "Hakkari"}]
     else:
         adaylar = []
@@ -179,8 +186,17 @@ def main():
         yeni.append(anahtar)
         dosya = os.path.join(a.cikti, f"haber_{bugun.replace('-', '')}_{len(yeni)}_{hashlib.md5(anahtar.encode()).hexdigest()[:6]}.jpg")
         haber_gorseli(x, dosya)
-        paylasim.append({"gorsel": dosya, "tur": "hikaye",
-                         "caption": f"🔴 SON DAKİKA | {x['il']}: {x['olay'].capitalize()}\nHaber kaynağı: {x['kaynak']}"})
+        kayit = {"gorsel": dosya, "tur": "hikaye",
+                 "caption": f"🔴 SON DAKİKA | {x['il']}: {x['olay'].capitalize()}\nHaber kaynağı: {x['kaynak']}"}
+        if x.get("can_kaybi"):
+            kayit["tur"] = "hikaye+gonderi"
+            kayit["gonderi_gorsel"] = gonderi_surumu(dosya)
+            olay = "sel" if x["olay"] == "SEL" else "çığ"
+            kayit["caption"] = (f"🔴 SON DAKİKA | {bulunma(x['il'])} {olay} felaketi: can kaybı yaşandı.\n\n"
+                                f"Hayatını kaybedenlerin yakınlarına başsağlığı diliyoruz. Bölgedeyseniz lütfen "
+                                f"resmi kurumların uyarılarını takip edin.\n\nHaber kaynağı: {x['kaynak']}\n\n"
+                                f"#sondakika #{'sel' if x['olay'] == 'SEL' else 'çığ'} #{x['il'].lower()} #havadurumu")
+        paylasim.append(kayit)
         print("Yeni hava haberi:", anahtar, "|", x["kaynak"], "|", x["baslik"])
     json.dump(paylasim, open(pj, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     if not a.demo:

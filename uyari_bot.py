@@ -237,6 +237,20 @@ def yollar_gorseli(yollar, yol):
     img.save(yol, quality=93)
 
 
+def gonderi_surumu(hikaye_yolu):
+    """9:16 hikâye görselinden Instagram gönderisine uygun 4:5 (1080x1350) sürüm üretir."""
+    from PIL import ImageFilter, ImageEnhance
+    src = Image.open(hikaye_yolu).convert("RGB")
+    GW, GH = 1080, 1350
+    arka = src.resize((GW, int(GW * src.height / src.width))).crop((0, 0, GW, GH))
+    arka = ImageEnhance.Brightness(arka.filter(ImageFilter.GaussianBlur(30))).enhance(0.55)
+    on = src.resize((int(GH * src.width / src.height), GH))
+    arka.paste(on, ((GW - on.width) // 2, 0))
+    yol = hikaye_yolu.replace(".jpg", "_gonderi.jpg")
+    arka.save(yol, quality=93)
+    return yol
+
+
 def uyari_caption(u):
     _, ad, _ = SEVIYE[u["seviye"]]
     return (f"⚠️ {ad} KODLU UYARI: {', '.join(u['hadise'])}\n\n"
@@ -301,8 +315,11 @@ def main():
     for i, u in enumerate(yeni_u):
         p = os.path.join(a.cikti, f"{zaman}_uyari_{i + 1}_{u['seviye']}.jpg")
         uyari_gorseli(u, p)
-        paylasim.append({"gorsel": p, "tur": "hikaye" if u["seviye"] == "yellow" else "hikaye+gonderi",
-                         "caption": uyari_caption(u)})
+        kayit = {"gorsel": p, "tur": "hikaye" if u["seviye"] == "yellow" else "hikaye+gonderi",
+                 "caption": uyari_caption(u)}
+        if "gonderi" in kayit["tur"]:
+            kayit["gonderi_gorsel"] = gonderi_surumu(p)
+        paylasim.append(kayit)
     if yeni_y:
         p = os.path.join(a.cikti, f"{zaman}_kapali_yollar.jpg")
         yollar_gorseli(yollar, p)  # yeni kapanma varsa güncel tam listeyi paylaş

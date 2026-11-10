@@ -74,7 +74,7 @@ def uyari(klasor):
         hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
         print("Hikâye:", yayinla(hik))
         if "gonderi" in p["tur"]:
-            g = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "caption": p["caption"]})["id"]
+            g = istek(f"{USER}/media", {"image_url": url(p.get("gonderi_gorsel", p["gorsel"])), "caption": p["caption"]})["id"]
             print("Gönderi:", yayinla(g))
 
 
