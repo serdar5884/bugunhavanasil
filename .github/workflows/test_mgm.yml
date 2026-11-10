@@ -1,0 +1,15 @@
+name: MGM bağlantı testi
+on: workflow_dispatch
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in "web/merkezler?il=Ankara" "web/merkezler?il=%C4%B0stanbul" "web/merkezler/iller" "web/tahminler/gunluk?istno=90601" "web/meteoalarm/today"; do
+            echo "=== $u"
+            curl -s -m 25 -o /tmp/o -w "HTTP %{http_code}  %{time_total}s\n" -H "Origin: https://www.mgm.gov.tr" -H "Referer: https://www.mgm.gov.tr/" -A "Mozilla/5.0" "https://servis.mgm.gov.tr/$u" || echo "curl hata $?"
+            head -c 700 /tmp/o; echo
+          done
+          echo "=== KGM"
+          curl -s -m 25 -L -o /tmp/k -w "HTTP %{http_code} %{time_total}s %{url_effective}\n" -A "Mozilla/5.0" "https://www.kgm.gov.tr/Sayfalar/KGM/SiteTr/YolDurumu/TrafigeKapaliYollar.aspx" || echo "curl hata $?"
+          wc -c /tmp/k; grep -o -i "<table[^>]*>" /tmp/k | head; head -c 500 /tmp/k
