@@ -354,21 +354,30 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
 
     # Başlık
     M = 56
-    d.text((M, 52), "BUGÜN HAVA NASIL?" if gun_no == 1 else "YARIN HAVA NASIL?" if gun_no == 2 else "HAVA NASIL?",
-           font=font("Bold", 32), fill=(255, 255, 255, 215))
+    # Üst satır: büyük sarı BUGÜN / YARIN + beyaz "HAVA NASIL?"
+    gun_kelime = {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "")
+    f_gun, f_hn = font("ExtraBold", 66), font("Bold", 40)
+    if gun_kelime:
+        golge = (0, 0, 0, 110)
+        d.text((M + 3, 33), gun_kelime, font=f_gun, fill=golge)
+        d.text((M, 30), gun_kelime, font=f_gun, fill=(255, 205, 0))
+        gx = M + d.textlength(gun_kelime, font=f_gun) + 16
+    else:
+        gx = M
+    d.text((gx, 52), "HAVA NASIL?", font=f_hn, fill=(255, 255, 255, 235))
     baslik = bolge.replace("i", "İ").replace("ı", "I").upper() + " BÖLGESİ"
     bosluk = 250 if sahne in ("gunesli", "parcali") else 0  # güneşe yer bırak
-    d.text((M, 90), baslik, font=metni_sigdir(d, baslik, "ExtraBold", 64, W - 2 * M - bosluk), fill="white")
+    d.text((M, 112), baslik, font=metni_sigdir(d, baslik, "ExtraBold", 60, W - 2 * M - bosluk), fill="white")
     gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
              "Eylül", "Ekim", "Kasım", "Aralık"]
     tstr = f"{tarih.day} {aylar[tarih.month]} {tarih.year}, {gunler[tarih.weekday()]}"
-    d.text((M, 172), tstr, font=font("Medium", 32), fill=(255, 255, 255, 220))
+    d.text((M, 188), tstr, font=font("Medium", 32), fill=(255, 255, 255, 220))
 
     # Kartlar: 2 sütun
     n = len(veriler)
     satir = (n + 1) // 2
-    top, bottom = 240, H - 80
+    top, bottom = 250, H - 80
     gap = 14
     kart_h = min(150, (bottom - top - gap * (satir - 1)) / satir)
     kart_w = (W - 2 * M - gap) / 2
