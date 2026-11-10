@@ -226,7 +226,7 @@ def yollar_gorseli(yollar, yol):
         if y + h > H - 180:
             break
         d.rounded_rectangle([M, y, W - M, y + h], radius=28, fill=(255, 255, 255, 30), outline=(255, 196, 0, 120), width=2)
-        d.text((M + 35, y + 22), yolb["il"].upper() or "—", font=font("Bold", 36), fill=sari)
+        d.text((M + 35, y + 22), yolb["il"].replace("i", "İ").replace("ı", "I").upper() or "—", font=font("Bold", 36), fill=sari)
         yy = y + 72
         for s in sat:
             d.text((M + 35, yy), s, font=f_m, fill="white"); yy += 44
@@ -296,7 +296,7 @@ def main():
     yeni_y = [y for y in yollar if y["id"] not in gorulen]
 
     os.makedirs(a.cikti, exist_ok=True)
-    zaman = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    zaman = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).strftime("%Y%m%d_%H%M")
     paylasim = []
     for i, u in enumerate(yeni_u):
         p = os.path.join(a.cikti, f"{zaman}_uyari_{i + 1}_{u['seviye']}.jpg")
