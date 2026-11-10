@@ -9,3 +9,19 @@ jobs:
         env:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      - name: Anahtar süresi
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os, json, urllib.request, urllib.parse, datetime
+          t = os.environ["IG_TOKEN"].strip()
+          u = "https://graph.facebook.com/v21.0/debug_token?" + urllib.parse.urlencode({"input_token": t, "access_token": t})
+          try:
+              d = json.loads(urllib.request.urlopen(u, timeout=30).read())["data"]
+              exp = d.get("expires_at", 0)
+              print("Tür:", d.get("type"), "| Geçerli:", d.get("is_valid"),
+                    "| Bitiş:", "süresiz" if not exp else datetime.datetime.utcfromtimestamp(exp).isoformat())
+          except Exception as e:
+              print("Süre okunamadı:", e)
+          PY
