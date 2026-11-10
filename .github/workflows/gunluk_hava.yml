@@ -1,0 +1,31 @@
+name: Günlük bölge hava durumu
+
+on:
+  schedule:
+    - cron: "17 4 * * *"   # her gün 07:17 (Türkiye saati)
+  workflow_dispatch:        # Actions sekmesinden elle çalıştırma
+
+permissions:
+  contents: write
+
+jobs:
+  hava:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Font ve kütüphaneler
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter
+          pip install -r requirements.txt
+      - name: Görselleri üret
+        run: python hava_bot.py --cikti yayin/gunluk
+      - name: Görselleri depoya kaydet
+        run: |
+          git config user.name "hava-bot"
+          git config user.email "hava-bot@users.noreply.github.com"
+          git add yayin/gunluk
+          git commit -m "Günlük hava $(date +%F)" || echo "değişiklik yok"
+          git push

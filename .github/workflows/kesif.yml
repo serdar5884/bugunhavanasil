@@ -1,0 +1,25 @@
+name: Keşif (kaynak verisini kaydet)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  kesif:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python uyari_bot.py --kesif
+      - name: Kaydet
+        run: |
+          git config user.name "hava-bot"
+          git config user.email "hava-bot@users.noreply.github.com"
+          git add kesif
+          git commit -m "Keşif verisi" || true
+          git push
