@@ -12,8 +12,8 @@ Kullanım:
 import glob, json, os, subprocess, sys, time, urllib.parse, urllib.request
 
 API = "https://graph.instagram.com/v21.0"
-TOKEN = os.environ.get("IG_TOKEN", "")
-USER = os.environ.get("IG_USER_ID", "me")
+TOKEN = os.environ.get("IG_TOKEN", "").strip().strip('"').strip("'").strip()
+USER = os.environ.get("IG_USER_ID", "").strip().strip('"').strip() or "me"
 REPO = os.environ.get("GITHUB_REPOSITORY", "serdar5884/bugunhavanasil")
 
 
@@ -82,6 +82,7 @@ if __name__ == "__main__":
         sys.exit("IG_TOKEN tanımlı değil – Instagram paylaşımı atlandı")
     komut = sys.argv[1] if len(sys.argv) > 1 else "kontrol"
     if komut == "kontrol":
+        print(f"Anahtar uzunluğu: {len(TOKEN)} karakter, başlangıcı: {TOKEN[:4]}… ; kullanıcı no uzunluğu: {len(USER)}")
         print(istek("me", {"fields": "user_id,username,account_type"}, "GET"))
     elif komut == "karusel":
         karusel(sys.argv[2])
