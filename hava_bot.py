@@ -411,7 +411,8 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
 
     d.text((M, H - 56), "Kaynak: Meteoroloji Genel Müdürlüğü (mgm.gov.tr)",
            font=font("Regular", 24), fill=(255, 255, 255, 170))
-    yol = os.path.join(cikti, f"{list(BOLGELER).index(bolge) + 1:02d}_{bolge.replace(' ', '_')}.jpg")
+    ascii_ad = bolge.translate(str.maketrans("çğıöşüÇĞİÖŞÜ ", "cgiosuCGIOSU_"))
+    yol = os.path.join(cikti, f"{list(BOLGELER).index(bolge) + 1:02d}_{ascii_ad}.jpg")
     img.save(yol, quality=93)
     return yol
 

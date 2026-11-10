@@ -12,6 +12,9 @@ concurrency:
   group: uyarilar
   cancel-in-progress: false
 
+env:
+  IG_TOKEN: ${{ secrets.IG_TOKEN }}
+
 jobs:
   uyari:
     runs-on: ubuntu-latest
@@ -33,3 +36,9 @@ jobs:
           git add durum.json yayin/uyari
           git commit -m "Uyarı kontrolü $(date +%F_%H%M)" || echo "yeni uyarı yok"
           git push
+      - name: Instagram'a paylaş
+        if: ${{ env.IG_TOKEN != '' }}
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: python -u instagram_paylas.py uyari yayin/uyari
