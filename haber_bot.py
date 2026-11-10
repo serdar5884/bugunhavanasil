@@ -13,7 +13,7 @@ Kullanım:
 """
 import argparse, datetime, hashlib, html, json, os, re
 from PIL import Image, ImageDraw
-from hava_bot import font, paylas_satiri
+from hava_bot import font, paylas_satiri, destek_bandi
 from uyari_bot import PLAKA, http_get, _sar, _zemin, DURUM_DOSYA, W, H, gonderi_surumu
 
 KAYNAKLAR = [
@@ -140,9 +140,9 @@ def haber_gorseli(x, yol):
     d.text((W / 2 - d.textlength(zaman, font=f_z) / 2, y + 30), zaman, font=f_z, fill=(255, 255, 255, 200))
     not_ = "Bölgedeyseniz resmi kurumların uyarılarını takip edin."
     f_n = font("Medium", 34)
-    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 260), not_, font=f_n, fill=(255, 255, 255, 210))
-    d.text((M, H - 150), f"Haber kaynağı: {x['kaynak']}", font=font("SemiBold", 32), fill=(255, 255, 255, 190))
-    paylas_satiri(d, M, H - 95, 34)
+    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 370), not_, font=f_n, fill=(255, 255, 255, 210))
+    d.text((M, H - 130), f"Haber kaynağı: {x['kaynak']}", font=font("SemiBold", 32), fill=(255, 255, 255, 190))
+    destek_bandi(d, M, H - 300, W - M, H - 170)
     img.save(yol, quality=93)
 
 
@@ -196,7 +196,7 @@ def main():
             kayit["caption"] = (f"🔴 SON DAKİKA | {bulunma(x['il'])} {olay} felaketi: can kaybı yaşandı.\n\n"
                                 f"Hayatını kaybedenlerin yakınlarına başsağlığı diliyoruz. Bölgedeyseniz lütfen "
                                 f"resmi kurumların uyarılarını takip edin.\n\nHaber kaynağı: {x['kaynak']}\n\n"
-                                f"📤 Bölgede yakını olanlarla paylaş.\n🔔 Takip et: @bugun.hava.nasil\n\n"
+                                f"📤 Bölgede yakını olanlarla paylaş.\n🔔 Gelişmelerden haberdar olmak için takip edip bildirimleri açın: @bugun.hava.nasil\n\n"
                                 f"#sondakika #{'sel' if x['olay'] == 'SEL' else 'çığ'} #{x['il'].lower()} #havadurumu")
         paylasim.append(kayit)
         print("Yeni hava haberi:", anahtar, "|", x["kaynak"], "|", x["baslik"])

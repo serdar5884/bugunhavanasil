@@ -359,6 +359,29 @@ def paylas_satiri(d, x, y, boyut=30, sag_hizali_W=None):
     d.text((x + d.textlength(m1, font=f1), y), m2, font=f2, fill="white")
 
 
+def zil_ikon(d, x, y, s, renk):
+    d.pieslice([x, y, x + s, y + s * 1.3], 180, 360, fill=renk)
+    d.rectangle([x, y + s * .62, x + s, y + s * .85], fill=renk)
+    d.polygon([(x - s * .12, y + s * .85), (x + s * 1.12, y + s * .85), (x + s, y + s * .7), (x, y + s * .7)], fill=renk)
+    d.ellipse([x + s * .38, y + s * .86, x + s * .62, y + s * 1.08], fill=renk)
+
+
+def destek_bandi(d, x0, y0, x1, y1):
+    """Büyük sarı bant: takip + bildirim + paylaş çağrısı."""
+    lacivert = (18, 30, 55)
+    h = y1 - y0
+    d.rounded_rectangle([x0, y0, x1, y1], radius=h * .22, fill=(255, 205, 0))
+    s = h * .42
+    zil_ikon(d, x0 + h * .3, y0 + h * .22, s, lacivert)
+    tx = x0 + h * .3 + s + h * .28
+    maxw = x1 - tx - h * .25
+    f1 = metni_sigdir(d, "Takip edip bildirimleri açarak destek ol!", "ExtraBold", int(h * .32), maxw)
+    d.text((tx, y0 + h * .13), "Takip edip bildirimleri açarak destek ol!", font=f1, fill=lacivert)
+    alt = f"{PAYLAS_METIN}  ·  {HESAP}"
+    f2 = metni_sigdir(d, alt, "Bold", int(h * .27), maxw)
+    d.text((tx, y0 + h * .56), alt, font=f2, fill=(60, 50, 0))
+
+
 def metni_sigdir(d, metin, f_stil, boyut, max_w):
     while boyut > 14:
         f = font(f_stil, boyut)
@@ -400,7 +423,7 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     # Kartlar: 2 sütun
     n = len(veriler)
     satir = (n + 1) // 2
-    top, bottom = 250, H - 80
+    top, bottom = 250, H - 170
     gap = 14
     kart_h = min(150, (bottom - top - gap * (satir - 1)) / satir)
     kart_w = (W - 2 * M - gap) / 2
@@ -432,8 +455,8 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         d.text((sag - mw - sw - 8, y0 + kart_h * .1), sicak, font=f_sic, fill="white")
         d.text((sag - mw, y0 + kart_h * .22), mn, font=f_min, fill=(255, 255, 255, 190))
 
-    d.text((M, H - 52), "Kaynak: MGM (mgm.gov.tr)", font=font("Regular", 24), fill=(255, 255, 255, 170))
-    paylas_satiri(d, 0, H - 56, 28, sag_hizali_W=W - M)
+    destek_bandi(d, M, H - 150, W - M, H - 50)
+    d.text((M, H - 40), "Kaynak: Meteoroloji Genel Müdürlüğü (mgm.gov.tr)", font=font("Regular", 22), fill=(255, 255, 255, 170))
     ascii_ad = bolge.translate(str.maketrans("çğıöşüÇĞİÖŞÜ ", "cgiosuCGIOSU_"))
     yol = os.path.join(cikti, f"{list(BOLGELER).index(bolge) + 1:02d}_{ascii_ad}.jpg")
     img.save(yol, quality=93)
@@ -450,8 +473,9 @@ def caption(tarih, tum, gun=1):
         sat += [f"🔥 En sıcak: {sicak['il']} {sicak['max']}°C",
                 f"❄️ En soğuk: {soguk['il']} {soguk['min']}°C", ""]
     sat += ["Kendi bölgeni bulmak için kaydır 👉", "",
-            "📤 Bu gönderiyi sevdiklerinle paylaş, hava durumunu her gün kaçırma!",
-            "🔔 Takip et: @bugun.hava.nasil", "",
+            "🔔 Sayfamızı takip edip bildirimleri açarak bize destek olun!",
+            "📤 Bu gönderiyi sevdiklerinle paylaş, hava durumunu kimse kaçırmasın.",
+            "👉 @bugun.hava.nasil", "",
             "Kaynak: Meteoroloji Genel Müdürlüğü (MGM)", "",
             "#havadurumu #hava #türkiye #meteoroloji #mgm #istanbul #ankara #izmir"]
     return "\n".join(sat)
