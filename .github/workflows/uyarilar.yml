@@ -1,8 +1,7 @@
 name: Uyarılar, kapalı yollar ve son dakika hava haberleri
 
 on:
-  schedule:
-    - cron: "41 * * * *"   # her saat
+  # Zamanlama cron-job.org'dan yapılıyor (07:17 gun=1, 20:13 gun=2, uyarılar her 30 dk)
   workflow_dispatch:
 
 permissions:

@@ -1,9 +1,7 @@
 name: Bölge hava durumu (sabah bugün, akşam yarın)
 
 on:
-  schedule:
-    - cron: "17 4 * * *"   # her gün 07:17 (Türkiye saati) -> BUGÜN
-    - cron: "13 17 * * *"  # her gün 20:13 (Türkiye saati) -> YARIN
+  # Zamanlama cron-job.org'dan yapılıyor (07:17 gun=1, 20:13 gun=2, uyarılar her 30 dk)
   workflow_dispatch:        # Actions sekmesinden elle çalıştırma
     inputs:
       gun:
