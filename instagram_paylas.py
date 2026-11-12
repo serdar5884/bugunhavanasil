@@ -7,6 +7,7 @@ Görseller herkese açık depodan (raw.githubusercontent.com) Instagram'a verili
 Kullanım:
   python instagram_paylas.py karusel yayin/gunluk     -> klasördeki 7 bölge görselini tek gönderi (kaydırmalı) olarak paylaşır
   python instagram_paylas.py uyari yayin/uyari        -> paylasim.json'daki yeni uyarıları hikâye (+ önemliyse gönderi) olarak paylaşır
+  python instagram_paylas.py reels yayin/gunluk        -> reels.mp4'i Reels olarak paylaşır
   python instagram_paylas.py kontrol                  -> anahtar çalışıyor mu, hesap adı ne
 """
 import glob, json, os, subprocess, sys, time, urllib.parse, urllib.request
@@ -36,8 +37,8 @@ def url(dosya):
     return f"https://raw.githubusercontent.com/{REPO}/{sha}/{urllib.parse.quote(dosya)}"
 
 
-def hazir_bekle(cid):
-    for _ in range(30):
+def hazir_bekle(cid, deneme=30):
+    for _ in range(deneme):
         d = istek(cid, {"fields": "status_code"}, "GET")
         if d.get("status_code") == "FINISHED":
             return
@@ -62,6 +63,22 @@ def karusel(klasor):
     caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read()
     kap = istek(f"{USER}/media", {"media_type": "CAROUSEL", "children": ",".join(cocuklar), "caption": caption})["id"]
     print("Gönderi paylaşıldı:", yayinla(kap))
+
+
+def reels(klasor, yayinlama=True):
+    video = os.path.join(klasor, "reels.mp4")
+    if not os.path.exists(video):
+        sys.exit("reels.mp4 yok")
+    caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read() + " #reels #havadurumureels"
+    veri = {"media_type": "REELS", "video_url": url(video), "caption": caption, "share_to_feed": "true"}
+    kapak = os.path.join(klasor, "reels_kapak.jpg")
+    if os.path.exists(kapak):
+        veri["cover_url"] = url(kapak)
+    cid = istek(f"{USER}/media", veri)["id"]
+    hazir_bekle(cid, deneme=60)  # video işleme birkaç dakika sürebilir
+    if not yayinlama:
+        return print("Reels testi: Instagram videoyu kabul etti ve işledi (yayınlanmadı)")
+    print("Reels paylaşıldı:", istek(f"{USER}/media_publish", {"creation_id": cid})["id"])
 
 
 def uyari(klasor):
@@ -90,5 +107,9 @@ if __name__ == "__main__":
             print(istek("me", {"fields": "user_id,username,account_type"}, "GET"))
     elif komut == "karusel":
         karusel(sys.argv[2])
+    elif komut == "reels":
+        reels(sys.argv[2])
+    elif komut == "reels-test":
+        reels(sys.argv[2], yayinlama=False)
     elif komut == "uyari":
         uyari(sys.argv[2])

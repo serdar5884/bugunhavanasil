@@ -1,0 +1,33 @@
+name: Reels ve yorum testi (yayınlamaz)
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter ffmpeg >/dev/null
+          pip install -q -r requirements.txt
+      - name: Yorum izni testi
+        run: |
+          python - <<'PY'
+          import instagram_paylas as ig
+          m = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count,timestamp", "limit": 5}, "GET")["data"]
+          print("Son gönderiler:", m)
+          print("Yorumlar:", ig.istek(f"{m[0]['id']}/comments", {"fields": "id,text,username"}, "GET"))
+          PY
+          python yorum_bot.py --dene "Sivas yarın kar var mı"
+      - name: Reels testi
+        run: |
+          mkdir -p yayin/test_reels && cp yayin/aksam/[0-9][0-9]_*.jpg yayin/aksam/caption.txt yayin/test_reels/
+          python -u reels_bot.py yayin/test_reels
+          git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
+          git add yayin/test_reels && git commit -qm "Reels testi" && git pull --rebase -q origin main && git push -q
+          python -u instagram_paylas.py reels-test yayin/test_reels
