@@ -94,7 +94,11 @@ def main():
     sayilar = durum.get("yorum_sayilari", {})
     # 1 istek: son gönderiler + yorum sayıları. Sadece yorumu artan gönderilere bakılır (API sınırı için)
     medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count", "limit": SON_GONDERI}, "GET").get("data", [])
-    degisen = [m for m in medya if m.get("comments_count", 0) > sayilar.get(m["id"], 0)]
+    tam_kontrol = datetime.datetime.now(TR).minute % 15 == 0  # 15 dakikada bir tüm yorumlara bak
+    degisen = [m for m in medya if m.get("comments_count", 0) and
+               (tam_kontrol or m.get("comments_count", 0) != sayilar.get(m["id"], -1))]
+    for m in medya:
+        sayilar[m["id"]] = m.get("comments_count", 0)
     if not degisen:
         return print("Yeni yorum yok")
     hesap = durum.get("hesap") or ig.istek(ig.USER, {"fields": "username"}, "GET").get("username", "")
