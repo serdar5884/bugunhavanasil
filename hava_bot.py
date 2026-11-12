@@ -401,7 +401,7 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     # Başlık
     M = 56
     # Üst satır: büyük sarı BUGÜN / YARIN + beyaz "HAVA NASIL?"
-    gun_kelime = {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "")
+    gun_kelime = {1: "BUGÜN", 2: "YARIN", "hs": "HAFTA SONU"}.get(gun_no, "")
     f_gun, f_hn = font("ExtraBold", 66), font("Bold", 40)
     if gun_kelime:
         golge = (0, 0, 0, 110)
@@ -417,7 +417,12 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
              "Eylül", "Ekim", "Kasım", "Aralık"]
-    tstr = f"{tarih.day} {aylar[tarih.month]} {tarih.year}, {gunler[tarih.weekday()]}"
+    if gun_no == "hs":
+        paz = tarih + datetime.timedelta(days=1)
+        tstr = (f"{tarih.day}–{paz.day} {aylar[paz.month]} {paz.year}, Cumartesi–Pazar" if tarih.month == paz.month
+                else f"{tarih.day} {aylar[tarih.month]} – {paz.day} {aylar[paz.month]}, Cumartesi–Pazar")
+    else:
+        tstr = f"{tarih.day} {aylar[tarih.month]} {tarih.year}, {gunler[tarih.weekday()]}"
     d.text((M, 188), tstr, font=font("Medium", 32), fill=(255, 255, 255, 220))
 
     # Kartlar: 2 sütun
@@ -440,6 +445,24 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         ik = kart_h * .62
         ikon(d, tip, x0 + 18 + ik / 2, y0 + kart_h / 2, int(ik))
         tx = x0 + 30 + ik
+        if "paz" in v:  # hafta sonu kartı
+            f_g = font("ExtraBold", int(kart_h * .24))
+            f_k = font("SemiBold", int(kart_h * .17))
+            sag = x0 + kart_w - 20
+            satirlar = [("Cmt", v["max"], v["min"]), ("Paz", v["paz"]["max"], v["paz"]["min"])]
+            gen = max(d.textlength(f"{a}  {mx}°/{mn}°", font=f_g) for a, mx, mn in satirlar)
+            for j, (a, mx, mn) in enumerate(satirlar):
+                yy = y0 + kart_h * (.14 + j * .40)
+                d.text((sag - gen, yy + kart_h * .05), a, font=f_k, fill=(255, 205, 0))
+                t = f"{mx}°" if mx is not None else "-"
+                t2 = f"/{mn}°" if mn is not None else ""
+                d.text((sag - d.textlength(t + t2, font=f_g), yy), t, font=f_g, fill="white")
+                d.text((sag - d.textlength(t2, font=f_g), yy), t2, font=f_g, fill=(255, 255, 255, 170))
+            f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .27), sag - gen - 12 - tx)
+            d.text((tx, y0 + kart_h * .17), v["il"], font=f_il, fill="white")
+            f_dur = metni_sigdir(d, metin, "Regular", int(kart_h * .19), sag - gen - 12 - tx)
+            d.text((tx, y0 + kart_h * .56), metin, font=f_dur, fill=(255, 255, 255, 200))
+            continue
         sicak = f"{v['max']}°" if v["max"] is not None else "-"
         f_sic = font("ExtraBold", int(kart_h * .38))
         sw = d.textlength(sicak, font=f_sic)
@@ -463,8 +486,33 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     return yol
 
 
+def _kucuk(il):
+    return il.replace("İ", "i").replace("I", "ı").lower().replace(" ", "")
+
+
+def etiketler(tum):
+    """O günün öne çıkan illerine göre hashtag: en sıcak, en soğuk, kar/yağış alan iller + büyük şehirler."""
+    hepsi = [v for vs in tum.values() for v in vs if v["max"] is not None]
+    iller = []
+    if hepsi:
+        iller.append(max(hepsi, key=lambda v: v["max"])["il"])
+        iller.append(min(hepsi, key=lambda v: v["min"] if v["min"] is not None else 99)["il"])
+    tipler = {v["il"]: HADISE.get(v["hadise"] or "", ("", ""))[1] for v in hepsi}
+    karli = [il for il, t in tipler.items() if t in ("kar", "karla_yagmur")]
+    yagisli = [il for il, t in tipler.items() if t in ("yagmur", "firtina")]
+    iller += karli[:3] + yagisli[:2]
+    iller += ["İstanbul", "Ankara", "İzmir"]
+    tekil = list(dict.fromkeys(iller))[:8]
+    et = ["#havadurumu", "#hava", "#meteoroloji"] + [f"#{_kucuk(il)}havadurumu" for il in tekil]
+    if karli:
+        et += ["#kar", "#karyağışı"]
+    if yagisli:
+        et += ["#yağmur"]
+    return " ".join(et)
+
+
 def caption(tarih, tum, gun=1):
-    bas = {1: "Bugün hava nasıl?", 2: "Yarın hava nasıl?"}.get(gun, "Hava nasıl?")
+    bas = {1: "Bugün hava nasıl?", 2: "Yarın hava nasıl?", "hs": "Hafta sonu hava nasıl?"}.get(gun, "Hava nasıl?")
     sat = [f"🌤 {bas} Türkiye bölge bölge hava durumu – {tarih.strftime('%d.%m.%Y')}", ""]
     hepsi = [v for vs in tum.values() for v in vs if v["max"] is not None]
     if hepsi:
@@ -473,11 +521,13 @@ def caption(tarih, tum, gun=1):
         sat += [f"🔥 En sıcak: {sicak['il']} {sicak['max']}°C",
                 f"❄️ En soğuk: {soguk['il']} {soguk['min']}°C", ""]
     sat += ["Kendi bölgeni bulmak için kaydır 👉", "",
+            "💬 Senin ilinde hava nasıl? İlini yorumlara yaz, MGM verisiyle hemen cevaplayalım!",
+            "(Örnek: \"Sivas yarın\" ya da \"İzmir hafta sonu\")", "",
             "🔔 Sayfamızı takip edip bildirimleri açarak bize destek olun!",
             "📤 Bu gönderiyi sevdiklerinle paylaş, hava durumunu kimse kaçırmasın.",
             "👉 @bugun.hava.nasil", "",
             "Kaynak: Meteoroloji Genel Müdürlüğü (MGM)", "",
-            "#havadurumu #hava #türkiye #meteoroloji #mgm #istanbul #ankara #izmir"]
+            etiketler(tum)]
     return "\n".join(sat)
 
 
@@ -485,8 +535,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--gun", type=int, default=1, choices=range(1, 6))
+    ap.add_argument("--hafta-sonu", action="store_true", help="Cumartesi + Pazar tahmini (Cuma akşamı)")
     ap.add_argument("--cikti", default="cikti")
     a = ap.parse_args()
+    gun_no = a.gun
+    if a.hafta_sonu:
+        bugun = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date()
+        a.gun = (5 - bugun.weekday()) % 7 + 1  # Cumartesi'nin "gün" numarası
+        gun_no = "hs"
 
     os.makedirs(a.cikti, exist_ok=True)
     tarih = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date() + datetime.timedelta(days=a.gun - 1)
@@ -498,6 +554,10 @@ def main():
 
     def guvenli(il):
         try:
+            if gun_no == "hs":
+                v = getir(il, a.gun)
+                v["paz"] = getir(il, a.gun + 1)
+                return v
             return getir(il, a.gun)
         except Exception as e:
             hatalar.append(f"{il}: {e}")
@@ -508,10 +568,10 @@ def main():
         for bolge, iller in BOLGELER.items():
             tum[bolge] = list(ex.map(guvenli, iller))
     for bolge in BOLGELER:
-        print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, a.gun), flush=True)
+        print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, gun_no), flush=True)
 
     with open(os.path.join(a.cikti, "caption.txt"), "w", encoding="utf-8") as f:
-        f.write(caption(tarih, tum, a.gun))
+        f.write(caption(tarih, tum, gun_no))
     with open(os.path.join(a.cikti, "veri.json"), "w", encoding="utf-8") as f:
         json.dump(tum, f, ensure_ascii=False, indent=1)
     if hatalar:

@@ -13,8 +13,8 @@ import argparse, datetime, json, os, re, sys
 from hava_bot import BOLGELER, HADISE, mgm_get, merkezleri_yukle
 import instagram_paylas as ig
 
-DURUM = "durum.json"
-SON_GONDERI = 12        # son kaç gönderinin yorumlarına bakılsın
+DURUM = "yorum_durum.json"  # uyarı botuyla çakışmasın diye ayrı dosya
+SON_GONDERI = 6   # 5 dakikada bir çalıştığı için API sınırını aşmamak adına son 6 gönderi        # son kaç gönderinin yorumlarına bakılsın
 TUR_BASINA_EN_FAZLA = 25
 TR = datetime.timezone(datetime.timedelta(hours=3))
 AYLAR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]

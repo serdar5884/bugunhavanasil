@@ -30,12 +30,6 @@ jobs:
         run: |
           python -u uyari_bot.py --cikti yayin/uyari
           python -u haber_bot.py --cikti yayin/uyari
-      - name: Yorumlara cevap ver
-        if: ${{ env.IG_TOKEN != '' }}
-        env:
-          IG_TOKEN: ${{ secrets.IG_TOKEN }}
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-        run: python -u yorum_bot.py || echo "Yorum cevaplama hatası"
       - name: Sonuçları kaydet
         run: |
           git config user.name "hava-bot"

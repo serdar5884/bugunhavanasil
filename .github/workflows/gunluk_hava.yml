@@ -1,11 +1,11 @@
-name: Bölge hava durumu (sabah bugün, akşam yarın)
+name: Bölge hava durumu (sabah bugün, akşam yarın, cuma hafta sonu)
 
 on:
   # Zamanlama cron-job.org'dan yapılıyor (07:17 gun=1, 20:13 gun=2, uyarılar her 30 dk)
   workflow_dispatch:        # Actions sekmesinden elle çalıştırma
     inputs:
       gun:
-        description: "1 = bugün, 2 = yarın"
+        description: "1 = bugün, 2 = yarın, hs = hafta sonu"
         default: "1"
 
 permissions:
@@ -29,9 +29,9 @@ jobs:
       - name: Görselleri üret
         run: |
           if [ "${{ github.event.schedule }}" = "13 17 * * *" ]; then GUN=2; else GUN=${{ inputs.gun || '1' }}; fi
-          if [ "$GUN" = "2" ]; then KLASOR=yayin/aksam; else KLASOR=yayin/gunluk; fi
+          if [ "$GUN" = "2" ]; then KLASOR=yayin/aksam; elif [ "$GUN" = "hs" ]; then KLASOR=yayin/haftasonu; else KLASOR=yayin/gunluk; fi
           echo "KLASOR=$KLASOR" >> $GITHUB_ENV
-          python -u hava_bot.py --gun $GUN --cikti $KLASOR
+          if [ "$GUN" = "hs" ]; then python -u hava_bot.py --hafta-sonu --cikti $KLASOR; else python -u hava_bot.py --gun $GUN --cikti $KLASOR; fi
           rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg
           if [ "$GUN" = "1" ]; then python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"; fi
       - name: Görselleri depoya kaydet
