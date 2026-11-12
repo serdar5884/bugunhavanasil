@@ -1,7 +1,7 @@
 name: Yorumlara otomatik cevap
 
 on:
-  # cron-job.org her 5 dakikada tetikler
+  # cron-job.org her dakika tetikler
   workflow_dispatch:
 
 permissions:
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   yorum:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     env:
       IG_TOKEN: ${{ secrets.IG_TOKEN }}
       IG_USER_ID: ${{ secrets.IG_USER_ID }}

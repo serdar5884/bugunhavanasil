@@ -14,7 +14,7 @@ from hava_bot import BOLGELER, HADISE, mgm_get, merkezleri_yukle
 import instagram_paylas as ig
 
 DURUM = "yorum_durum.json"  # uyarı botuyla çakışmasın diye ayrı dosya
-SON_GONDERI = 6   # 5 dakikada bir çalıştığı için API sınırını aşmamak adına son 6 gönderi        # son kaç gönderinin yorumlarına bakılsın
+SON_GONDERI = 10  # dakikada bir çalıştığı için API sınırını aşmamak adına son 6 gönderi        # son kaç gönderinin yorumlarına bakılsın
 TUR_BASINA_EN_FAZLA = 25
 TR = datetime.timezone(datetime.timedelta(hours=3))
 AYLAR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -91,10 +91,17 @@ def main():
         sys.exit("IG_TOKEN yok – yorum cevaplama atlandı")
     durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {}
     cevaplanan = set(durum.get("cevaplanan_yorumlar", []))
-    hesap = ig.istek(ig.USER, {"fields": "username"}, "GET").get("username", "")
-    medya = ig.istek(f"{ig.USER}/media", {"fields": "id", "limit": SON_GONDERI}, "GET").get("data", [])
+    sayilar = durum.get("yorum_sayilari", {})
+    # 1 istek: son gönderiler + yorum sayıları. Sadece yorumu artan gönderilere bakılır (API sınırı için)
+    medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count", "limit": SON_GONDERI}, "GET").get("data", [])
+    degisen = [m for m in medya if m.get("comments_count", 0) > sayilar.get(m["id"], 0)]
+    if not degisen:
+        return print("Yeni yorum yok")
+    hesap = durum.get("hesap") or ig.istek(ig.USER, {"fields": "username"}, "GET").get("username", "")
+    durum["hesap"] = hesap
     yeni = 0
-    for m in medya:
+    for m in degisen:
+        sayilar[m["id"]] = m.get("comments_count", 0)
         yorumlar = ig.istek(f"{m['id']}/comments", {"fields": "id,text,username,timestamp", "limit": 50}, "GET").get("data", [])
         for y in yorumlar:
             if y["id"] in cevaplanan or y.get("username") == hesap:
@@ -112,6 +119,7 @@ def main():
             yeni += 1
             if yeni >= TUR_BASINA_EN_FAZLA:
                 break
+    durum["yorum_sayilari"] = {k: v for k, v in sayilar.items() if k in {m["id"] for m in medya}}
     durum["cevaplanan_yorumlar"] = list(cevaplanan)[-5000:]
     json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
     print(yeni, "yoruma cevap verildi")
