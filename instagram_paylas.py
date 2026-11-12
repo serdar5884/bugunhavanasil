@@ -62,7 +62,9 @@ def karusel(klasor):
         hazir_bekle(c)
     caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read()
     kap = istek(f"{USER}/media", {"media_type": "CAROUSEL", "children": ",".join(cocuklar), "caption": caption})["id"]
-    print("Gönderi paylaşıldı:", yayinla(kap))
+    mid = yayinla(kap)
+    print("Gönderi paylaşıldı:", mid)
+    return mid
 
 
 def reels(klasor, yayinlama=True):

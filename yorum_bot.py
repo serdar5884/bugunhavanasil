@@ -94,6 +94,14 @@ def main():
     sayilar = durum.get("yorum_sayilari", {})
     # 1 istek: son gönderiler + yorum sayıları. Sadece yorumu artan gönderilere bakılır (API sınırı için)
     medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count", "limit": SON_GONDERI}, "GET").get("data", [])
+    # profilde sabitlenen gönderiler eskise de her zaman kontrol edilsin
+    son_idler = {m["id"] for m in medya}
+    for sid in durum.get("sabit_gonderiler", []):
+        if sid not in son_idler:
+            try:
+                medya.append(ig.istek(sid, {"fields": "id,comments_count"}, "GET"))
+            except Exception as e:
+                print("Sabit gönderi okunamadı:", sid, e)
     tam_kontrol = datetime.datetime.now(TR).minute % 15 == 0  # 15 dakikada bir tüm yorumlara bak
     degisen = [m for m in medya if m.get("comments_count", 0) and
                (tam_kontrol or m.get("comments_count", 0) != sayilar.get(m["id"], -1))]
