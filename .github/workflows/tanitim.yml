@@ -1,0 +1,32 @@
+name: Tanıtım gönderisi (sabitlenecek)
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter >/dev/null
+          pip install -q -r requirements.txt
+      - name: Görselleri üret ve kaydet
+        run: |
+          python tanitim.py yayin/tanitim
+          git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
+          git add yayin/tanitim && git commit -qm "Tanıtım gönderisi" && git pull --rebase -q origin main && git push -q
+      - name: Paylaş ve sabit listesine ekle
+        run: |
+          python - <<'PY'
+          import json, os, instagram_paylas as ig
+          mid = ig.karusel("yayin/tanitim")
+          d = json.load(open("yorum_durum.json", encoding="utf-8")) if os.path.exists("yorum_durum.json") else {}
+          d.setdefault("sabit_gonderiler", []).append(mid)
+          json.dump(d, open("yorum_durum.json", "w", encoding="utf-8"), ensure_ascii=False)
+          PY
+          git add yorum_durum.json && git commit -qm "Sabit gönderi kaydı" && for i in 1 2 3; do git pull --rebase -q origin main && git push -q && break; sleep 3; done
