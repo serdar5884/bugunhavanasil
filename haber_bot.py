@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Son dakika hava haberleri: sel, heyelan, çığ, kar, fırtına, hortum, su baskını...
-Kaynaklar: AA, TRT Haber, NTV, Habertürk haber akışları (RSS).
+Kaynaklar: AA, NTV, Habertürk haber akışları (RSS) – sadece son 3 saatte yayımlananlar.
 
 Telif için: haber metni ve fotoğrafı KOPYALANMAZ. Kart bizim tasarımımız; üzerinde sadece
 olay türü + il + kendi kısa cümlemiz + kaynak adı yer alır.
@@ -18,7 +18,7 @@ from uyari_bot import PLAKA, http_get, _sar, _zemin, DURUM_DOSYA, W, H, gonderi_
 
 KAYNAKLAR = [
     ("AA", "https://www.aa.com.tr/tr/rss/default?cat=guncel"),
-    ("TRT Haber", "https://www.trthaber.com/xml_mobile.php?tur=xml_genel&kategori=gundem&adet=50"),
+    # TRT Haber çıkarıldı: akışında yayın tarihi yok, eski haberler güncelmiş gibi görünüyordu
     ("NTV", "https://www.ntv.com.tr/turkiye.rss"),
     ("Habertürk", "https://www.haberturk.com/rss/kategori/gundem.xml"),
 ]
