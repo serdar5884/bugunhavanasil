@@ -29,12 +29,14 @@ OLAYLAR = [
     ("HEYELAN", (170, 110, 60), r"\bheyelan"),
     ("SEL", (40, 120, 200), r"\bsel(\b|e\b|de\b|den\b|i\b| felaketi| suları)|\btaşkın|\bsu baskını|\bsu bastı|\bsağanak.{0,30}(bastı|bodrum|su bastı)"),
     ("HORTUM", (110, 110, 130), r"\bhortum(\b|u\b|un\b)"),
-    ("FIRTINA", (80, 90, 140), r"\bfırtına(\b|da\b|nın\b)|\bkuvvetli rüzgar|\bçatı(sı|ları)? uçtu"),
+    ("FIRTINA", (80, 90, 140), r"\bfırtına(\b|da\b|nın\b|sı\b|sında\b)|\blodos\b|\bkuvvetli rüzgar|\bçatı(sı|ları)? uçtu"),
     ("KAR", (150, 180, 220), r"\bkar (yağışı|nedeniyle|esareti|kalınlığı)|\btipi\b|\bkardan kapan|\bkar.{0,25}kapandı"),
     ("DOLU", (120, 150, 170), r"\bdolu (yağışı|yağdı|vurdu)"),
     ("YILDIRIM", (200, 170, 40), r"\byıldırım (düştü|isabet)"),
 ]
-HARIC = r"uyarı|uyarısı|hava durumu|tahmin|meteoroloji|bugün hava|yarın hava|hafta sonu hava|maç|lig\b|derbi|fırtına gibi|siyasi"
+HARIC = (r"uyarı|alarm|hava durumu|tahmin|meteoroloji|bugün hava|yarın hava|hafta sonu hava|bekleniyor|beklenen|"
+         r"maç|lig\b|derbi|fırtına gibi|fırtına kopardı|siyasi|şehit|helikopter|kaza kırım|hikaye|hikayesi|"
+         r"\b\w+(acak|ecek|acağı|eceği)\b")  # gelecek zaman = olay henüz olmamış (ulaşacak, düşecek...)
 GUNLUK_SINIR = 8
 # Can kaybı varsa hikâyeye ek olarak gönderi de paylaşılır (sadece bu olaylarda)
 CAN_KAYBI_OLAYLAR = {"SEL", "ÇIĞ"}
@@ -68,6 +70,30 @@ def _etiket(xml, adlar):
     return ""
 
 
+TR = datetime.timezone(datetime.timedelta(hours=3))
+EN_ESKI_SAAT = 3  # sadece son 3 saatte yayımlanan haberler
+
+
+def tarih_coz(metin):
+    """RSS (RFC822), Atom (ISO) ve TRT biçimlerini dener; çözülemezse None."""
+    import email.utils
+    metin = (metin or "").strip()
+    if not metin:
+        return None
+    try:
+        t = email.utils.parsedate_to_datetime(metin)
+        return t if t.tzinfo else t.replace(tzinfo=TR)
+    except Exception:
+        pass
+    for f in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S", "%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            t = datetime.datetime.strptime(metin.replace("Z", "+00:00"), f)
+            return t if t.tzinfo else t.replace(tzinfo=TR)
+        except ValueError:
+            continue
+    return None
+
+
 def haberleri_cek():
     haberler = []
     for kaynak, url in KAYNAKLAR:
@@ -81,25 +107,29 @@ def haberleri_cek():
             baslik = _etiket(o, ["title", "haber_manset", "baslik"])
             ozet = _etiket(o, ["description", "summary", "haber_aciklama", "spot"])
             link = _etiket(o, ["link", "haber_link", "guid"])
+            tarih = tarih_coz(_etiket(o, ["pubDate", "published", "updated", "dc:date", "haber_tarihi", "tarih", "haber_yayin_tarihi"]))
             if baslik:
                 haberler.append({"kaynak": kaynak, "baslik": re.sub(r"\s+", " ", baslik),
-                                 "ozet": re.sub(r"\s+", " ", ozet)[:300], "link": link})
+                                 "ozet": re.sub(r"\s+", " ", ozet)[:300], "link": link, "tarih": tarih})
     return haberler
 
 
 def hava_haberi_mi(h):
-    metin = (h["baslik"] + " " + h["ozet"][:150]).lower()
-    if re.search(HARIC, h["baslik"].lower()):
+    # Olay ve il BAŞLIKTA geçmeli (özetteki tesadüfi kelimeler yanıltmasın)
+    metin = h["baslik"].lower()
+    if re.search(HARIC, metin):
         return None
+    simdi = datetime.datetime.now(TR)
+    if not h.get("tarih") or not (simdi - datetime.timedelta(hours=EN_ESKI_SAAT) <= h["tarih"] <= simdi + datetime.timedelta(minutes=30)):
+        return None  # tarihi olmayan ya da eski haber paylaşılmaz
     olay = next(((ad, renk) for ad, renk, desen in OLAYLAR if re.search(desen, metin)), None)
     if not olay:
         return None
     # Türkiye'de bir il geçmeli (yurt dışı haberlerini ele)
-    tum = h["baslik"] + " " + h["ozet"]
-    il = next((p for p in PLAKA[1:] if re.search(rf"\b{p}\b", tum)), None)
+    il = next((p for p in PLAKA[1:] if re.search(rf"\b{p}\b", h["baslik"])), None)
     if not il:
         return None
-    can = olay[0] in CAN_KAYBI_OLAYLAR and bool(re.search(CAN_KAYBI, metin + " " + h["ozet"].lower()))
+    can = olay[0] in CAN_KAYBI_OLAYLAR and bool(re.search(CAN_KAYBI, metin))
     return {"olay": olay[0], "renk": olay[1], "il": il, "can_kaybi": can}
 
 
@@ -135,7 +165,8 @@ def haber_gorseli(x, yol):
     y = 1010
     for s in _sar(d, cumle, f_c, W - 2 * M):
         d.text((W / 2 - d.textlength(s, font=f_c) / 2, y), s, font=f_c, fill="white"); y += 68
-    zaman = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).strftime("%d.%m.%Y  %H:%M")
+    t = x.get("tarih") or datetime.datetime.now(TR)
+    zaman = "Haber saati: " + t.astimezone(TR).strftime("%d.%m.%Y  %H:%M")
     f_z = font("Medium", 38)
     d.text((W / 2 - d.textlength(zaman, font=f_z) / 2, y + 30), zaman, font=f_z, fill=(255, 255, 255, 200))
     not_ = "Bölgedeyseniz resmi kurumların uyarılarını takip edin."
@@ -154,7 +185,7 @@ def main():
     a = ap.parse_args()
 
     if a.demo:
-        adaylar = [{"kaynak": "AA", "baslik": "Rize'de sel", "ozet": "", "link": "x", "olay": "SEL", "renk": OLAYLAR[2][1], "il": "Rize", "can_kaybi": True},
+        adaylar = [{"kaynak": "AA", "baslik": "Rize'de sel", "ozet": "", "link": "x", "olay": "SEL", "renk": OLAYLAR[2][1], "il": "Rize", "can_kaybi": True, "tarih": datetime.datetime.now(TR)},
                    {"kaynak": "TRT Haber", "baslik": "x", "ozet": "", "link": "y", "olay": "ÇIĞ", "renk": OLAYLAR[0][1], "il": "Hakkari"}]
     else:
         adaylar = []
@@ -164,7 +195,7 @@ def main():
                 adaylar.append({**h, **x})
     if a.liste:
         for x in adaylar:
-            print(f"[{x['olay']}] {x['il']} | {x['kaynak']} | {x['baslik']}")
+            print(f"[{x['olay']}] {x['il']} | {x['kaynak']} | {x.get('tarih')} | {x['baslik']}")
         print(len(adaylar), "hava haberi bulundu")
         return
 
@@ -172,16 +203,20 @@ def main():
     gorulen = set(durum.get("haber_gorulen", []))
     bugun = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).strftime("%Y-%m-%d")
     bugun_sayi = sum(1 for g in gorulen if g.startswith(bugun))
+    # ilk çalıştırmada akıştaki tüm haberleri "görüldü" say (eski haber birikmesin) – listede değilse
+
 
     os.makedirs(a.cikti, exist_ok=True)
     pj = os.path.join(a.cikti, "paylasim.json")
     paylasim = json.load(open(pj, encoding="utf-8")) if os.path.exists(pj) else []
-    yeni = []
+    yeni, yeni_idler = [], []
     for x in adaylar:
         # aynı gün aynı ilde aynı olay = tek haber (farklı sitelerden gelse de)
         anahtar = f"{bugun}|{x['il']}|{x['olay']}"
-        if anahtar in gorulen or anahtar in yeni:
+        haber_id = "h:" + hashlib.md5(re.sub(r"\W", "", x["baslik"].lower()).encode()).hexdigest()[:12]
+        if anahtar in gorulen or anahtar in yeni or haber_id in gorulen:
             continue
+        yeni_idler.append(haber_id)
         if bugun_sayi + len(yeni) >= GUNLUK_SINIR:
             break
         yeni.append(anahtar)
@@ -202,7 +237,7 @@ def main():
         print("Yeni hava haberi:", anahtar, "|", x["kaynak"], "|", x["baslik"])
     json.dump(paylasim, open(pj, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     if not a.demo:
-        durum["haber_gorulen"] = (list(gorulen) + yeni)[-1000:]
+        durum["haber_gorulen"] = (list(gorulen) + yeni + yeni_idler)[-2000:]
         json.dump(durum, open(DURUM_DOSYA, "w", encoding="utf-8"), ensure_ascii=False)
     print(len(yeni), "yeni hava haberi görseli")
 

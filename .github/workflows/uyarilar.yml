@@ -28,7 +28,7 @@ jobs:
           pip install -r requirements.txt
       - name: Yeni uyarıları kontrol et
         run: |
-          python -u uyari_bot.py --cikti yayin/uyari
+          python -u uyari_bot.py --min-seviye orange --cikti yayin/uyari
           python -u haber_bot.py --cikti yayin/uyari
       - name: Sonuçları kaydet
         run: |
