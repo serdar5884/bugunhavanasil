@@ -30,13 +30,15 @@ OLAYLAR = [
     ("SEL", (40, 120, 200), r"\bsel(\b|e\b|de\b|den\b|i\b| felaketi| suları)|\btaşkın|\bsu baskını|\bsu bastı|\bsağanak.{0,30}(bastı|bodrum|su bastı)"),
     ("HORTUM", (110, 110, 130), r"\bhortum(\b|u\b|un\b)"),
     ("FIRTINA", (80, 90, 140), r"\bfırtına(\b|da\b|nın\b|sı\b|sında\b)|\blodos\b|\bkuvvetli rüzgar|\bçatı(sı|ları)? uçtu"),
-    ("KAR", (150, 180, 220), r"\bkar (yağışı|nedeniyle|esareti|kalınlığı)|\btipi\b|\bkardan kapan|\bkar.{0,25}kapandı"),
+    ("KAR", (150, 180, 220), r"\b(yoğun |kuvvetli )?kar (yağışı|nedeniyle|esareti|kalınlığı|geliyor|uyarısı|bekleniyor|alarmı|yağacak)|\bkar yağacak|\btipi\b|\bkardan kapan|\bkar.{0,25}kapandı"),
+    ("YAĞIŞ", (60, 110, 170), r"\bkuvvetli (yağış|sağanak)|\bsağanak yağış|\bşiddetli yağış|\byoğun yağış"),
     ("DOLU", (120, 150, 170), r"\bdolu (yağışı|yağdı|vurdu)"),
     ("YILDIRIM", (200, 170, 40), r"\byıldırım (düştü|isabet)"),
 ]
-HARIC = (r"uyarı|alarm|hava durumu|tahmin|meteoroloji|bugün hava|yarın hava|hafta sonu hava|bekleniyor|beklenen|"
-         r"maç|lig\b|derbi|fırtına gibi|fırtına kopardı|siyasi|şehit|helikopter|kaza kırım|hikaye|hikayesi|"
-         r"\b\w+(acak|ecek|acağı|eceği)\b")  # gelecek zaman = olay henüz olmamış (ulaşacak, düşecek...)
+HARIC = (r"hava durumu|bugün hava|yarın hava|hafta sonu hava|hava nasıl olacak|"
+         r"maç|lig\b|derbi|fırtına gibi|fırtına kopardı|siyasi|şehit|helikopter|kaza kırım|hikaye|hikayesi")
+# Olay henüz olmamışsa (bekleniyor, uyarı, risk, -acak/-ecek) "HAVA UYARISI" olarak paylaşılır
+TAHMIN = r"bekleniyor|beklenen|uyarı|alarm|risk|tehlike|geliyor|kapıda|\b\w+(acak|ecek|acağı|eceği)\b"
 GUNLUK_SINIR = 8
 # Can kaybı varsa hikâyeye ek olarak gönderi de paylaşılır (sadece bu olaylarda)
 CAN_KAYBI_OLAYLAR = {"SEL", "ÇIĞ"}
@@ -54,7 +56,12 @@ def bulunma(il):
 CUMLE = {
     "ÇIĞ": "çığ düştü", "HEYELAN": "heyelan meydana geldi", "SEL": "sel meydana geldi",
     "HORTUM": "hortum etkili oldu", "FIRTINA": "fırtına etkili oldu", "KAR": "kar yağışı etkili oluyor",
-    "DOLU": "dolu yağışı etkili oldu", "YILDIRIM": "yıldırım düştü",
+    "DOLU": "dolu yağışı etkili oldu", "YILDIRIM": "yıldırım düştü", "YAĞIŞ": "kuvvetli yağış etkili oluyor",
+}
+CUMLE_TAHMIN = {
+    "ÇIĞ": "çığ tehlikesi var", "HEYELAN": "heyelan riski var", "SEL": "sel ve su baskını riski var",
+    "HORTUM": "hortum riski var", "FIRTINA": "fırtına bekleniyor", "KAR": "yoğun kar yağışı bekleniyor",
+    "DOLU": "dolu yağışı bekleniyor", "YILDIRIM": "gök gürültülü sağanak bekleniyor", "YAĞIŞ": "kuvvetli yağış bekleniyor",
 }
 
 
@@ -129,8 +136,9 @@ def hava_haberi_mi(h):
     il = next((p for p in PLAKA[1:] if re.search(rf"\b{p}\b", h["baslik"])), None)
     if not il:
         return None
-    can = olay[0] in CAN_KAYBI_OLAYLAR and bool(re.search(CAN_KAYBI, metin))
-    return {"olay": olay[0], "renk": olay[1], "il": il, "can_kaybi": can}
+    tahmin = bool(re.search(TAHMIN, metin))
+    can = not tahmin and olay[0] in CAN_KAYBI_OLAYLAR and bool(re.search(CAN_KAYBI, metin))
+    return {"olay": olay[0], "renk": olay[1], "il": il, "can_kaybi": can, "tahmin": tahmin}
 
 
 def haber_gorseli(x, yol):
@@ -138,15 +146,20 @@ def haber_gorseli(x, yol):
     img = _zemin((20, 22, 30), tuple(int(c * .5) for c in renk))
     d = ImageDraw.Draw(img, "RGBA")
     M = 70
-    kirmizi = (215, 30, 40)
-    # SON DAKİKA bandı
-    d.rectangle([0, 150, W, 270], fill=kirmizi)
+    tahmin = x.get("tahmin")
+    band_renk = (235, 120, 20) if tahmin else (215, 30, 40)
+    ust, alt = ("HAVA UYARISI", "BEKLENİYOR") if tahmin else ("SON DAKİKA", "HAVA HABER")
+    d.rectangle([0, 150, W, 270], fill=band_renk)
     f = font("ExtraBold", 72)
-    d.text((M, 165), "SON DAKİKA", font=f, fill="white")
-    d.text((M + d.textlength("SON DAKİKA", font=f) + 24, 190), "HAVA HABER", font=font("Bold", 42), fill=(255, 220, 220))
+    d.text((M, 165), ust, font=f, fill="white")
+    d.text((M + d.textlength(ust, font=f) + 24, 190), alt, font=font("Bold", 42), fill=(255, 235, 220))
     d.text((M, 80), "BUGÜN HAVA NASIL?", font=font("Bold", 34), fill=(255, 205, 0))
     # olay türü – büyük
     f_o = font("ExtraBold", 190 if len(x["olay"]) <= 5 else 150)
+    if tahmin:
+        etiket = "DİKKAT"
+        fe = font("ExtraBold", 54)
+        d.text((W / 2 - d.textlength(etiket, font=fe) / 2, 410), etiket, font=fe, fill=(255, 190, 90))
     ow = d.textlength(x["olay"], font=f_o)
     d.text((W / 2 - ow / 2 + 5, 505), x["olay"], font=f_o, fill=(0, 0, 0, 120))
     d.text((W / 2 - ow / 2, 500), x["olay"], font=f_o, fill="white")
@@ -159,6 +172,8 @@ def haber_gorseli(x, yol):
     # kendi cümlemiz
     if x.get("can_kaybi"):
         cumle = f"{bulunma(x['il'])} {'sel' if x['olay'] == 'SEL' else 'çığ'} felaketi: can kaybı yaşandı."
+    elif tahmin:
+        cumle = f"{bulunma(x['il'])} {CUMLE_TAHMIN[x['olay']]}."
     else:
         cumle = f"{bulunma(x['il'])} {CUMLE[x['olay']]}."
     f_c = font("SemiBold", 52)
@@ -186,7 +201,7 @@ def main():
 
     if a.demo:
         adaylar = [{"kaynak": "AA", "baslik": "Rize'de sel", "ozet": "", "link": "x", "olay": "SEL", "renk": OLAYLAR[2][1], "il": "Rize", "can_kaybi": True, "tarih": datetime.datetime.now(TR)},
-                   {"kaynak": "TRT Haber", "baslik": "x", "ozet": "", "link": "y", "olay": "ÇIĞ", "renk": OLAYLAR[0][1], "il": "Hakkari"}]
+                   {"kaynak": "NTV", "baslik": "x", "ozet": "", "link": "y", "olay": "KAR", "renk": (150, 180, 220), "il": "Erzurum", "tahmin": True, "tarih": datetime.datetime.now(TR)}]
     else:
         adaylar = []
         for h in haberleri_cek():
@@ -212,7 +227,7 @@ def main():
     yeni, yeni_idler = [], []
     for x in adaylar:
         # aynı gün aynı ilde aynı olay = tek haber (farklı sitelerden gelse de)
-        anahtar = f"{bugun}|{x['il']}|{x['olay']}"
+        anahtar = f"{bugun}|{x['il']}|{x['olay']}" + ("|tahmin" if x.get("tahmin") else "")
         haber_id = "h:" + hashlib.md5(re.sub(r"\W", "", x["baslik"].lower()).encode()).hexdigest()[:12]
         if anahtar in gorulen or anahtar in yeni or haber_id in gorulen:
             continue
@@ -223,7 +238,9 @@ def main():
         dosya = os.path.join(a.cikti, f"haber_{bugun.replace('-', '')}_{len(yeni)}_{hashlib.md5(anahtar.encode()).hexdigest()[:6]}.jpg")
         haber_gorseli(x, dosya)
         kayit = {"gorsel": dosya, "tur": "hikaye",
-                 "caption": f"🔴 SON DAKİKA | {x['il']}: {x['olay'].capitalize()}\nHaber kaynağı: {x['kaynak']}"}
+                 "caption": (f"⚠️ HAVA UYARISI | {bulunma(x['il'])} {CUMLE_TAHMIN[x['olay']]}.\nHaber kaynağı: {x['kaynak']}"
+                             if x.get("tahmin") else
+                             f"🔴 SON DAKİKA | {x['il']}: {x['olay'].capitalize()}\nHaber kaynağı: {x['kaynak']}")}
         if x.get("can_kaybi"):
             kayit["tur"] = "hikaye+gonderi"
             kayit["gonderi_gorsel"] = gonderi_surumu(dosya)
