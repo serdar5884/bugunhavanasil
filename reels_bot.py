@@ -81,15 +81,28 @@ def main(klasor):
         ofset += sureler[i - 1] - GECIS
         filtre.append(f"[{son_et}][v{i}]xfade=transition=fade:duration={GECIS}:offset={ofset:.2f}[x{i}]")
         son_et = f"x{i}"
-    # sakin akor müziği (C - Am - F - G), yumuşak giriş/çıkış
-    akorlar = [(261.6, 329.6, 392.0), (220.0, 261.6, 329.6), (174.6, 220.0, 261.6), (196.0, 246.9, 293.7)]
-    parca = toplam / 4
-    ifade = "+".join(
-        f"if(between(t,{j * parca:.2f},{(j + 1) * parca:.2f}),"
-        + "+".join(f"0.06*sin(2*PI*{f}*t)+0.02*sin(2*PI*{f * 2}*t)" for f in a) + ",0)"
-        for j, a in enumerate(akorlar))
-    filtre.append(f"aevalsrc='{ifade}':s=44100:d={toplam:.2f},lowpass=f=1800,"
-                  f"afade=t=in:d=1.2,afade=t=out:st={toplam - 1.8:.2f}:d=1.8,aformat=channel_layouts=stereo[a]")
+    # Müzik: muzik/ klasöründeki parçalar her gün sırayla kullanılır (Pixabay lisansı); yoksa üretilen sakin akor
+    parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
+    if parcalar:
+        parca = parcalar[bugun.toordinal() % len(parcalar)]
+        girdiler += ["-stream_loop", "-1", "-i", parca]
+        filtre.append(f"[{n}:a]atrim=0:{toplam:.2f},asetpts=PTS-STARTPTS,volume=0.85,afade=t=in:d=0.8,"
+                      f"afade=t=out:st={toplam - 2.5:.2f}:d=2.5,aformat=channel_layouts=stereo[a]")
+        dosya = os.path.basename(parca)[3:-4]
+        sanatci = next((ad for on, ad in (("alex-morgan", "Alex Morgan"), ("atlasaudio", "AtlasAudio"), ("nastelbom", "Nastelbom"),
+                                          ("velariomusic", "VelarioMusic"), ("andriig", "AndriiG")) if dosya.startswith(on)),
+                       dosya.split("-")[0])
+        open(os.path.join(klasor, "muzik.txt"), "w", encoding="utf-8").write(sanatci)
+        print("Müzik:", os.path.basename(parca))
+    else:
+        akorlar = [(261.6, 329.6, 392.0), (220.0, 261.6, 329.6), (174.6, 220.0, 261.6), (196.0, 246.9, 293.7)]
+        parca_s = toplam / 4
+        ifade = "+".join(
+            f"if(between(t,{j * parca_s:.2f},{(j + 1) * parca_s:.2f}),"
+            + "+".join(f"0.06*sin(2*PI*{f}*t)+0.02*sin(2*PI*{f * 2}*t)" for f in a) + ",0)"
+            for j, a in enumerate(akorlar))
+        filtre.append(f"aevalsrc='{ifade}':s=44100:d={toplam:.2f},lowpass=f=1800,"
+                      f"afade=t=in:d=1.2,afade=t=out:st={toplam - 1.8:.2f}:d=1.8,aformat=channel_layouts=stereo[a]")
     cikti = os.path.join(klasor, "reels.mp4")
     komut = ["ffmpeg", "-y", "-loglevel", "error", *girdiler, "-filter_complex", ";".join(filtre),
              "-map", f"[{son_et}]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "27",

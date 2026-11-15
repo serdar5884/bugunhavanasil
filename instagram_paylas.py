@@ -72,6 +72,9 @@ def reels(klasor, yayinlama=True):
     if not os.path.exists(video):
         sys.exit("reels.mp4 yok")
     caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read() + " #reels #havadurumureels"
+    mz = os.path.join(klasor, "muzik.txt")
+    if os.path.exists(mz):
+        caption += f"\n\n🎵 Müzik: {open(mz, encoding='utf-8').read().strip()} (Pixabay)"
     veri = {"media_type": "REELS", "video_url": url(video), "caption": caption, "share_to_feed": "true"}
     kapak = os.path.join(klasor, "reels_kapak.jpg")
     if os.path.exists(kapak):
