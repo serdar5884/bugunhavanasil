@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 from hava_bot import font, destek_bandi, HESAP
 
 W, H = 1080, 1920
-SURE, GECIS = 2.6, 0.4
+ACILIS, BOLGE, KAPANIS, GECIS = 2.5, 5.0, 3.5, 0.5  # saniye: bölge görselleri okunabilsin diye uzun
 
 
 def dikey(src_yol, hedef):
@@ -65,16 +65,20 @@ def main(klasor):
     kareler.append(son)
 
     n = len(kareler)
-    toplam = n * SURE - (n - 1) * GECIS
+    sureler = [ACILIS] + [BOLGE] * (n - 2) + [KAPANIS]
+    toplam = sum(sureler) - (n - 1) * GECIS
     girdiler, filtre = [], []
     for i, k in enumerate(kareler):
+        SURE = sureler[i]
         girdiler += ["-loop", "1", "-t", str(SURE), "-i", k]
-        # hafif yakınlaşma (Ken Burns)
-        filtre.append(f"[{i}:v]scale=1188:2112,zoompan=z='min(zoom+0.0009,1.06)':d={int(SURE * 30)}:"
+        # çok hafif yakınlaşma (bölgelerde daha yavaş, yazı rahat okunsun)
+        hiz = 0.0009 if i == 0 else 0.0003
+        filtre.append(f"[{i}:v]scale=1188:2112,zoompan=z='min(zoom+{hiz},1.06)':d={int(SURE * 30)}:"
                       f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps=30,setsar=1,format=yuv420p[v{i}]")
     son_et = "v0"
+    ofset = 0.0
     for i in range(1, n):
-        ofset = i * (SURE - GECIS)
+        ofset += sureler[i - 1] - GECIS
         filtre.append(f"[{son_et}][v{i}]xfade=transition=fade:duration={GECIS}:offset={ofset:.2f}[x{i}]")
         son_et = f"x{i}"
     # sakin akor müziği (C - Am - F - G), yumuşak giriş/çıkış
