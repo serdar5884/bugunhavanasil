@@ -1,0 +1,31 @@
+name: Reels'i yeniden üret ve paylaş (gönderi olmadan)
+on:
+  workflow_dispatch:
+    inputs:
+      klasor:
+        description: "yayin/gunluk"
+        default: "yayin/gunluk"
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      KLASOR: ${{ inputs.klasor }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter ffmpeg >/dev/null
+          pip install -q -r requirements.txt
+      - name: Reels üret ve kaydet
+        run: |
+          rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt
+          python -u reels_bot.py $KLASOR
+          git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
+          git add $KLASOR && git commit -qm "Reels yeniden üretildi" && git pull --rebase -q origin main && git push -q
+      - name: Paylaş
+        run: python -u instagram_paylas.py reels $KLASOR
