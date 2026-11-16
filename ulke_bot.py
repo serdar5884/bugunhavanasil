@@ -114,7 +114,21 @@ def tespit(veri):
             ort = round(sum(farklar[il] for il in artan) / len(artan))
             olaylar.append({"tur": "SICAK", "baslik": "SICAKLIKLAR ARTIYOR!", "sahne": "gunesli", "iller": artan, "tarih": tarih,
                             "fiil": f"sıcaklıklar ortalama {ort}°C artıyor", "ek": ""})
-    return olaylar
+    # Aynı gün hem "yağmurlu hava" hem "kuvvetli yağış" varsa tek gönderide birleştir
+    birlesik = []
+    for o in olaylar:
+        if o["tur"] == "YAGIS":
+            ym = next((x for x in olaylar if x["tur"] == "YAGMUR" and x["tarih"] == o["tarih"]), None)
+            if ym:
+                bolge = {}
+                for il in o["iller"]:
+                    bolge[IL_BOLGE[il]] = bolge.get(IL_BOLGE[il], 0) + 1
+                b = max(bolge, key=bolge.get)
+                ym["ek"] = (f"{len(o['iller'])} ilde kuvvetli yağış bekleniyor ({', '.join(o['iller'][:6])}"
+                            f"{'...' if len(o['iller']) > 6 else ''}); sel ve su baskınlarına dikkat.")
+                continue
+        birlesik.append(o)
+    return birlesik
 
 
 FIIL = {"KAR": "kar yağışı bekleniyor", "YAGIS": "kuvvetli yağış bekleniyor", "YAGMUR": "yağmur ve sağanak bekleniyor", "RUZGAR": "kuvvetli rüzgar bekleniyor"}
