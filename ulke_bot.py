@@ -2,7 +2,8 @@
 """
 Yurt geneli önemli hava gelişmeleri – MGM'nin 81 il tahmininden otomatik tespit:
   KAR GELİYOR!            yarın/öbür gün en az 8 ilde kar
-  KUVVETLİ YAĞIŞ GELİYOR! en az 8 ilde kuvvetli yağmur / sağanak / gök gürültülü sağanak
+  KUVVETLİ YAĞIŞ GELİYOR! en az 8 ilde MGM "kuvvetli" yağış kodu
+  YAĞMURLU HAVA GELİYOR!  bir önceki gün ≤20 ilde yağış varken en az 40 ilde yağış
   SOĞUK HAVA DALGASI!     en az 30 ilde en yüksek sıcaklık bir önceki güne göre 6°C+ düşüyor
   SICAKLIKLAR ARTIYOR!    en az 30 ilde 6°C+ artış
   KUVVETLİ RÜZGAR!        en az 8 ilde kuvvetli rüzgar
@@ -25,7 +26,8 @@ GUNLER = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", 
 AYLAR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 IL_BOLGE = {il: b for b, iller in BOLGELER.items() for il in iller}
 KAR = {"K", "HKY", "YKY", "KKY"}
-KUVVETLI_YAGIS = {"KY", "SY", "KSY", "GSY", "KGY", "MSY"}
+KUVVETLI_YAGIS = {"KY", "KSY", "KGY"}  # sadece MGM'nin "kuvvetli" kodları
+YAGISLI = {"HY", "Y", "KY", "HSY", "SY", "KSY", "MSY", "GSY", "KGY", "KKY", "HHY"}
 RUZGAR = {"GKR", "KKR", "R"}
 
 
@@ -89,6 +91,11 @@ def tespit(veri):
         if len(yagis) >= 8:
             olaylar.append({"tur": "YAGIS", "baslik": "KUVVETLİ YAĞIŞ GELİYOR!", "sahne": "firtinali", "iller": yagis, "tarih": tarih,
                             "ek": "Sel ve su baskınlarına karşı dikkatli olun."})
+        # Yağışlı havaya geçiş: bir önceki gün az ilde yağış varken bu gün çok ilde
+        yagisli, onceki_yagisli = say(YAGISLI), [il for il, d in veri.items() if onceki in d and d[onceki]["hadise"] in YAGISLI]
+        if len(yagisli) >= 40 and len(onceki_yagisli) <= 20:
+            olaylar.append({"tur": "YAGMUR", "baslik": "YAĞMURLU HAVA GELİYOR!", "sahne": "yagmurlu", "iller": yagisli, "tarih": tarih,
+                            "ek": "Şemsiyenizi yanınıza almayı unutmayın."})
         ruzgar = say(RUZGAR)
         if len(ruzgar) >= 8:
             olaylar.append({"tur": "RUZGAR", "baslik": "KUVVETLİ RÜZGAR!", "sahne": "bulutlu", "iller": ruzgar, "tarih": tarih,
@@ -110,7 +117,7 @@ def tespit(veri):
     return olaylar
 
 
-FIIL = {"KAR": "kar yağışı bekleniyor", "YAGIS": "kuvvetli yağış ve sağanak bekleniyor", "RUZGAR": "kuvvetli rüzgar bekleniyor"}
+FIIL = {"KAR": "kar yağışı bekleniyor", "YAGIS": "kuvvetli yağış bekleniyor", "YAGMUR": "yağmur ve sağanak bekleniyor", "RUZGAR": "kuvvetli rüzgar bekleniyor"}
 
 
 def paragraf(o):
@@ -201,7 +208,7 @@ def kart(o, yol):
 
 def caption(o):
     t = o["tarih"]
-    et = {"KAR": "#kar #karyağışı #kargeliyor", "YAGIS": "#sağanak #yağmur #kuvvetliyağış", "RUZGAR": "#fırtına #rüzgar",
+    et = {"KAR": "#kar #karyağışı #kargeliyor", "YAGIS": "#sağanak #yağmur #kuvvetliyağış", "YAGMUR": "#yağmur #sağanak", "RUZGAR": "#fırtına #rüzgar",
           "SOGUK": "#soğukhava #soğukhavadalgası", "SICAK": "#sıcakhava #havaısınıyor"}[o["tur"]]
     return (f"⚠️ {o['baslik']}\n\n{paragraf(o)}\n\n"
             f"📍 {len(o['iller'])} il: {', '.join(o['iller'])}\n\n"
