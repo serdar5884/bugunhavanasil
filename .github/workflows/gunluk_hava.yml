@@ -51,4 +51,4 @@ jobs:
         run: |
           python -u instagram_paylas.py karusel $KLASOR
           if [ -f $KLASOR/reels.mp4 ]; then python -u instagram_paylas.py reels $KLASOR || echo "Reels paylaşılamadı"; fi
-          if [ -f yayin/ulke/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi
+          if [ "$GUN" != "hs" ] && [ -f yayin/ulke/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi
