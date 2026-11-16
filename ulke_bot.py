@@ -146,8 +146,23 @@ def paragraf(o):
             f"{len(o['iller'])} il merkezinde {fiil}. En çok etkilenecek bölgeler: {bolge_metin}. {o['ek']}").strip()
 
 
+def fotograf(sahne, tarih):
+    """arka_plan/<sahne>/ klasöründe fotoğraf varsa sıradakini 1080x1350 kırparak döndürür."""
+    import glob
+    klasor = os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan", sahne)
+    fotolar = sorted(glob.glob(os.path.join(klasor, "*.jpg")) + glob.glob(os.path.join(klasor, "*.jpeg")) +
+                     glob.glob(os.path.join(klasor, "*.png")) + glob.glob(os.path.join(klasor, "*.webp")))
+    if not fotolar:
+        return None
+    src = Image.open(fotolar[tarih.toordinal() % len(fotolar)]).convert("RGB")
+    oran = max(W / src.width, H / src.height)
+    src = src.resize((int(src.width * oran + 1), int(src.height * oran + 1)))
+    x, y = (src.width - W) // 2, (src.height - H) // 2
+    return src.crop((x, y, x + W, y + H))
+
+
 def kart(o, yol):
-    img = sahne_ciz(o["sahne"], o["tur"]).convert("RGB")
+    img = fotograf(o["sahne"], o["tarih"]) or sahne_ciz(o["sahne"], o["tur"]).convert("RGB")
     img = ImageEnhance.Brightness(img).enhance(0.8)  # RGB kalmalı: RGBA çizim üstüne karışsın
     d = ImageDraw.Draw(img, "RGBA")
     # alttan koyulaşan perde (yazı okunsun)
