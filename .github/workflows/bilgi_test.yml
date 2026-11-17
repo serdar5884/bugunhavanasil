@@ -1,0 +1,34 @@
+name: Bilgi videosu testi (paylaşmaz)
+on:
+  workflow_dispatch:
+    inputs:
+      konu: {default: "lodos_poyraz"}
+      ses: {default: "fahrettin"}
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter ffmpeg >/dev/null
+          pip install -q -r requirements.txt piper-tts
+      - name: Türkçe ses modeli
+        run: |
+          mkdir -p ses_model && cd ses_model
+          for s in ${{ inputs.ses }} dfki fettah; do
+            u="https://huggingface.co/rhasspy/piper-voices/resolve/main/tr/tr_TR/$s/medium/tr_TR-$s-medium"
+            if curl -sfL "$u.onnx" -o tr.onnx && curl -sfL "$u.onnx.json" -o tr.onnx.json; then echo "Ses: $s"; break; fi
+          done
+          ls -la
+      - name: Video üret
+        env:
+          PIPER_MODEL: ses_model/tr.onnx
+        run: python -u bilgi_video.py --konu ${{ inputs.konu }} --cikti yayin/bilgi_test
+      - name: Kaydet
+        run: |
+          git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
+          git add yayin/bilgi_test && git commit -qm "Bilgi videosu testi" && git pull --rebase -q origin main && git push -q

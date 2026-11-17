@@ -1,30 +1,28 @@
 #!/usr/bin/env python3
 """
-"10 saniyede" bilgi videosu (1080x1920, 30 fps) – animasyonlar Pillow ile çizilir, müzik muzik/ klasöründen.
-Deneme konusu: Lodos ile poyraz farkı.
-Kullanım: python bilgi_video.py cikti.mp4
+"10 saniyede" meteoroloji bilgi videoları (1080x1920, 30 fps) + aynı konudan kaydırmalı gönderi görselleri (4:5).
+Konular bilgi_konulari.py içinde; animasyonlar Pillow ile çizilir, müzik muzik/ klasöründen.
+
+Kullanım:
+  python bilgi_video.py --konu lodos_poyraz --cikti yayin/bilgi     -> reels.mp4 + 01..N.jpg + caption.txt
+  python bilgi_video.py --siradaki --cikti yayin/bilgi              -> bilgi_durum.json'daki sıradaki konu
 """
-import math, os, random, subprocess, sys, glob
-from PIL import Image, ImageDraw, ImageFilter
+import argparse, glob, json, math, os, random, subprocess
+from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 from hava_bot import font, HESAP
+from bilgi_konulari import KONULAR
 
 W, H, FPS = 1080, 1920, 30
 SARI, LACI = (255, 205, 0), (14, 24, 46)
-rnd = random.Random(7)
+GECIS = 0.35
+YAZI_HIZI = 0.5  # altyazının tamamı sahne süresinin ilk yarısında belirir, kalan yarıda okunur
+DURUM = "bilgi_durum.json"
 
-# ---------------------------------------------------------------- SAHNE PLANI
-SAHNELER = [  # (süre sn, tür, veri)
-    (2.6, "baslik", {"ust": "10 SANİYEDE", "b1": "LODOS", "ve": "VE", "b2": "POYRAZ", "alt": "FARKI NEDİR?"}),
-    (3.6, "ruzgar", {"ad": "LODOS", "yon": "GÜNEYBATIDAN", "aci": -35, "renk": ((70, 40, 60), (215, 120, 70)),
-                     "seritr": (255, 200, 140), "metin": "Lodos güneybatıdan eser, ılık ve fırtınalıdır.", "vurgu": ["güneybatıdan", "ılık"],
-                     "ok_aci": 135, "kar": False}),
-    (3.6, "ruzgar", {"ad": "POYRAZ", "yon": "KUZEYDOĞUDAN", "aci": 145, "renk": ((20, 35, 70), (110, 150, 200)),
-                     "seritr": (220, 240, 255), "metin": "Poyraz kuzeydoğudan eser, soğuk ve serttir.", "vurgu": ["kuzeydoğudan", "soğuk"],
-                     "ok_aci": 315, "kar": True}),
-    (2.2, "ozet", {}),
-    (2.0, "takip", {}),
-]
-GECIS = 0.3
+GOK = {
+    "ilik": ((70, 40, 60), (215, 120, 70)), "soguk": ((20, 35, 70), (110, 150, 200)), "gece": ((10, 14, 35), (40, 45, 80)),
+    "firtina": ((18, 20, 38), (60, 60, 90)), "gunes": ((30, 120, 220), (130, 200, 250)), "bulutlu": ((70, 85, 110), (150, 160, 180)),
+    "sis": ((140, 150, 160), (200, 205, 210)), "yagmur": ((35, 50, 75), (90, 105, 130)), "kar": ((110, 140, 180), (200, 215, 235)),
+}
 
 
 def gradient(ust, alt):
@@ -36,8 +34,16 @@ def gradient(ust, alt):
     return img
 
 
+_zeminler = {}
+
+
+def zemin(gok):
+    if gok not in _zeminler:
+        _zeminler[gok] = gradient(*GOK[gok])
+    return _zeminler[gok].copy().convert("RGBA")
+
+
 def bulut(d, cx, cy, s, ton=225, golge=150):
-    """Çizgi film tarzı kabarık bulut (gölgeli)."""
     toplar = [(-.9, .1, .55), (-.45, -.25, .7), (.1, -.38, .8), (.65, -.15, .65), (1.05, .15, .5), (.1, .15, .75)]
     for dx, dy, r in toplar:
         d.ellipse([cx + (dx - r) * s, cy + (dy - r) * s + s * .12, cx + (dx + r) * s, cy + (dy + r) * s + s * .12], fill=(golge,) * 3 + (255,))
@@ -47,14 +53,177 @@ def bulut(d, cx, cy, s, ton=225, golge=150):
         d.ellipse([cx + (dx - r * .55) * s, cy + (dy - r * .7) * s, cx + (dx + r * .25) * s, cy + (dy - r * .1) * s], fill=(min(255, ton + 25),) * 3 + (255,))
 
 
-def bulut_katmani(ton, golge, kayma):
-    kat = Image.new("RGBA", (W + 600, 700), (0, 0, 0, 0))
-    d = ImageDraw.Draw(kat)
-    for i in range(7):
-        bulut(d, 120 + i * 260 + (i % 2) * 60, 380 + (i % 3) * 70, 150 + (i % 2) * 40, ton, golge)
-    return kat
+_bulutlar = {}
 
 
+def bulut_katmani(ton, golge):
+    if (ton, golge) not in _bulutlar:
+        kat = Image.new("RGBA", (W + 700, 720), (0, 0, 0, 0))
+        d = ImageDraw.Draw(kat)
+        for i in range(8):
+            bulut(d, 120 + i * 250 + (i % 2) * 60, 380 + (i % 3) * 70, 150 + (i % 2) * 40, ton, golge)
+        _bulutlar[(ton, golge)] = kat
+    return _bulutlar[(ton, golge)]
+
+
+rnd = random.Random(7)
+SERIT = [(rnd.random(), rnd.random(), rnd.uniform(.6, 1.4), rnd.randint(120, 320)) for _ in range(46)]
+DAMLA = [(rnd.random(), rnd.random(), rnd.uniform(.8, 1.3)) for _ in range(160)]
+KARL = [(rnd.random(), rnd.random(), rnd.uniform(.5, 1.5), rnd.choice([4, 5, 6, 8])) for _ in range(140)]
+DOLU = [(rnd.random(), rnd.random(), rnd.uniform(.9, 1.4), rnd.choice([7, 9, 11])) for _ in range(60)]
+
+
+# ---------------------------------------------------------------- EFEKTLER
+def efekt(img, ad, t, v):
+    d = ImageDraw.Draw(img, "RGBA")
+    if ad == "ruzgar":
+        sag = v.get("akis", "sag") == "sag"
+        dx, dy = (1, -.45) if sag else (-1, .45)
+        for x0, y0, hiz, uz in SERIT:
+            p = (x0 + t * hiz * .45) % 1.3 - .15
+            x = (p if sag else 1 - p) * W
+            y = 380 + y0 * 1000 + p * dy * 500
+            d.line([(x, y), (x - dx * uz, y - dy * uz)], fill=tuple(v.get("serit", (240, 240, 255))) + (150,), width=6)
+    if ad == "yagmur":
+        for x0, y0, hiz in DAMLA:
+            x = (x0 * W - t * 120) % W
+            y = (y0 * H + t * 1400 * hiz) % H
+            d.line([(x, y), (x - 8, y + 38)], fill=(190, 210, 240, 160), width=4)
+    if ad == "kar":
+        for x0, y0, hiz, r in KARL:
+            x = (x0 * W + math.sin(t * 2 + y0 * 9) * 30 - t * 60) % W
+            y = (y0 * H + t * 220 * hiz) % H
+            d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 225))
+    if ad == "dolu":
+        for x0, y0, hiz, r in DOLU:
+            y = (y0 * H + t * 1100 * hiz) % H
+            d.ellipse([x0 * W - r, y - r, x0 * W + r, y + r], fill=(235, 245, 255, 240), outline=(170, 190, 220, 255), width=2)
+    if ad == "sis":
+        for i in range(6):
+            ofs = math.sin(t * .8 + i) * 80
+            sis = Image.new("RGBA", (W, 220), (0, 0, 0, 0))
+            ImageDraw.Draw(sis).rounded_rectangle([-100 + ofs, 60, W + 100 + ofs, 160], radius=50, fill=(240, 242, 245, 95))
+            img.alpha_composite(sis.filter(ImageFilter.GaussianBlur(25)), (0, 500 + i * 190))
+    if ad in ("simsek", "yildirim"):
+        faz = t % 1.6
+        if faz < .25:
+            rr = random.Random(int(t / 1.6) + (0 if ad == "simsek" else 99))
+            if ad == "simsek":  # buluttan buluta (yatay)
+                x, y = 150, 460
+                pts = [(x, y)]
+                while x < W - 150:
+                    x += rr.randint(60, 110); y += rr.randint(-40, 40); pts.append((x, y))
+            else:  # buluttan yere (dikey)
+                x, y = rr.randint(380, 700), 520
+                pts = [(x, y)]
+                while y < 1380:
+                    y += rr.randint(70, 130); x += rr.randint(-70, 70); pts.append((x, y))
+            parla = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+            ImageDraw.Draw(parla).line(pts, fill=(255, 250, 210, 255), width=10)
+            img.alpha_composite(parla.filter(ImageFilter.GaussianBlur(14)))
+            img.alpha_composite(parla)
+            if faz < .08:
+                img.alpha_composite(Image.new("RGBA", (W, H), (255, 255, 255, 50)))
+    if ad in ("gunes", "gokkusagi"):
+        gx, gy = W - 200, 440
+        isik = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        idr = ImageDraw.Draw(isik)
+        for r, a in ((380, 40), (260, 70), (170, 120)):
+            idr.ellipse([gx - r, gy - r, gx + r, gy + r], fill=(255, 230, 150, a))
+        img.alpha_composite(isik.filter(ImageFilter.GaussianBlur(30)))
+        d = ImageDraw.Draw(img, "RGBA")
+        for i in range(12):
+            a = math.radians(i * 30 + t * 20)
+            d.line([(gx + math.cos(a) * 130, gy + math.sin(a) * 130), (gx + math.cos(a) * 190, gy + math.sin(a) * 190)], fill=(255, 220, 90, 230), width=12)
+        d.ellipse([gx - 105, gy - 105, gx + 105, gy + 105], fill=(255, 215, 60, 255))
+    if ad == "gokkusagi":
+        renkler = [(230, 60, 60), (245, 140, 40), (250, 210, 50), (80, 190, 90), (60, 140, 230), (90, 80, 200), (150, 80, 190)]
+        acilma = min(1, t / 1.5)
+        kat = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        kd = ImageDraw.Draw(kat)
+        for i, r in enumerate(renkler):
+            R = 620 - i * 34
+            kd.arc([W / 2 - R, 1250 - R, W / 2 + R, 1250 + R], 180, 180 + 180 * acilma, fill=r + (200,), width=34)
+        img.alpha_composite(kat.filter(ImageFilter.GaussianBlur(2)))
+
+
+# ---------------------------------------------------------------- ORTA GÖRSELLER
+def pusula(d, cx, cy, r, ok_aci, etiket, t):
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(10, 16, 30, 160), outline=(255, 255, 255, 180), width=4)
+    f = font("ExtraBold", 40)
+    for harf, a in (("K", 270), ("D", 0), ("G", 90), ("B", 180)):
+        x, y = cx + math.cos(math.radians(a)) * (r - 40), cy + math.sin(math.radians(a)) * (r - 40)
+        d.text((x - d.textlength(harf, font=f) / 2, y - 24), harf, font=f, fill=(255, 255, 255, 220))
+    if ok_aci is not None:
+        a = math.radians(ok_aci)
+        titre = math.sin(t * 6) * 6
+        bx, by = cx + math.cos(a) * (r * .75 + titre), cy + math.sin(a) * (r * .75 + titre)
+        ux, uy = cx - math.cos(a) * r * .35, cy - math.sin(a) * r * .35
+        d.line([(bx, by), (ux, uy)], fill=SARI, width=16)
+        pa = math.atan2(uy - by, ux - bx)
+        d.polygon([(ux + math.cos(pa) * 34, uy + math.sin(pa) * 34), (ux + math.cos(pa + 2.5) * 34, uy + math.sin(pa + 2.5) * 34),
+                   (ux + math.cos(pa - 2.5) * 34, uy + math.sin(pa - 2.5) * 34)], fill=SARI)
+    if etiket:
+        fe = font("Bold", 34)
+        d.text((cx - d.textlength(etiket, font=fe) / 2, cy + r + 22), etiket, font=fe, fill=SARI)
+
+
+def termometre(d, cx, cy, deger, t, etiket=""):
+    h = 420
+    d.rounded_rectangle([cx - 38, cy - h / 2, cx + 38, cy + h / 2], radius=38, fill=(255, 255, 255, 230))
+    d.ellipse([cx - 70, cy + h / 2 - 40, cx + 70, cy + h / 2 + 100], fill=(255, 255, 255, 230))
+    renk = (230, 70, 50) if deger >= 15 else (60, 140, 230)
+    oran = min(1, t / 1.2) * max(.08, min(1, (deger + 20) / 60))
+    d.rounded_rectangle([cx - 20, cy + h / 2 - (h - 40) * oran, cx + 20, cy + h / 2 + 20], radius=20, fill=renk)
+    d.ellipse([cx - 52, cy + h / 2 - 22, cx + 52, cy + h / 2 + 82], fill=renk)
+    d.text((cx + 110, cy - 50), f"{deger}°C", font=font("ExtraBold", 90), fill="white")
+    if etiket:
+        d.text((cx + 115, cy + 55), etiket, font=font("Bold", 36), fill=SARI)
+
+
+def kristal(d, cx, cy, R, t):
+    a0 = t * 15
+    for k in range(6):
+        a = math.radians(a0 + k * 60)
+        ux, uy = math.cos(a), math.sin(a)
+        d.line([(cx, cy), (cx + ux * R, cy + uy * R)], fill=(255, 255, 255, 245), width=14)
+        for s in (.45, .72):
+            px, py = cx + ux * R * s, cy + uy * R * s
+            for y in (-1, 1):
+                b = a + y * math.radians(45)
+                d.line([(px, py), (px + math.cos(b) * R * .28, py + math.sin(b) * R * .28)], fill=(255, 255, 255, 235), width=10)
+    d.regular_polygon((cx, cy, R * .22), 6, rotation=a0, fill=(200, 230, 255, 255))
+
+
+def buyuk_metin(d, metin, alt, t):
+    s = min(1, t / .4)
+    satirlar = metin.split("\n")
+    y = 980 - len(satirlar) * 85
+    for sat in satirlar:
+        f = font("ExtraBold", int(150 * (.8 + .2 * s)))
+        while d.textlength(sat, font=f) > W - 100:
+            f = font("ExtraBold", f.size - 6)
+        x = W / 2 - d.textlength(sat, font=f) / 2
+        d.text((x + 6, y + 8), sat, font=f, fill=(0, 0, 0, 120))
+        d.text((x, y), sat, font=f, fill=SARI)
+        y += 170
+    if alt:
+        fa = font("Bold", 48)
+        d.text((W / 2 - d.textlength(alt, font=fa) / 2, y + 10), alt, font=fa, fill="white")
+
+
+def renk_kodlari(d, t):
+    for i, (ad, renk, metin) in enumerate((("SARI", (240, 190, 20), "Dikkatli olun"), ("TURUNCU", (235, 120, 20), "Hazırlıklı olun"),
+                                          ("KIRMIZI", (200, 30, 35), "Çok tehlikeli, önlem alın"))):
+        giris = min(1, max(0, (t - i * .5) / .4))
+        x0 = 90 - (1 - giris) * 1000
+        y = 600 + i * 230
+        d.rounded_rectangle([x0, y, x0 + W - 180, y + 190], radius=34, fill=renk + (235,))
+        d.text((x0 + 40, y + 28), ad, font=font("ExtraBold", 64), fill="white" if i else LACI)
+        d.text((x0 + 40, y + 112), metin, font=font("Bold", 40), fill="white" if i else LACI)
+
+
+# ---------------------------------------------------------------- ORTAK ÖĞELER
 def ust_bant(d):
     d.rounded_rectangle([40, 120, 120, 200], radius=22, fill=(40, 160, 220))
     d.ellipse([58, 140, 102, 184], fill=SARI)
@@ -66,146 +235,122 @@ def sayac(d, kalan):
     cx, cy, r = W - 110, 160, 46
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(0, 0, 0, 120))
     d.arc([cx - r, cy - r, cx + r, cy + r], -90, -90 + 360 * kalan / 10, fill=SARI, width=8)
-    t = str(max(0, math.ceil(kalan)))
+    tx = str(max(0, math.ceil(kalan)))
     f = font("ExtraBold", 44)
-    d.text((cx - d.textlength(t, font=f) / 2, cy - 28), t, font=f, fill="white")
+    d.text((cx - d.textlength(tx, font=f) / 2, cy - 28), tx, font=f, fill="white")
 
 
 def altyazi(d, metin, vurgu, ilerleme, y=1420):
-    """Kelime kelime beliren altyazı; vurgulu kelimeler sarı."""
     f = font("ExtraBold", 54)
     kelimeler = metin.split()
-    goster = kelimeler[:max(1, int(len(kelimeler) * min(1, ilerleme * 1.6)))]
+    adet = len(kelimeler) if ilerleme >= YAZI_HIZI else max(1, int(len(kelimeler) * ilerleme / YAZI_HIZI))
     satirlar, s = [], []
     for k in kelimeler:
         if d.textlength(" ".join(s + [k]), font=f) > W - 180:
             satirlar.append(s); s = []
         s.append(k)
     satirlar.append(s)
-    h = len(satirlar) * 72 + 40
-    d.rounded_rectangle([60, y, W - 60, y + h], radius=30, fill=(10, 16, 30, 190))
-    sayac_k = 0
+    d.rounded_rectangle([60, y, W - 60, y + len(satirlar) * 72 + 40], radius=30, fill=(10, 16, 30, 195))
+    vset = [v.lower() for v in vurgu]
+    n = 0
     for i, sat in enumerate(satirlar):
-        gen = d.textlength(" ".join(sat), font=f)
-        x = W / 2 - gen / 2
+        x = W / 2 - d.textlength(" ".join(sat), font=f) / 2
         for k in sat:
-            if sayac_k < len(goster):
-                temiz = k.strip(".,").lower()
-                vur = any(temiz == v.lower() for v in vurgu)
+            if n < adet:
+                vur = k.strip(".,!?:;").lower() in vset
                 kw = d.textlength(k, font=f)
                 if vur:
-                    d.rounded_rectangle([x - 8, y + 24 + i * 72, x + kw + 8, y + 24 + i * 72 + 64], radius=12, fill=SARI)
+                    d.rounded_rectangle([x - 8, y + 24 + i * 72, x + kw + 8, y + 88 + i * 72], radius=12, fill=SARI)
                 d.text((x, y + 22 + i * 72), k, font=f, fill=LACI if vur else "white")
-            sayac_k += 1
+            n += 1
             x += d.textlength(k + " ", font=f)
 
 
-def pusula(d, cx, cy, r, ok_aci, etiket, t):
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(10, 16, 30, 150), outline=(255, 255, 255, 180), width=4)
-    f = font("ExtraBold", 40)
-    for harf, a in (("K", 270), ("D", 0), ("G", 90), ("B", 180)):
-        x, y = cx + math.cos(math.radians(a)) * (r - 40), cy + math.sin(math.radians(a)) * (r - 40)
-        d.text((x - d.textlength(harf, font=f) / 2, y - 24), harf, font=f, fill=(255, 255, 255, 220))
-    # ok: rüzgarın geldiği yönden merkeze doğru (titreşimli)
-    a = math.radians(ok_aci)
-    titre = math.sin(t * 8) * 6
-    bx, by = cx + math.cos(a) * (r * .75 + titre), cy + math.sin(a) * (r * .75 + titre)
-    ux, uy = cx - math.cos(a) * r * .35, cy - math.sin(a) * r * .35
-    d.line([(bx, by), (ux, uy)], fill=SARI, width=16)
-    pa = math.atan2(uy - by, ux - bx)
-    uc = [(ux + math.cos(pa) * 34, uy + math.sin(pa) * 34),
-          (ux + math.cos(pa + 2.5) * 34, uy + math.sin(pa + 2.5) * 34),
-          (ux + math.cos(pa - 2.5) * 34, uy + math.sin(pa - 2.5) * 34)]
-    d.polygon(uc, fill=SARI)
-    fe = font("Bold", 34)
-    d.text((cx - d.textlength(etiket, font=fe) / 2, cy + r + 22), etiket, font=fe, fill=SARI)
-
-
-# ---------------------------------------------------------------- KARE ÇİZİCİLER
-_onbellek = {}
-
-
-def zemin(anahtar, ust, alt):
-    if anahtar not in _onbellek:
-        _onbellek[anahtar] = gradient(ust, alt)
-    return _onbellek[anahtar].copy()
-
-
-SERITLER = [(rnd.random(), rnd.random(), rnd.uniform(.6, 1.4), rnd.randint(120, 320)) for _ in range(46)]
-KARLAR = [(rnd.random(), rnd.random(), rnd.uniform(.5, 1.5), rnd.choice([4, 5, 6, 8])) for _ in range(140)]
-
-
-def kare_baslik(v, t, toplam_t):
-    img = zemin("baslik", (25, 40, 80), (60, 90, 150)).convert("RGBA")
-    kat = bulut_katmani(205, 150, 0)
-    img.alpha_composite(kat, (int(-200 - t * 40), 650))
+# ---------------------------------------------------------------- SAHNELER
+def sahne_baslik(k, t, kalan):
+    img = zemin(k.get("gok", "bulutlu"))
+    img.alpha_composite(bulut_katmani(205, 150), (int(-200 - t * 40), 650))
     d = ImageDraw.Draw(img, "RGBA")
     ust_bant(d)
     sayac(d, 10)
-    giris = min(1, t / .5)
-    olcek = .7 + .3 * giris
-    f_ust = font("ExtraBold", 46)
-    gen = d.textlength(v["ust"], font=f_ust) + 60
+    s = .7 + .3 * min(1, t / .5)
+    f_u = font("ExtraBold", 46)
+    gen = d.textlength("10 SANİYEDE", font=f_u) + 60
     d.rounded_rectangle([W / 2 - gen / 2, 520, W / 2 + gen / 2, 600], radius=40, fill=SARI)
-    d.text((W / 2 - d.textlength(v["ust"], font=f_ust) / 2, 532), v["ust"], font=f_ust, fill=LACI)
-    for metin, y, boy, renk in ((v["b1"], 640, 170, SARI), (v["ve"], 820, 70, "white"), (v["b2"], 890, 170, SARI), (v["alt"], 1080, 84, "white")):
-        f = font("ExtraBold", int(boy * olcek))
+    d.text((W / 2 - d.textlength("10 SANİYEDE", font=f_u) / 2, 532), "10 SANİYEDE", font=f_u, fill=LACI)
+    y = 640
+    satirlar = [(x, 150, SARI) if i % 2 == 0 else (x, 70, "white") for i, x in enumerate(k["baslik"])] + [(k["soru"], 80, "white")]
+    for metin, boy, renk in satirlar:
+        f = font("ExtraBold", int(boy * s))
+        while d.textlength(metin, font=f) > W - 100:
+            f = font("ExtraBold", f.size - 4)
         x = W / 2 - d.textlength(metin, font=f) / 2
         d.text((x + 6, y + 8), metin, font=f, fill=(0, 0, 0, 120))
         d.text((x, y), metin, font=f, fill=renk)
+        y += f.size + 30
     return img
 
 
-def kare_ruzgar(v, t, kalan):
-    img = zemin(v["ad"], *v["renk"]).convert("RGBA")
-    ton, golge = (200, 130) if v["kar"] else (235, 175)
-    img.alpha_composite(bulut_katmani(ton, golge, 0), (int(-300 + (t * 120 if v["ok_aci"] == 135 else -t * 120)), -120))
-    d = ImageDraw.Draw(img, "RGBA")
-    # rüzgar şeritleri: lodos sağ-yukarı, poyraz sol-aşağı akar
-    dx, dy = (1, -.45) if v["ok_aci"] == 135 else (-1, .45)
-    for x0, y0, hiz, uz in SERITLER:
-        p = (x0 + t * hiz * .55) % 1.3 - .15
-        x = (p if dx > 0 else 1 - p) * W
-        y = 380 + y0 * 1000 + (p * dy * 500 if dx > 0 else -p * dy * -500)
-        d.line([(x, y), (x - dx * uz, y - dy * uz)], fill=v["seritr"] + (150,), width=6)
-    if v["kar"]:
-        for x0, y0, hiz, r in KARLAR:
-            x = (x0 * W - t * 260 * hiz) % W
-            y = (y0 * H + t * 300 * hiz) % H
-            d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, 220))
-    ust_bant(d)
-    sayac(d, kalan)
-    f = font("ExtraBold", 150)
-    d.text((W / 2 - d.textlength(v["ad"], font=f) / 2 + 6, 300), v["ad"], font=f, fill=(0, 0, 0, 110))
-    d.text((W / 2 - d.textlength(v["ad"], font=f) / 2, 294), v["ad"], font=f, fill="white")
-    pusula(d, W / 2, 960, 230, v["ok_aci"], v["yon"] + " ESER", t)
-    altyazi(d, v["metin"], v["vurgu"], t / 2.4)
-    return img
-
-
-def kare_ozet(t, kalan):
-    img = zemin("ozet", (30, 40, 70), (70, 80, 120)).convert("RGBA")
+def sahne_konu(v, t, kalan):
+    img = zemin(v.get("gok", "bulutlu"))
+    karanlik = v.get("gok") in ("firtina", "gece", "yagmur")
+    img.alpha_composite(bulut_katmani(*((150, 100) if karanlik else (230, 175))), (int(-300 + t * 50), -130))
+    for e in v.get("efekt", []):
+        efekt(img, e, t, v)
     d = ImageDraw.Draw(img, "RGBA")
     ust_bant(d)
     sayac(d, kalan)
-    f_b, f_k = font("ExtraBold", 92), font("Bold", 46)
-    for i, (ad, ozellik, renk, yon) in enumerate((("LODOS", "Ilık · Fırtınalı", (225, 130, 70), "Güneybatı ↗"),
-                                                  ("POYRAZ", "Soğuk · Sert", (90, 150, 220), "Kuzeydoğu ↙"))):
-        y = 520 + i * 470
-        giris = min(1, max(0, (t - i * .3) / .4))
-        x0 = 80 - (1 - giris) * 900
-        d.rounded_rectangle([x0, y, x0 + W - 160, y + 400], radius=40, fill=renk + (230,))
-        d.text((x0 + 60, y + 50), ad, font=f_b, fill="white")
-        d.text((x0 + 60, y + 170), ozellik, font=f_k, fill="white")
-        d.text((x0 + 60, y + 250), yon.replace(" ↗", "").replace(" ↙", "") + "dan eser", font=font("SemiBold", 40), fill=(255, 255, 255, 230))
+    f = font("ExtraBold", 140)
+    while d.textlength(v["ad"], font=f) > W - 80:
+        f = font("ExtraBold", f.size - 6)
+    x = W / 2 - d.textlength(v["ad"], font=f) / 2
+    d.text((x + 6, 306), v["ad"], font=f, fill=(0, 0, 0, 110))
+    d.text((x, 300), v["ad"], font=f, fill="white")
+    g = v.get("gorsel")
+    if g == "pusula":
+        pusula(d, W / 2, 960, 230, v.get("ok_aci"), v.get("etiket", ""), t)
+    elif g == "termometre":
+        termometre(d, W / 2 - 160, 950, v["deger"], t, v.get("etiket", ""))
+    elif g == "kristal":
+        kristal(d, W / 2, 950, 220, t)
+    elif g == "buyuk":
+        buyuk_metin(d, v["buyuk"], v.get("alt", ""), t)
+    elif g == "renkkod":
+        renk_kodlari(d, t)
+    if v.get("_ses_sure"):
+        altyazi(d, v["metin"], v.get("vurgu", []), min(1, (t - 0.3) / v["_ses_sure"]) * YAZI_HIZI)
+    else:
+        altyazi(d, v["metin"], v.get("vurgu", []), t / v["sure"])
     return img
 
 
-def kare_takip(t):
-    img = zemin("takip", (40, 170, 230), (20, 110, 190)).convert("RGBA")
+def sahne_ozet(k, t, kalan):
+    img = zemin("gece")
     d = ImageDraw.Draw(img, "RGBA")
-    s = 1 + .04 * math.sin(t * 6)
-    r = 150 * s
+    ust_bant(d)
+    sayac(d, kalan)
+    kartlar = k["ozet"]
+    yuk = 400 if len(kartlar) <= 2 else 300
+    y0 = 1000 - (len(kartlar) * (yuk + 60) - 60) / 2
+    for i, (ad, s1, s2, renk) in enumerate(kartlar):
+        y = y0 + i * (yuk + 60)
+        giris = min(1, max(0, (t - i * .4) / .5))
+        x0 = 80 - (1 - giris) * 1000
+        d.rounded_rectangle([x0, y, x0 + W - 160, y + yuk], radius=40, fill=tuple(renk) + (235,))
+        fa = font("ExtraBold", 86 if yuk == 400 else 70)
+        while d.textlength(ad, font=fa) > W - 280:
+            fa = font("ExtraBold", fa.size - 4)
+        d.text((x0 + 60, y + 40), ad, font=fa, fill="white")
+        d.text((x0 + 60, y + 50 + fa.size + 20), s1, font=font("Bold", 44), fill="white")
+        if s2:
+            d.text((x0 + 60, y + 50 + fa.size + 86), s2, font=font("SemiBold", 38), fill=(255, 255, 255, 230))
+    return img
+
+
+def sahne_takip(k, t, kalan):
+    img = gradient((40, 170, 230), (20, 110, 190)).convert("RGBA")
+    d = ImageDraw.Draw(img, "RGBA")
+    r = 150 * (1 + .04 * math.sin(t * 5))
     d.rounded_rectangle([W / 2 - r, 620 - r, W / 2 + r, 620 + r], radius=60, fill=(255, 255, 255, 60))
     d.ellipse([W / 2 - 70, 560, W / 2 + 50, 680], fill=SARI)
     bulut(d, W / 2 + 20, 690, 70, 250, 210)
@@ -219,47 +364,147 @@ def kare_takip(t):
     return img
 
 
-def kare(sahne_i, t):
-    sure, tur, v = SAHNELER[sahne_i]
-    gecen = sum(s[0] for s in SAHNELER[:sahne_i]) + t
-    bilgi_bas = SAHNELER[0][0]
-    kalan = max(0, 10 - (gecen - bilgi_bas) * 10 / (sum(s[0] for s in SAHNELER[1:4])))
-    if tur == "baslik":
-        return kare_baslik(v, t, sure)
-    if tur == "ruzgar":
-        return kare_ruzgar(v, t, kalan)
-    if tur == "ozet":
-        return kare_ozet(t, kalan)
-    return kare_takip(t)
+SES_MODEL = os.environ.get("PIPER_MODEL", "")  # Türkçe Piper ses modeli (.onnx); yoksa seslendirme yapılmaz
 
 
-def main(cikti):
-    toplam = sum(s[0] for s in SAHNELER)
-    n = int(toplam * FPS)
+def seslendir(metin, yol):
+    """Piper (açık kaynak, ücretsiz) ile Türkçe seslendirme -> wav, süre (sn)."""
+    import wave
+    from piper import PiperVoice
+    if not hasattr(seslendir, "ses"):
+        seslendir.ses = PiperVoice.load(SES_MODEL)
+    with wave.open(yol, "wb") as wf:
+        try:
+            seslendir.ses.synthesize_wav(metin, wf)   # piper-tts >= 1.3
+        except AttributeError:
+            seslendir.ses.synthesize(metin, wf)       # eski sürüm
+    with wave.open(yol, "rb") as wf:
+        return wf.getnframes() / wf.getframerate()
+
+
+def plan(k, sesler=None):
+    sesler = sesler or {}
+
+    def sure(anahtar, taban):
+        return max(taban, sesler[anahtar][1] + 1.0) if anahtar in sesler else taban
+    p = [(sure("baslik", 3.2), sahne_baslik, k)]
+    for i, s in enumerate(k["sahneler"]):
+        s = dict(s)
+        if f"s{i}" in sesler:
+            s["_ses_sure"] = sesler[f"s{i}"][1]
+        s["sure"] = sure(f"s{i}", s["sure"])
+        p.append((s["sure"], sahne_konu, s))
+    p.append((sure("ozet", 4.5), sahne_ozet, k))
+    p.append((sure("takip", 2.6), sahne_takip, k))
+    return p
+
+
+def kare(p, i, t):
+    if i == 0:
+        return p[0][1](p[0][2], t, 10)
+    bilgi = sum(s[0] for s in p[1:-1])
+    gecen = sum(s[0] for s in p[1:i]) + t
+    return p[i][1](p[i][2], t, max(0, 10 - gecen * 10 / bilgi))
+
+
+def video(k, cikti):
+    import tempfile
+    sesler = {}
+    if SES_MODEL and os.path.exists(SES_MODEL):
+        tmp = tempfile.mkdtemp()
+        metinler = {"baslik": k.get("ses_baslik"), "ozet": k.get("ses_ozet"), "takip": "Bizi takipte kalın!"}
+        metinler.update({f"s{i}": s.get("ses") for i, s in enumerate(k["sahneler"])})
+        for ad, m in metinler.items():
+            if m:
+                yol = os.path.join(tmp, ad + ".wav")
+                sesler[ad] = (yol, seslendir(m, yol))
+    p = plan(k, sesler)
+    toplam = sum(s[0] for s in p)
+    sinir, acc = [], 0
+    for s in p:
+        sinir.append(acc); acc += s[0]
+    sira = ["baslik"] + [f"s{i}" for i in range(len(k["sahneler"]))] + ["ozet", "takip"]
+    ses_girdi, ses_filtre, ses_etiket = [], [], []
+    for j, ad in enumerate(sira):
+        if ad in sesler:
+            n = 2 + len(ses_girdi) // 2
+            ses_girdi += ["-i", sesler[ad][0]]
+            gecik = int((sinir[j] + 0.3) * 1000)
+            ses_filtre.append(f"[{n}:a]aresample=44100,aformat=channel_layouts=stereo,adelay={gecik}|{gecik},volume=1.6[v{n}]")
+            ses_etiket.append(f"[v{n}]")
     parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
-    ses = ["-stream_loop", "-1", "-i", parcalar[2]] if parcalar else ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
-    p = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS),
-                          "-i", "-", *ses, "-filter_complex",
-                          f"[1:a]atrim=0:{toplam},volume=0.7,afade=t=in:d=0.5,afade=t=out:st={toplam - 1.5}:d=1.5[a]",
-                          "-map", "0:v", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "24", "-pix_fmt", "yuv420p",
-                          "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "-t", str(toplam), cikti], stdin=subprocess.PIPE)
-    sinirlar = []
-    acc = 0
-    for s in SAHNELER:
-        sinirlar.append(acc); acc += s[0]
-    onceki = None
-    for f in range(n):
+    parca = parcalar[sum(map(ord, k["id"])) % len(parcalar)] if parcalar else None
+    ses = ["-stream_loop", "-1", "-i", parca] if parca else ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+    muzik_ses = 0.18 if sesler else 0.7  # seslendirme varsa müzik arka planda kalsın
+    filtre = f"[1:a]atrim=0:{toplam},asetpts=PTS-STARTPTS,volume={muzik_ses},afade=t=in:d=0.6,afade=t=out:st={toplam - 1.8}:d=1.8[m]"
+    if ses_etiket:
+        filtre += ";" + ";".join(ses_filtre) + f";[m]{''.join(ses_etiket)}amix=inputs={1 + len(ses_etiket)}:normalize=0:duration=first[a]"
+    else:
+        filtre = filtre.replace("[m]", "[a]")
+    pr = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS),
+                           "-i", "-", *ses, *ses_girdi, "-filter_complex", filtre,
+                           "-map", "0:v", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast", "-crf", "25", "-pix_fmt", "yuv420p",
+                           "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", "-t", str(toplam), cikti], stdin=subprocess.PIPE)
+    for f in range(int(toplam * FPS)):
         tt = f / FPS
-        i = max(j for j, b in enumerate(sinirlar) if tt >= b)
-        img = kare(i, tt - sinirlar[i]).convert("RGB")
-        if i > 0 and tt - sinirlar[i] < GECIS:  # geçiş: önceki sahnenin son karesiyle karıştır
-            k = (tt - sinirlar[i]) / GECIS
-            img = Image.blend(kare(i - 1, SAHNELER[i - 1][0] - 0.01).convert("RGB"), img, k)
-        p.stdin.write(img.tobytes())
-    p.stdin.close()
-    p.wait()
-    print("Hazır:", cikti, f"{toplam:.1f} sn")
+        i = max(j for j, b in enumerate(sinir) if tt >= b)
+        img = kare(p, i, tt - sinir[i]).convert("RGB")
+        if i > 0 and tt - sinir[i] < GECIS:
+            img = Image.blend(kare(p, i - 1, p[i - 1][0] - 0.01).convert("RGB"), img, (tt - sinir[i]) / GECIS)
+        pr.stdin.write(img.tobytes())
+    pr.stdin.close()
+    pr.wait()
+    if not parca:
+        return None
+    ad = os.path.basename(parca)[3:-4]
+    return next((n for o, n in (("alex-morgan", "Alex Morgan"), ("atlasaudio", "AtlasAudio"), ("nastelbom", "Nastelbom"),
+                                ("velariomusic", "VelarioMusic"), ("andriig", "AndriiG")) if ad.startswith(o)), ad.split("-")[0])
+
+
+def gonderi_gorselleri(k, klasor):
+    """Her sahnenin son halinden 4:5 kaydırmalı gönderi görselleri (takip sahnesi hariç)."""
+    p = plan(k)
+    for i in range(len(p) - 1):
+        img = kare(p, i, p[i][0] - 0.05).convert("RGB")
+        on = img.resize((int(1350 * W / H), 1350))
+        bg = ImageEnhance.Brightness(img.crop((0, 285, 1080, 1635)).filter(ImageFilter.GaussianBlur(30))).enhance(.5)
+        bg.paste(on, ((1080 - on.width) // 2, 0))
+        bg.save(os.path.join(klasor, f"{i + 1:02d}_{k['id']}.jpg"), quality=92)
+
+
+def caption(k):
+    s = [f"⚡ 10 saniyede: {k['soru_tam']}", ""] + [f"• {x}" for x in k["aciklama"]]
+    s += ["", "💬 Başka hangi hava olayını merak ediyorsun? Yorumlara yaz!",
+          "🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş",
+          f"👉 {HESAP}", "", "#havadurumu #meteoroloji #bilgi #biliyormuydunuz " + k.get("etiket", "")]
+    return "\n".join(s)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--konu")
+    ap.add_argument("--siradaki", action="store_true")
+    ap.add_argument("--cikti", default="yayin/bilgi")
+    a = ap.parse_args()
+    ids = [k["id"] for k in KONULAR]
+    if a.siradaki:
+        durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {"sira": 0}
+        k = KONULAR[durum["sira"] % len(KONULAR)]
+        durum["sira"] += 1
+        json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
+    else:
+        k = KONULAR[ids.index(a.konu)] if a.konu else KONULAR[0]
+    os.makedirs(a.cikti, exist_ok=True)
+    for f in glob.glob(os.path.join(a.cikti, "*")):
+        os.remove(f)
+    muzik = video(k, os.path.join(a.cikti, "reels.mp4"))
+    gonderi_gorselleri(k, a.cikti)
+    open(os.path.join(a.cikti, "caption.txt"), "w", encoding="utf-8").write(caption(k))
+    if muzik:
+        open(os.path.join(a.cikti, "muzik.txt"), "w", encoding="utf-8").write(muzik)
+    Image.open(sorted(glob.glob(os.path.join(a.cikti, "01_*.jpg")))[0]).save(os.path.join(a.cikti, "reels_kapak.jpg"))
+    print("Hazır:", k["id"])
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "bilgi.mp4")
+    main()
