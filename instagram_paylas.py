@@ -54,7 +54,7 @@ def yayinla(cid):
 
 
 def karusel(klasor):
-    gorseller = sorted(glob.glob(os.path.join(klasor, "*.jpg")))[:10]
+    gorseller = sorted(g for g in glob.glob(os.path.join(klasor, "*.jpg")) if "kapak" not in os.path.basename(g))[:10]
     if len(gorseller) < 2:
         sys.exit("Paylaşılacak görsel yok")
     cocuklar = [istek(f"{USER}/media", {"image_url": url(g), "is_carousel_item": "true"})["id"] for g in gorseller]

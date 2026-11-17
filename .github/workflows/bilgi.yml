@@ -1,0 +1,52 @@
+name: Bilgi videosu (Reels + kaydırmalı gönderi)
+
+on:
+  # Pazartesi, Çarşamba, Cuma 12:00'den sonraki ilk uyarı kontrolü tetikler; elle de çalıştırılabilir
+  workflow_dispatch:
+    inputs:
+      konu:
+        description: "Boş = sıradaki konu, örn. simsek_yildirim"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bilgi
+  cancel-in-progress: false
+
+jobs:
+  bilgi:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      PIPER_MODEL: ses_model/tr.onnx
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kurulum
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter ffmpeg >/dev/null
+          pip install -q -r requirements.txt edge-tts piper-tts
+          mkdir -p ses_model
+          u="https://huggingface.co/rhasspy/piper-voices/resolve/main/tr/tr_TR/dfki/medium/tr_TR-dfki-medium"
+          curl -sfL "$u.onnx" -o ses_model/tr.onnx && curl -sfL "$u.onnx.json" -o ses_model/tr.onnx.json || echo "Yedek ses indirilemedi"
+      - name: Video ve görselleri üret
+        run: |
+          if [ -n "${{ inputs.konu }}" ]; then python -u bilgi_video.py --konu "${{ inputs.konu }}" --cikti yayin/bilgi
+          else python -u bilgi_video.py --siradaki --cikti yayin/bilgi; fi
+      - name: Kaydet
+        run: |
+          git config user.name "hava-bot"
+          git config user.email "hava-bot@users.noreply.github.com"
+          git add -A yayin/bilgi bilgi_durum.json
+          git commit -qm "Bilgi videosu" || true
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q && break; sleep 3; done
+      - name: Instagram'a paylaş
+        if: ${{ env.IG_TOKEN != '' }}
+        run: |
+          python -u instagram_paylas.py reels yayin/bilgi
+          python -u instagram_paylas.py karusel yayin/bilgi

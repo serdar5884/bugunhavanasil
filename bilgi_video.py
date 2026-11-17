@@ -364,22 +364,51 @@ def sahne_takip(k, t, kalan):
     return img
 
 
-SES_MODEL = os.environ.get("PIPER_MODEL", "")  # Türkçe Piper ses modeli (.onnx); yoksa seslendirme yapılmaz
+SES_MODEL = os.environ.get("PIPER_MODEL", "")  # yedek: Türkçe Piper ses modeli (.onnx)
+EDGE_SES, EDGE_HIZ, EDGE_TON = "tr-TR-AhmetNeural", "+12%", "+6Hz"  # ana ses: Microsoft Ahmet, canlı ton
+CANLI_FILTRE = "atempo=1.06,asetrate=22050*1.04,aresample=44100,equalizer=f=3000:t=q:w=1:g=3"
+
+
+def _sure(yol):
+    import wave
+    with wave.open(yol, "rb") as wf:
+        return wf.getnframes() / wf.getframerate()
+
+
+def _edge(metin, yol):
+    import asyncio, edge_tts
+    mp3 = yol.replace(".wav", ".mp3")
+    asyncio.run(edge_tts.Communicate(metin, EDGE_SES, rate=EDGE_HIZ, pitch=EDGE_TON).save(mp3))
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", mp3, "-ar", "44100", "-ac", "1", yol], check=True)
+
+
+def _piper(metin, yol):
+    import wave
+    from piper import PiperVoice
+    if not hasattr(_piper, "ses"):
+        _piper.ses = PiperVoice.load(SES_MODEL)
+    ham = yol.replace(".wav", "_ham.wav")
+    with wave.open(ham, "wb") as wf:
+        try:
+            _piper.ses.synthesize_wav(metin, wf)
+        except AttributeError:
+            _piper.ses.synthesize(metin, wf)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", ham, "-af", CANLI_FILTRE, "-ac", "1", yol], check=True)
 
 
 def seslendir(metin, yol):
-    """Piper (açık kaynak, ücretsiz) ile Türkçe seslendirme -> wav, süre (sn)."""
-    import wave
-    from piper import PiperVoice
-    if not hasattr(seslendir, "ses"):
-        seslendir.ses = PiperVoice.load(SES_MODEL)
-    with wave.open(yol, "wb") as wf:
+    """Önce Microsoft Ahmet (edge-tts); çalışmazsa açık kaynak Piper (dfki, canlı ayar). Döner: süre (sn)."""
+    if not getattr(seslendir, "edge_bozuk", False):
         try:
-            seslendir.ses.synthesize_wav(metin, wf)   # piper-tts >= 1.3
-        except AttributeError:
-            seslendir.ses.synthesize(metin, wf)       # eski sürüm
-    with wave.open(yol, "rb") as wf:
-        return wf.getnframes() / wf.getframerate()
+            _edge(metin, yol)
+            return _sure(yol)
+        except Exception as e:
+            print("Microsoft sesi çalışmadı, Piper'a geçiliyor:", e)
+            seslendir.edge_bozuk = True
+    if SES_MODEL and os.path.exists(SES_MODEL):
+        _piper(metin, yol)
+        return _sure(yol)
+    raise RuntimeError("Seslendirme yapılamadı")
 
 
 def plan(k, sesler=None):
@@ -410,14 +439,19 @@ def kare(p, i, t):
 def video(k, cikti):
     import tempfile
     sesler = {}
-    if SES_MODEL and os.path.exists(SES_MODEL):
+    if os.environ.get("SESLENDIRME", "1") == "1":
         tmp = tempfile.mkdtemp()
         metinler = {"baslik": k.get("ses_baslik"), "ozet": k.get("ses_ozet"), "takip": "Bizi takipte kalın!"}
         metinler.update({f"s{i}": s.get("ses") for i, s in enumerate(k["sahneler"])})
         for ad, m in metinler.items():
             if m:
                 yol = os.path.join(tmp, ad + ".wav")
-                sesler[ad] = (yol, seslendir(m, yol))
+                try:
+                    sesler[ad] = (yol, seslendir(m, yol))
+                except Exception as e:
+                    print("Seslendirme atlandı:", e)
+                    sesler = {}
+                    break
     p = plan(k, sesler)
     toplam = sum(s[0] for s in p)
     sinir, acc = [], 0
@@ -491,6 +525,9 @@ def main():
         durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {"sira": 0}
         k = KONULAR[durum["sira"] % len(KONULAR)]
         durum["sira"] += 1
+        import datetime
+        durum["son"] = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date().isoformat()
+        durum["son_konu"] = k["id"]
         json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
     else:
         k = KONULAR[ids.index(a.konu)] if a.konu else KONULAR[0]

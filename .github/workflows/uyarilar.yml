@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: uyarilar
@@ -43,3 +44,12 @@ jobs:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
         run: python -u instagram_paylas.py uyari yayin/uyari
+      - name: Bilgi videosu zamanı mı? (Pzt/Çar/Cuma 12:00 sonrası, günde bir)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          GUN=$(TZ=Europe/Istanbul date +%u); SAAT=$(TZ=Europe/Istanbul date +%H); BUGUN=$(TZ=Europe/Istanbul date +%F)
+          SON=$(python -c "import json;print(json.load(open('bilgi_durum.json')).get('son',''))" 2>/dev/null || echo "")
+          if [[ "$GUN" =~ ^(1|3|5)$ ]] && [ "$SAAT" -ge 12 ] && [ "$SAAT" -lt 18 ] && [ "$SON" != "$BUGUN" ]; then
+            gh workflow run bilgi.yml --ref main && echo "Bilgi videosu tetiklendi"
+          else echo "Bilgi videosu zamanı değil ($GUN $SAAT son=$SON)"; fi
