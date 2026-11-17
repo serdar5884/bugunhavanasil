@@ -13,7 +13,7 @@ Kullanım:
 """
 import argparse, datetime, hashlib, html, json, os, re
 from PIL import Image, ImageDraw
-from hava_bot import font, paylas_satiri, destek_bandi
+from hava_bot import font, paylas_satiri, destek_bandi, yorum_cagrisi
 from uyari_bot import PLAKA, http_get, _sar, _zemin, DURUM_DOSYA, W, H, gonderi_surumu
 
 KAYNAKLAR = [
@@ -203,8 +203,9 @@ def haber_gorseli(x, yol):
     d.text((W / 2 - d.textlength(zaman, font=f_z) / 2, y + 30), zaman, font=f_z, fill=(255, 255, 255, 200))
     not_ = "Bölgedeyseniz resmi kurumların uyarılarını takip edin."
     f_n = font("Medium", 34)
-    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 370), not_, font=f_n, fill=(255, 255, 255, 210))
+    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 450), not_, font=f_n, fill=(255, 255, 255, 210))
     d.text((M, H - 130), f"Haber kaynağı: {x['kaynak']}", font=font("SemiBold", 32), fill=(255, 255, 255, 190))
+    yorum_cagrisi(d, M + 20, H - 385, W - M - 20, H - 315)
     destek_bandi(d, M, H - 300, W - M, H - 170)
     img.save(yol, quality=93)
 

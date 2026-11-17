@@ -12,7 +12,7 @@ Kullanım:
 """
 import argparse, datetime, hashlib, html, json, os, re, time, urllib.request
 from PIL import Image, ImageDraw
-from hava_bot import font, metni_sigdir, MGM, HEADERS, paylas_satiri, destek_bandi
+from hava_bot import font, metni_sigdir, MGM, HEADERS, paylas_satiri, destek_bandi, yorum_cagrisi
 
 W, H = 1080, 1920  # hikâye formatı
 DURUM_DOSYA = "durum.json"
@@ -189,7 +189,7 @@ def uyari_gorseli(u, yol):
     f_m = font("Regular", 34)
     m_sat = _sar(d, u.get("metin") or "", f_m, W - 2 * M - 80)
     kutu_h = 110 + len(il_sat) * (f_il.size + 14) + (30 + len(m_sat) * 46 if m_sat else 0) + 30
-    kutu_h = min(kutu_h, H - 420 - y)
+    kutu_h = min(kutu_h, H - 500 - y)
     m_sat = m_sat[: max(0, int((kutu_h - 170 - len(il_sat) * (f_il.size + 14)) / 46))]
     d.rounded_rectangle([M, y, W - M, y + kutu_h], radius=36, fill=(255, 255, 255, 28), outline=(255, 255, 255, 60), width=2)
     d.text((M + 40, y + 34), f"Uyarı verilen iller ({len(u['iller'])})", font=font("Bold", 40), fill=renk)
@@ -202,9 +202,10 @@ def uyari_gorseli(u, yol):
     # alt bilgi: güvenlik notu
     not_ = "Tedbirli olun, resmi kurumların açıklamalarını takip edin."
     f_n = font("Medium", 34)
-    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 370), not_, font=f_n, fill=(255, 255, 255, 220))
+    d.text((W / 2 - d.textlength(not_, font=f_n) / 2, H - 450), not_, font=f_n, fill=(255, 255, 255, 220))
     d.text((M, H - 130), "Kaynak: Meteoroloji Genel Müdürlüğü (MeteoUYARI)", font=font("Regular", 30),
            fill=(255, 255, 255, 170))
+    yorum_cagrisi(d, M + 20, H - 385, W - M - 20, H - 315)
     destek_bandi(d, M, H - 300, W - M, H - 170)
     img.save(yol, quality=93)
 
@@ -224,7 +225,7 @@ def yollar_gorseli(yollar, yol):
         f_m = font("Regular", 33)
         sat = _sar(d, yolb["metin"], f_m, W - 2 * M - 70)[:4]
         h = 80 + len(sat) * 44
-        if y + h > H - 340:
+        if y + h > H - 410:
             break
         d.rounded_rectangle([M, y, W - M, y + h], radius=28, fill=(255, 255, 255, 30), outline=(255, 196, 0, 120), width=2)
         d.text((M + 35, y + 22), yolb["il"].replace("i", "İ").replace("ı", "I").upper() or "—", font=font("Bold", 36), fill=sari)
@@ -235,6 +236,7 @@ def yollar_gorseli(yollar, yol):
     if len(yollar) > 7:
         d.text((M, y), f"+ {len(yollar) - 7} yol daha", font=font("SemiBold", 36), fill=(255, 255, 255, 200))
     d.text((M, H - 130), "Kaynak: Karayolları Genel Müdürlüğü", font=font("Regular", 30), fill=(255, 255, 255, 170))
+    yorum_cagrisi(d, M + 20, H - 385, W - M - 20, H - 315)
     destek_bandi(d, M, H - 300, W - M, H - 170)
     img.save(yol, quality=93)
 

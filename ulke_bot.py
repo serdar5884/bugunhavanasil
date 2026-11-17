@@ -14,7 +14,7 @@ Kullanım: python ulke_bot.py --cikti yayin/ulke      (--demo: örnek veri)
 import argparse, datetime, json, os, random
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image, ImageDraw, ImageEnhance
-from hava_bot import (BOLGELER, HADISE, mgm_get, merkezleri_yukle, sahne_ciz, font, destek_bandi,
+from hava_bot import (BOLGELER, HADISE, mgm_get, merkezleri_yukle, sahne_ciz, font, destek_bandi, yorum_cagrisi,
                       metni_sigdir, W, H, HESAP)
 from haber_bot import bulunma
 from reels_bot import dikey
@@ -194,7 +194,7 @@ def kart(o, yol):
         fazla = sum(len(s) for s in satirlar[4:])
         satirlar = satirlar[:4]
     cip_h = len(satirlar) * 50
-    alt = H - 190
+    alt = H - 245
     cip_y = alt - cip_h
     # paragraf
     f_p = font("SemiBold", 33)
@@ -230,6 +230,7 @@ def kart(o, yol):
         y += 50
     if fazla:
         d.text((M, y - 4), f"+ {fazla} il daha (tamamı açıklamada)", font=font("Medium", 26), fill=(255, 255, 255, 210))
+    yorum_cagrisi(d, M + 40, H - 212, W - M - 40, H - 160)
     destek_bandi(d, M, H - 150, W - M, H - 55)
     d.text((M, H - 44), "Kaynak: MGM il merkezi tahminleri", font=font("Regular", 22), fill=(255, 255, 255, 170))
     img.convert("RGB").save(yol, quality=93)

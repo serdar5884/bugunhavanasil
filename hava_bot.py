@@ -382,6 +382,25 @@ def destek_bandi(d, x0, y0, x1, y1):
     d.text((tx, y0 + h * .56), alt, font=f2, fill=(60, 50, 0))
 
 
+YORUM_METIN = "Yoruma ilini yaz, 5 günlük tahmini al!"
+
+
+def yorum_cagrisi(d, x0, y0, x1, y1):
+    """Beyaz şerit: konuşma balonu + 'Yoruma ilini yaz, 5 günlük tahmini al!'"""
+    h = y1 - y0
+    d.rounded_rectangle([x0, y0, x1, y1], radius=h / 2, fill=(255, 255, 255, 235))
+    lac = (18, 30, 55)
+    bx, by, bs = x0 + h * .45, y0 + h * .2, h * .6
+    d.rounded_rectangle([bx, by, bx + bs * 1.25, by + bs * .8], radius=bs * .22, fill=lac)
+    d.polygon([(bx + bs * .25, by + bs * .75), (bx + bs * .2, by + bs * 1.05), (bx + bs * .55, by + bs * .78)], fill=lac)
+    for i in range(3):
+        cx = bx + bs * (.32 + i * .3)
+        d.ellipse([cx - bs * .07, by + bs * .33, cx + bs * .07, by + bs * .47], fill=(255, 205, 0))
+    tx = bx + bs * 1.25 + h * .3
+    f = metni_sigdir(d, YORUM_METIN, "ExtraBold", int(h * .5), x1 - tx - h * .4)
+    d.text((tx, y0 + (h - f.size) / 2 - h * .05), YORUM_METIN, font=f, fill=lac)
+
+
 def metni_sigdir(d, metin, f_stil, boyut, max_w):
     while boyut > 14:
         f = font(f_stil, boyut)
@@ -428,7 +447,7 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     # Kartlar: 2 sütun
     n = len(veriler)
     satir = (n + 1) // 2
-    top, bottom = 250, H - 170
+    top, bottom = 250, H - 225
     gap = 14
     kart_h = min(150, (bottom - top - gap * (satir - 1)) / satir)
     kart_w = (W - 2 * M - gap) / 2
@@ -478,6 +497,7 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         d.text((sag - mw - sw - 8, y0 + kart_h * .1), sicak, font=f_sic, fill="white")
         d.text((sag - mw, y0 + kart_h * .22), mn, font=f_min, fill=(255, 255, 255, 190))
 
+    yorum_cagrisi(d, M + 40, H - 212, W - M - 40, H - 160)
     destek_bandi(d, M, H - 150, W - M, H - 50)
     d.text((M, H - 40), "Kaynak: Meteoroloji Genel Müdürlüğü (mgm.gov.tr)", font=font("Regular", 22), fill=(255, 255, 255, 170))
     ascii_ad = bolge.translate(str.maketrans("çğıöşüÇĞİÖŞÜ ", "cgiosuCGIOSU_"))
