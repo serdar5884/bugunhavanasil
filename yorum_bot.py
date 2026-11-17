@@ -53,6 +53,12 @@ def tahmin(il, tarih):
 
 
 GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+SIMGE = {"gunes": "☀️", "az_bulut": "🌤️", "bulut": "☁️", "yagmur": "🌧️", "firtina": "⛈️", "kar": "❄️", "karla_yagmur": "🌨️", "sis": "🌫️"}
+
+
+def simge(hadise_metni):
+    tip = next((v[1] for v in HADISE.values() if v[0] == hadise_metni), "bulut")
+    return SIMGE.get(tip, "🌡️")
 COK_GUN = r"(5|bes|7|yedi)\s*gun|haftalik|bir hafta|1 hafta|bu hafta|hafta boyu|onumuzdeki gunler|gunluk tahmin|uzun vade"
 
 
@@ -85,11 +91,11 @@ def cevap_metni(yorum, kullanici):
         for il in iller[:2]:  # uzun cevap olmasın diye en fazla 2 il
             gunler = tahmin_cok(il)
             if gunler:
-                satir = " | ".join(f"{GUN_KISA[t.weekday()]} {t.day}: {h}, {mx}°/{mn}°" for t, h, mx, mn in gunler)
-                bloklar.append(f"{il} {len(gunler)} günlük ➜ {satir}")
+                satirlar = [f"{simge(h)} {GUN_KISA[t.weekday()]} {t.day} {AYLAR[t.month][:3]}  {mx}° / {mn}°  {h}" for t, h, mx, mn in gunler]
+                bloklar.append(f"📍 {il} – {len(gunler)} günlük\n" + "\n".join(satirlar))
         if not bloklar:
             return None
-        return f"@{kullanici} " + " // ".join(bloklar) + " 🌤 Kaynak: MGM"
+        return f"@{kullanici}\n" + "\n\n".join(bloklar) + "\n\nKaynak: MGM"
     if "yarin" in s:
         gunler = [(bugun + datetime.timedelta(days=1), "yarın")]
     elif "hafta sonu" in s or "haftasonu" in s:
@@ -106,12 +112,12 @@ def cevap_metni(yorum, kullanici):
                 tarih, ad = bugun + datetime.timedelta(days=1), "yarın"
                 v = tahmin(il, tarih)
             if v:
-                parcalar.append(f"{ad} ({tarih.day} {AYLAR[tarih.month]}): {v[0]}, en yüksek {v[1]}°, en düşük {v[2]}°")
+                parcalar.append(f"{simge(v[0])} {ad.capitalize()} ({tarih.day} {AYLAR[tarih.month]}): {v[0]}\n🌡️ En yüksek {v[1]}° · En düşük {v[2]}°")
         if parcalar:
-            satirlar.append(f"{il} – " + " | ".join(parcalar))
+            satirlar.append(f"📍 {il}\n" + "\n".join(parcalar))
     if not satirlar:
         return None
-    return f"@{kullanici} " + " / ".join(satirlar) + " 🌤 Kaynak: MGM"
+    return f"@{kullanici}\n" + "\n\n".join(satirlar) + "\n\nKaynak: MGM"
 
 
 def main():
