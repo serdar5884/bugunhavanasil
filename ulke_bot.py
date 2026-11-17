@@ -106,7 +106,7 @@ def tespit(veri):
         if len(dusen) >= 30:
             il_max = min(dusen, key=lambda il: farklar[il])
             ort = round(-sum(farklar[il] for il in dusen) / len(dusen))
-            olaylar.append({"tur": "SOGUK", "baslik": "SOĞUK HAVA DALGASI!", "sahne": "bulutlu", "iller": dusen, "tarih": tarih,
+            olaylar.append({"tur": "SOGUK", "baslik": "SOĞUK HAVA DALGASI!", "sahne": "bulutlu", "foto": "soguk", "iller": dusen, "tarih": tarih,
                             "fiil": f"sıcaklıklar ortalama {ort}°C düşüyor",
                             "ek": f"En büyük düşüş {bulunma(il_max)}: {veri[il_max][onceki]['max']}°C'den {g[il_max]['max']}°C'ye."})
         artan = [il for il, f in farklar.items() if f >= 6]
