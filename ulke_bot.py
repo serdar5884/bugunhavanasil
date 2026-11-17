@@ -98,7 +98,7 @@ def tespit(veri):
                             "ek": "Şemsiyenizi yanınıza almayı unutmayın."})
         ruzgar = say(RUZGAR)
         if len(ruzgar) >= 8:
-            olaylar.append({"tur": "RUZGAR", "baslik": "KUVVETLİ RÜZGAR!", "sahne": "bulutlu", "iller": ruzgar, "tarih": tarih,
+            olaylar.append({"tur": "RUZGAR", "baslik": "KUVVETLİ RÜZGAR!", "sahne": "bulutlu", "foto": "ruzgarli", "iller": ruzgar, "tarih": tarih,
                             "ek": "Çatı uçması ve devrilmelere karşı tedbirli olun."})
         farklar = {il: g[il]["max"] - veri[il][onceki]["max"] for il in g
                    if onceki in veri[il] and g[il]["max"] is not None and veri[il][onceki]["max"] is not None}
@@ -162,7 +162,7 @@ def fotograf(sahne, tarih):
 
 
 def kart(o, yol):
-    img = fotograf(o["sahne"], o["tarih"]) or sahne_ciz(o["sahne"], o["tur"]).convert("RGB")
+    img = fotograf(o.get("foto", o["sahne"]), o["tarih"]) or sahne_ciz(o["sahne"], o["tur"]).convert("RGB")
     img = ImageEnhance.Brightness(img).enhance(0.8)  # RGB kalmalı: RGBA çizim üstüne karışsın
     d = ImageDraw.Draw(img, "RGBA")
     # alttan koyulaşan perde (yazı okunsun)

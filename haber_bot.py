@@ -145,7 +145,7 @@ def foto_zemin(olay, anahtar):
     """Olaya uygun fotoğraf varsa (arka_plan/), 1080x1920 kırpılmış ve koyulaştırılmış olarak döndürür."""
     import glob
     from PIL import ImageEnhance
-    klasor = {"YAĞIŞ": "yagmurlu", "SEL": "yagmurlu", "FIRTINA": "firtinali", "KAR": "karli", "ÇIĞ": "karli"}.get(olay)
+    klasor = {"YAĞIŞ": "yagmurlu", "SEL": "yagmurlu", "FIRTINA": "ruzgarli", "HORTUM": "firtinali", "KAR": "karli", "ÇIĞ": "karli"}.get(olay)
     if not klasor:
         return None
     fotolar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan", klasor, "*.jp*g")))
