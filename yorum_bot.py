@@ -50,12 +50,44 @@ def tahmin(il, tarih):
     return None
 
 
+GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+COK_GUN = r"(5|bes|7|yedi)\s*gun|haftalik|bir hafta|1 hafta|bu hafta|hafta boyu|onumuzdeki gunler|gunluk tahmin|uzun vade"
+
+
+def tahmin_cok(il):
+    """MGM'nin 5 günlük tahmini: [(tarih, hadise metni, max, min), ...]"""
+    t = mgm_get(f"/tahminler/gunluk?istno={merkezleri_yukle()[il]}")
+    t = t[0] if isinstance(t, list) else t
+    bugun = datetime.datetime.now(TR).date()
+    out = []
+    for i in range(1, 6):
+        ts = str(t.get(f"tarihGun{i}", ""))[:10]
+        if not ts:
+            continue
+        tarih = datetime.date.fromisoformat(ts)
+        if tarih < bugun:
+            continue
+        out.append((tarih, HADISE.get(t.get(f"hadiseGun{i}"), (t.get(f"hadiseGun{i}"), ""))[0],
+                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}")))
+    return out
+
+
 def cevap_metni(yorum, kullanici):
     iller = illeri_bul(yorum)
     if not iller:
         return None
     s = sade(yorum)
     bugun = datetime.datetime.now(TR).date()
+    if re.search(COK_GUN, s) and "hafta sonu" not in s and "haftasonu" not in s:
+        bloklar = []
+        for il in iller[:2]:  # uzun cevap olmasın diye en fazla 2 il
+            gunler = tahmin_cok(il)
+            if gunler:
+                satir = " | ".join(f"{GUN_KISA[t.weekday()]} {t.day}: {h}, {mx}°/{mn}°" for t, h, mx, mn in gunler)
+                bloklar.append(f"{il} {len(gunler)} günlük ➜ {satir}")
+        if not bloklar:
+            return None
+        return f"@{kullanici} " + " // ".join(bloklar) + " 🌤 Kaynak: MGM"
     if "yarin" in s:
         gunler = [(bugun + datetime.timedelta(days=1), "yarın")]
     elif "hafta sonu" in s or "haftasonu" in s:
