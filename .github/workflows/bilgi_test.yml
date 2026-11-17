@@ -15,7 +15,7 @@ jobs:
         with: {python-version: "3.12"}
       - run: |
           sudo apt-get update -q && sudo apt-get install -y -q fonts-inter ffmpeg >/dev/null
-          pip install -q -r requirements.txt piper-tts
+          pip install -q -r requirements.txt piper-tts edge-tts
       - name: Türkçe ses modeli
         run: |
           mkdir -p ses_model && cd ses_model
