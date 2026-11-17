@@ -141,9 +141,26 @@ def hava_haberi_mi(h):
     return {"olay": olay[0], "renk": olay[1], "il": il, "can_kaybi": can, "tahmin": tahmin}
 
 
+def foto_zemin(olay, anahtar):
+    """Olaya uygun fotoğraf varsa (arka_plan/), 1080x1920 kırpılmış ve koyulaştırılmış olarak döndürür."""
+    import glob
+    from PIL import ImageEnhance
+    klasor = {"YAĞIŞ": "yagmurlu", "SEL": "yagmurlu", "FIRTINA": "firtinali", "KAR": "karli", "ÇIĞ": "karli"}.get(olay)
+    if not klasor:
+        return None
+    fotolar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan", klasor, "*.jp*g")))
+    if not fotolar:
+        return None
+    src = Image.open(fotolar[sum(map(ord, anahtar)) % len(fotolar)]).convert("RGB")
+    oran = max(W / src.width, H / src.height)
+    src = src.resize((int(src.width * oran + 1), int(src.height * oran + 1)))
+    x0, y0 = (src.width - W) // 2, (src.height - H) // 2
+    return ImageEnhance.Brightness(src.crop((x0, y0, x0 + W, y0 + H))).enhance(0.45)
+
+
 def haber_gorseli(x, yol):
     renk = x["renk"]
-    img = _zemin((20, 22, 30), tuple(int(c * .5) for c in renk))
+    img = foto_zemin(x["olay"], x["il"]) or _zemin((20, 22, 30), tuple(int(c * .5) for c in renk))
     d = ImageDraw.Draw(img, "RGBA")
     M = 70
     tahmin = x.get("tahmin")
