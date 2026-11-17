@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-"10 saniyede" meteoroloji bilgi videoları (1080x1920, 30 fps) + aynı konudan kaydırmalı gönderi görselleri (4:5).
+Meteoroloji bilgi videoları (1080x1920, 30 fps) + aynı konudan kaydırmalı gönderi görselleri (4:5).
 Konular bilgi_konulari.py içinde; animasyonlar Pillow ile çizilir, müzik muzik/ klasöründen.
 
 Kullanım:
@@ -17,6 +17,7 @@ SARI, LACI = (255, 205, 0), (14, 24, 46)
 GECIS = 0.35
 YAZI_HIZI = 0.5  # altyazının tamamı sahne süresinin ilk yarısında belirir, kalan yarıda okunur
 DURUM = "bilgi_durum.json"
+ALTYAZI_ORAN = 0.6  # altyazı, seslendirmenin %60'ı bittiğinde tamamen yazılmış olur
 
 GOK = {
     "ilik": ((70, 40, 60), (215, 120, 70)), "soguk": ((20, 35, 70), (110, 150, 200)), "gece": ((10, 14, 35), (40, 45, 80)),
@@ -232,6 +233,7 @@ def ust_bant(d):
 
 
 def sayac(d, kalan):
+    return  # geri sayım kaldırıldı
     cx, cy, r = W - 110, 160, 46
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(0, 0, 0, 120))
     d.arc([cx - r, cy - r, cx + r, cy + r], -90, -90 + 360 * kalan / 10, fill=SARI, width=8)
@@ -274,11 +276,7 @@ def sahne_baslik(k, t, kalan):
     ust_bant(d)
     sayac(d, 10)
     s = .7 + .3 * min(1, t / .5)
-    f_u = font("ExtraBold", 46)
-    gen = d.textlength("10 SANİYEDE", font=f_u) + 60
-    d.rounded_rectangle([W / 2 - gen / 2, 520, W / 2 + gen / 2, 600], radius=40, fill=SARI)
-    d.text((W / 2 - d.textlength("10 SANİYEDE", font=f_u) / 2, 532), "10 SANİYEDE", font=f_u, fill=LACI)
-    y = 640
+    y = 600
     satirlar = [(x, 150, SARI) if i % 2 == 0 else (x, 70, "white") for i, x in enumerate(k["baslik"])] + [(k["soru"], 80, "white")]
     for metin, boy, renk in satirlar:
         f = font("ExtraBold", int(boy * s))
@@ -318,7 +316,7 @@ def sahne_konu(v, t, kalan):
     elif g == "renkkod":
         renk_kodlari(d, t)
     if v.get("_ses_sure"):
-        altyazi(d, v["metin"], v.get("vurgu", []), min(1, (t - 0.3) / v["_ses_sure"]) * YAZI_HIZI)
+        altyazi(d, v["metin"], v.get("vurgu", []), min(1, (t - 0.3) / (v["_ses_sure"] * ALTYAZI_ORAN)) * YAZI_HIZI)
     else:
         altyazi(d, v["metin"], v.get("vurgu", []), t / v["sure"])
     return img
@@ -507,7 +505,7 @@ def gonderi_gorselleri(k, klasor):
 
 
 def caption(k):
-    s = [f"⚡ 10 saniyede: {k['soru_tam']}", ""] + [f"• {x}" for x in k["aciklama"]]
+    s = [f"⚡ {k['soru_tam']}", ""] + [f"• {x}" for x in k["aciklama"]]
     s += ["", "💬 Başka hangi hava olayını merak ediyorsun? Yorumlara yaz!",
           "🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş",
           f"👉 {HESAP}", "", "#havadurumu #meteoroloji #bilgi #biliyormuydunuz " + k.get("etiket", "")]

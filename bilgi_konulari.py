@@ -1,5 +1,5 @@
 """
-"10 saniyede" bilgi videosu konuları (sırayla paylaşılır).
+Bilgi videosu konuları (sırayla paylaşılır).
 Sahne alanları: ad (büyük başlık), metin (altyazı), ses (seslendirme; sayılar yazıyla), vurgu, gok, efekt, gorsel, sure.
 Pusula açıları (ekran koordinatı, rüzgarın GELDİĞİ yön): 135=güneybatı, 315=kuzeydoğu, 225=kuzeybatı, 45=güneydoğu, 270=kuzey, 90=güney.
 Gökler: ilik, soguk, gece, firtina, gunes, bulutlu, sis, yagmur, kar
@@ -20,7 +20,7 @@ def s(ad, metin, ses, vurgu, gok, efekt=(), gorsel=None, sure=5.5, **ek):
 
 KONULAR = [
     konu("lodos_poyraz", ["LODOS", "VE", "POYRAZ"], "FARKI NEDİR?", "Lodos ve poyraz arasındaki fark nedir?",
-         "On saniyede: Lodos ve poyraz arasındaki fark nedir?",
+         "Lodos ve poyraz arasındaki fark nedir?",
          [s("LODOS", "Lodos güneybatıdan eser, ılık ve fırtınalıdır.", "Lodos, güneybatıdan eser. Ilık ve fırtınalıdır!",
             ["güneybatıdan", "ılık"], "ilik", ["ruzgar"], "pusula", akis="sag", serit=[255, 200, 140], ok_aci=135, etiket="GÜNEYBATIDAN ESER"),
           s("POYRAZ", "Poyraz kuzeydoğudan eser, soğuk ve serttir.", "Poyraz ise kuzeydoğudan eser. Soğuk ve serttir!",
@@ -31,7 +31,7 @@ KONULAR = [
           "Poyraz kuzeydoğudan esen soğuk ve sert bir rüzgardır; kışın soğuk havayı getirir."], "#lodos #poyraz #rüzgar"),
 
     konu("simsek_yildirim", ["ŞİMŞEK", "VE", "YILDIRIM"], "FARKI NEDİR?", "Şimşek ve yıldırım arasındaki fark nedir?",
-         "On saniyede: Şimşek ve yıldırım arasındaki fark nedir?",
+         "Şimşek ve yıldırım arasındaki fark nedir?",
          [s("ŞİMŞEK", "Şimşek bulutun içinde ya da bulutlar arasında çakar.", "Şimşek, bulutun içinde ya da bulutlar arasında çakar.",
             ["bulutlar", "arasında"], "firtina", ["yagmur", "simsek"]),
           s("YILDIRIM", "Yıldırım ise buluttan yere düşer ve tehlikelidir.", "Yıldırım ise buluttan yere düşer. Ve çok tehlikelidir!",
@@ -43,7 +43,7 @@ KONULAR = [
          "#şimşek #yıldırım #fırtına", "firtina"),
 
     konu("gok_gurultusu", ["GÖK", "GÜRÜLTÜSÜ"], "NEDEN SONRA GELİR?", "Gök gürültüsü neden şimşekten sonra duyulur?",
-         "On saniyede: Gök gürültüsü neden şimşekten sonra duyulur?",
+         "Gök gürültüsü neden şimşekten sonra duyulur?",
          [s("IŞIK HIZLI", "Işık sesten çok daha hızlıdır, şimşeği önce görürüz.", "Işık, sesten çok daha hızlıdır. Bu yüzden şimşeği önce görürüz.",
             ["ışık", "önce"], "firtina", ["yagmur", "simsek"]),
           s("SAY VE BÖL", "Şimşekten sonra saniyeleri say, üçe böl: kilometre!", "Şimşekten sonra saniyeleri say ve üçe böl. Sonuç, kilometre cinsinden uzaklıktır!",
@@ -55,7 +55,7 @@ KONULAR = [
          "#gökgürültüsü #şimşek #fırtına", "gece"),
 
     konu("sis_pus", ["SİS", "VE", "PUS"], "FARKI NEDİR?", "Sis ve pus arasındaki fark nedir?",
-         "On saniyede: Sis ve pus arasındaki fark nedir?",
+         "Sis ve pus arasındaki fark nedir?",
          [s("SİS", "Sis havadaki su damlacıklarıdır, görüş 1 km'nin altına düşer.", "Sis, havada asılı kalan su damlacıklarıdır. Görüş bir kilometrenin altına düşer.",
             ["su", "1", "km'nin"], "sis", ["sis"]),
           s("PUS", "Pus daha hafiftir, görüş 1 km'nin üzerinde kalır.", "Pus ise daha hafiftir. Görüş bir kilometrenin üzerinde kalır.",
@@ -65,7 +65,7 @@ KONULAR = [
          ["Sis, havada asılı su damlacıklarının görüşü 1 kilometrenin altına düşürmesidir.",
           "Pusta görüş 1 kilometrenin üzerindedir; sisli havada farları kısa huzmede kullanın."], "#sis #pus #görüş", "sis"),
 
-    konu("dolu", ["DOLU"], "NASIL OLUŞUR?", "Dolu nasıl oluşur?", "On saniyede: Dolu nasıl oluşur?",
+    konu("dolu", ["DOLU"], "NASIL OLUŞUR?", "Dolu nasıl oluşur?", "Dolu nasıl oluşur?",
          [s("YUKARI!", "Güçlü hava akımları su damlalarını bulutun soğuk tepesine taşır.", "Güçlü hava akımları, su damlalarını bulutun soğuk tepesine taşır.",
             ["soğuk", "tepesine"], "firtina", ["yagmur"]),
           s("DONAR, BÜYÜR", "Damlalar donar, katman katman büyür ve ağırlaşınca düşer.", "Damlalar orada donar, katman katman büyür. Ağırlaşınca da yere düşer!",
@@ -77,7 +77,7 @@ KONULAR = [
          "#dolu #fırtına #meteoroloji", "firtina"),
 
     konu("renk_kodlari", ["SARI", "TURUNCU", "KIRMIZI"], "KOD NE DEMEK?", "Meteorolojik uyarılardaki sarı, turuncu ve kırmızı kod ne demek?",
-         "On saniyede: Sarı, turuncu ve kırmızı kod ne demek?",
+         "Sarı, turuncu ve kırmızı kod ne demek?",
          [s("RENK KODLARI", "Sarı dikkatli olun, turuncu hazırlıklı olun, kırmızı çok tehlikeli!", "Sarı kod, dikkatli olun demektir. Turuncu, hazırlıklı olun. Kırmızı ise çok tehlikeli demektir!",
             ["sarı", "turuncu", "kırmızı"], "gece", (), "renkkod", sure=7.5)],
          [["SARI", "Dikkatli olun", "", [230, 180, 20]], ["TURUNCU", "Hazırlıklı olun", "", [235, 120, 20]], ["KIRMIZI", "Çok tehlikeli", "Önlem alın!", [200, 30, 35]]],
@@ -86,7 +86,7 @@ KONULAR = [
           "Kırmızı kod çok tehlikeli hava olaylarını gösterir; resmi kurumların uyarılarına mutlaka uyun."],
          "#meteorolojikuyarı #turuncukod #kırmızıkod", "gece"),
 
-    konu("hissedilen", ["HİSSEDİLEN", "SICAKLIK"], "NEDİR?", "Hissedilen sıcaklık nedir?", "On saniyede: Hissedilen sıcaklık nedir?",
+    konu("hissedilen", ["HİSSEDİLEN", "SICAKLIK"], "NEDİR?", "Hissedilen sıcaklık nedir?", "Hissedilen sıcaklık nedir?",
          [s("RÜZGAR", "Soğukta rüzgar, havayı olduğundan daha soğuk hissettirir.", "Soğuk havada rüzgar, havayı olduğundan daha soğuk hissettirir.",
             ["rüzgar,", "soğuk"], "soguk", ["ruzgar", "kar"], "termometre", akis="sol", deger=-8, etiket="Hissedilen"),
           s("NEM", "Sıcakta nem, havayı olduğundan daha sıcak hissettirir.", "Sıcak havada ise nem, havayı olduğundan daha sıcak hissettirir!",
@@ -96,7 +96,7 @@ KONULAR = [
          ["Hissedilen sıcaklık; rüzgar ve nemin vücudumuz üzerindeki etkisiyle hesaplanır.",
           "Kışın rüzgar ısı kaybını artırır, yazın yüksek nem terlemeyi zorlaştırır."], "#hissedilensıcaklık #nem #rüzgar"),
 
-    konu("kar_kristali", ["KAR", "TANELERİ"], "NEDEN ALTIGEN?", "Kar taneleri neden altıgendir?", "On saniyede: Kar taneleri neden altıgendir?",
+    konu("kar_kristali", ["KAR", "TANELERİ"], "NEDEN ALTIGEN?", "Kar taneleri neden altıgendir?", "Kar taneleri neden altıgendir?",
          [s("ALTI KOL", "Su donarken molekülleri altıgen bir düzende dizilir.", "Su donarken, molekülleri altıgen bir düzende dizilir.",
             ["altıgen"], "kar", ["kar"], "kristal"),
           s("HEPSİ FARKLI", "Her tane farklı sıcaklık ve nemden geçer, ikisi aynı olmaz.", "Her kar tanesi farklı sıcaklık ve nemden geçer. Bu yüzden ikisi asla tam aynı olmaz!",
@@ -107,7 +107,7 @@ KONULAR = [
           "Düşerken geçtiği sıcaklık ve nem her tanenin şeklini değiştirdiği için iki kar tanesi neredeyse hiç aynı olmaz."],
          "#kar #kartanesi #biliyormuydunuz", "kar"),
 
-    konu("gokkusagi", ["GÖKKUŞAĞI"], "NASIL OLUŞUR?", "Gökkuşağı nasıl oluşur?", "On saniyede: Gökkuşağı nasıl oluşur?",
+    konu("gokkusagi", ["GÖKKUŞAĞI"], "NASIL OLUŞUR?", "Gökkuşağı nasıl oluşur?", "Gökkuşağı nasıl oluşur?",
          [s("KIRILMA", "Güneş ışığı yağmur damlasına girerken kırılır ve renklere ayrılır.", "Güneş ışığı, yağmur damlasına girerken kırılır ve renklere ayrılır.",
             ["kırılır", "renklere"], "gunes", ["yagmur", "gunes"]),
           s("YEDİ RENK", "Gökkuşağını görmek için güneş arkanızda olmalı.", "Gökkuşağını görmek için güneş arkanızda, yağmur önünüzde olmalı!",
@@ -118,7 +118,7 @@ KONULAR = [
           "Gökkuşağını görmek için güneş arkanızda, yağmur önünüzde olmalıdır."], "#gökkuşağı #güneş #yağmur", "gunes"),
 
     konu("yagis_mm", ["1 MM", "YAĞIŞ"], "NE KADAR SU?", "1 milimetre yağış ne kadar suya eşittir?",
-         "On saniyede: Bir milimetre yağış ne kadar suya eşittir?",
+         "Bir milimetre yağış ne kadar suya eşittir?",
          [s("METREKARE", "1 mm yağış, her metrekareye 1 litre su demektir.", "Bir milimetre yağış, her metrekareye bir litre su düşmesi demektir.",
             ["1", "litre"], "yagmur", ["yagmur"], "buyuk", buyuk="1 mm = 1 L/m²", alt="Metrekare başına bir litre"),
           s("KUVVETLİ", "Kısa sürede çok yağış düşerse sel riski artar.", "Kısa sürede çok yağış düşerse, sel ve su baskını riski artar!",
@@ -129,7 +129,7 @@ KONULAR = [
           "Kısa sürede yoğun yağış toprağın emebileceğinden fazla su bırakır ve sel riskini artırır."], "#yağış #yağmur #sel", "yagmur"),
 
     konu("karayel_kesisleme", ["KARAYEL", "VE", "KEŞİŞLEME"], "NEDİR?", "Karayel ve keşişleme rüzgarları nedir?",
-         "On saniyede: Karayel ve keşişleme nedir?",
+         "Karayel ve keşişleme nedir?",
          [s("KARAYEL", "Karayel kuzeybatıdan eser, kışın soğuk ve kar getirir.", "Karayel, kuzeybatıdan eser. Kışın soğuk ve kar getirir!",
             ["kuzeybatıdan", "soğuk"], "soguk", ["ruzgar", "kar"], "pusula", akis="sag", serit=[220, 240, 255], ok_aci=225, etiket="KUZEYBATIDAN ESER"),
           s("KEŞİŞLEME", "Keşişleme güneydoğudan eser, genellikle ılık ve kurudur.", "Keşişleme ise güneydoğudan eser. Genellikle ılık ve kurudur.",
@@ -140,7 +140,7 @@ KONULAR = [
           "Keşişleme güneydoğudan esen, genellikle ılık ve kuru bir rüzgardır."], "#karayel #keşişleme #rüzgar"),
 
     konu("yildiz_kible", ["YILDIZ", "VE", "KIBLE"], "RÜZGARI NEDİR?", "Yıldız ve kıble rüzgarları nedir?",
-         "On saniyede: Yıldız ve kıble rüzgarları nedir?",
+         "Yıldız ve kıble rüzgarları nedir?",
          [s("YILDIZ", "Yıldız rüzgarı kuzeyden eser ve soğuk hava getirir.", "Yıldız rüzgarı kuzeyden eser ve soğuk hava getirir.",
             ["kuzeyden", "soğuk"], "soguk", ["ruzgar", "kar"], "pusula", akis="sol", serit=[220, 240, 255], ok_aci=270, etiket="KUZEYDEN ESER"),
           s("KIBLE", "Kıble rüzgarı güneyden eser ve sıcak hava getirir.", "Kıble rüzgarı ise güneyden eser ve sıcak hava getirir!",
@@ -150,7 +150,7 @@ KONULAR = [
          ["Yıldız (yıldız poyrazı) kuzeyden esen soğuk rüzgardır.", "Kıble güneyden esen sıcak rüzgardır."], "#rüzgar #yıldız #kıble"),
 
     konu("cig_kiragi", ["ÇİĞ", "VE", "KIRAĞI"], "FARKI NEDİR?", "Çiğ ve kırağı arasındaki fark nedir?",
-         "On saniyede: Çiğ ve kırağı arasındaki fark nedir?",
+         "Çiğ ve kırağı arasındaki fark nedir?",
          [s("ÇİĞ", "Serin gecelerde havadaki nem yüzeylerde damlacık olur.", "Serin gecelerde havadaki nem, yüzeylerde su damlacıkları olarak toplanır.",
             ["damlacık"], "gece", (), "termometre", deger=6, etiket="0°C üstü"),
           s("KIRAĞI", "Hava sıfırın altındaysa nem doğrudan buz kristali olur.", "Hava sıfırın altındaysa, nem doğrudan buz kristali olur. İşte bu kırağıdır!",
@@ -160,7 +160,7 @@ KONULAR = [
          ["Çiğ, gece soğuyan yüzeylerde havadaki su buharının damlacık halinde toplanmasıdır.",
           "Sıcaklık 0°C'nin altındaysa su buharı doğrudan buz kristaline dönüşür; buna kırağı denir."], "#çiğ #kırağı #don", "gece"),
 
-    konu("hortum", ["HORTUM"], "NASIL OLUŞUR?", "Hortum nasıl oluşur?", "On saniyede: Hortum nasıl oluşur?",
+    konu("hortum", ["HORTUM"], "NASIL OLUŞUR?", "Hortum nasıl oluşur?", "Hortum nasıl oluşur?",
          [s("DÖNEN HAVA", "Güçlü fırtına bulutlarında hava dönmeye başlar.", "Güçlü fırtına bulutlarının içinde hava dönmeye başlar.",
             ["dönmeye"], "firtina", ["yagmur", "ruzgar"], akis="sag"),
           s("YERE İNER", "Bu dönen hava sütunu yere inince hortum oluşur.", "Bu dönen hava sütunu yere ulaşınca hortum oluşur. Denizde olursa su hortumu denir!",
@@ -170,7 +170,7 @@ KONULAR = [
          ["Hortum, güçlü fırtına bulutlarından yere uzanan, hızla dönen bir hava sütunudur.",
           "Deniz üzerinde oluşanlara su hortumu denir; görüldüğünde sağlam, kapalı bir yere geçin."], "#hortum #fırtına", "firtina"),
 
-    konu("mevsimler", ["MEVSİMLER"], "NEDEN OLUŞUR?", "Mevsimler neden oluşur?", "On saniyede: Mevsimler neden oluşur?",
+    konu("mevsimler", ["MEVSİMLER"], "NEDEN OLUŞUR?", "Mevsimler neden oluşur?", "Mevsimler neden oluşur?",
          [s("EĞİK EKSEN", "Dünya'nın ekseni 23,5 derece eğiktir.", "Dünya'nın ekseni, yaklaşık yirmi üç buçuk derece eğiktir.",
             ["eğiktir."], "gunes", ["gunes"], "buyuk", buyuk="23,5°", alt="Dünya'nın eksen eğikliği"),
           s("DİK IŞIK", "Yazın güneş ışığı daha dik gelir, bu yüzden daha sıcaktır.", "Yazın güneş ışınları daha dik gelir. Bu yüzden hava daha sıcaktır!",
@@ -180,7 +180,7 @@ KONULAR = [
          ["Mevsimleri Dünya'nın Güneş'e uzaklığı değil, eksen eğikliği oluşturur.",
           "Yazın ışınlar daha dik gelir ve günler uzundur; kışın ışınlar eğik gelir ve günler kısadır."], "#mevsimler #güneş #dünya", "gunes"),
 
-    konu("ruzgar_neden", ["RÜZGAR"], "NEDEN ESER?", "Rüzgar neden eser?", "On saniyede: Rüzgar neden eser?",
+    konu("ruzgar_neden", ["RÜZGAR"], "NEDEN ESER?", "Rüzgar neden eser?", "Rüzgar neden eser?",
          [s("BASINÇ FARKI", "Hava, yüksek basınçtan alçak basınca doğru akar.", "Hava, yüksek basınçlı yerden alçak basınçlı yere doğru akar.",
             ["yüksek", "alçak"], "bulutlu", ["ruzgar"], akis="sag", serit=[240, 240, 255]),
           s("FARK BÜYÜKSE", "Basınç farkı büyüdükçe rüzgar da sertleşir.", "Basınç farkı ne kadar büyükse, rüzgar da o kadar sert eser!",
@@ -190,7 +190,7 @@ KONULAR = [
          ["Rüzgar, hava basıncı farkından doğar: hava yüksek basınçtan alçak basınca akar.",
           "Basınç farkı ne kadar büyükse rüzgar o kadar şiddetli eser."], "#rüzgar #basınç #meteoroloji"),
 
-    konu("zirai_don", ["ZİRAİ", "DON"], "NEDİR?", "Zirai don nedir?", "On saniyede: Zirai don nedir?",
+    konu("zirai_don", ["ZİRAİ", "DON"], "NEDİR?", "Zirai don nedir?", "Zirai don nedir?",
          [s("SIFIRIN ALTI", "Gece sıcaklık 0 derecenin altına düşer.", "Gece, sıcaklık sıfır derecenin altına düşer.",
             ["0", "altına"], "gece", (), "termometre", deger=-2, etiket="Zirai don"),
           s("BİTKİLER ZARAR GÖRÜR", "Açık ve rüzgarsız gecelerde çiçek ve meyveler donabilir.", "Özellikle açık ve rüzgarsız gecelerde, çiçek ve meyveler donabilir!",
@@ -202,7 +202,7 @@ KONULAR = [
          "#ziraidon #don #tarım", "gece"),
 
     konu("bulut_rengi", ["BULUTLAR"], "NEDEN GRİ OLUR?", "Bulutlar neden bazen beyaz, bazen gri olur?",
-         "On saniyede: Bulutlar neden bazen gri olur?",
+         "Bulutlar neden bazen gri olur?",
          [s("BEYAZ", "İnce bulutlar güneş ışığını saçar, beyaz görünür.", "İnce bulutlar güneş ışığını her yöne saçar. Bu yüzden beyaz görünür.",
             ["beyaz"], "gunes", ["gunes"]),
           s("GRİ", "Kalın ve su dolu bulutlar ışığı geçirmez, gri görünür.", "Kalın ve su dolu bulutlar ışığı geçirmez. Gri görünürler, yani yağmur yakındır!",
@@ -212,7 +212,7 @@ KONULAR = [
          ["İnce bulutlar ışığı saçarak beyaz görünür.", "Kalın ve su damlacıklarıyla dolu bulutlar ışığı geçirmediği için gri ya da koyu görünür."],
          "#bulut #yağmur #gökyüzü"),
 
-    konu("nem", ["NEM"], "NEDİR?", "Nem nedir?", "On saniyede: Nem nedir?",
+    konu("nem", ["NEM"], "NEDİR?", "Nem nedir?", "Nem nedir?",
          [s("SU BUHARI", "Nem, havadaki görünmez su buharıdır.", "Nem, havadaki görünmez su buharıdır.",
             ["su", "buharıdır."], "bulutlu", ["sis"], "buyuk", buyuk="%  NEM", alt="Bağıl nem yüzde ile ölçülür"),
           s("YÜZDE 100", "Nem yüzde 100 olunca su buharı yoğunlaşır: sis ve bulut oluşur.", "Nem yüzde yüze ulaşınca su buharı yoğunlaşır. Sis ve bulut oluşur!",
@@ -223,7 +223,7 @@ KONULAR = [
           "Nem %100'e ulaştığında su buharı yoğunlaşır; sis, çiğ ve bulut oluşur."], "#nem #sis #hava", "bulutlu"),
 
     konu("firtina_hizi", ["FIRTINA"], "KAÇ KM HIZDA?", "Rüzgar kaç km hızda fırtına sayılır?",
-         "On saniyede: Rüzgar kaç kilometre hızda fırtına sayılır?",
+         "Rüzgar kaç kilometre hızda fırtına sayılır?",
          [s("FIRTINA", "Rüzgar hızı saatte 62 km'yi geçince fırtına sayılır.", "Rüzgarın hızı saatte altmış iki kilometreyi geçince fırtına sayılır.",
             ["62", "fırtına"], "firtina", ["ruzgar", "yagmur"], "buyuk", akis="sag", buyuk="62+ km/sa", alt="Fırtına"),
           s("KASIRGA", "Saatte 118 km'yi aşarsa artık kasırga gücündedir!", "Saatte yüz on sekiz kilometreyi aşarsa, artık kasırga gücündedir!",
