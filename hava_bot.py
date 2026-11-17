@@ -522,7 +522,7 @@ def caption(tarih, tum, gun=1):
                 f"❄️ En soğuk: {soguk['il']} {soguk['min']}°C", ""]
     sat += ["Kendi bölgeni bulmak için kaydır 👉", "",
             "💬 Senin ilinde hava nasıl? İlini yorumlara yaz, MGM verisiyle hemen cevaplayalım!",
-            "(Örnek: \"Sivas yarın\" ya da \"İzmir hafta sonu\")", "",
+            "(Örnek: \"Sivas yarın\", \"İzmir hafta sonu\" ya da \"Ankara 5 günlük\")", "",
             "🔔 Sayfamızı takip edip bildirimleri açarak bize destek olun!",
             "📤 Bu gönderiyi sevdiklerinle paylaş, hava durumunu kimse kaçırmasın.",
             "👉 @bugun.hava.nasil", "",

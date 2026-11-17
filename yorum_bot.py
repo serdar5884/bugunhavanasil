@@ -37,7 +37,9 @@ def illeri_bul(metin):
         ek = r"(?:'?(?:da|de|ta|te|ya|ye|a|e|in|un|nin|nun|dan|den|tan|ten|li|lu|lar|ler|daki|deki))?"
         if re.search(rf"(?<![a-z]){ad}{ek}(?![a-z])", s) and il not in bulunan:
             bulunan.append(il)
-    return bulunan[:3]
+    # yorumda geçtiği sıraya göre
+    sirali = sorted(bulunan, key=lambda il: min([m.start() for ad, x in SADE_IL.items() if x == il for m in re.finditer(ad, s)] or [999]))
+    return sirali[:3]
 
 
 def tahmin(il, tarih):
