@@ -521,16 +521,24 @@ def main():
     ap.add_argument("--cikti", default="yayin/bilgi")
     a = ap.parse_args()
     ids = [k["id"] for k in KONULAR]
+    durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {"sira": 0}
+    paylasilan = durum.setdefault("paylasilan", [])
     if a.siradaki:
-        durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {"sira": 0}
-        k = KONULAR[durum["sira"] % len(KONULAR)]
-        durum["sira"] += 1
+        # elle paylaşılmış konuları atla (tur tamamlanınca liste sıfırlanır)
+        if len(set(paylasilan) & set(ids)) >= len(ids):
+            paylasilan.clear()
+        while True:
+            k = KONULAR[durum["sira"] % len(KONULAR)]
+            durum["sira"] += 1
+            if k["id"] not in paylasilan:
+                break
         import datetime
         durum["son"] = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date().isoformat()
         durum["son_konu"] = k["id"]
-        json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
     else:
         k = KONULAR[ids.index(a.konu)] if a.konu else KONULAR[0]
+    paylasilan.append(k["id"])
+    json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
     os.makedirs(a.cikti, exist_ok=True)
     for f in glob.glob(os.path.join(a.cikti, "*")):
         os.remove(f)
