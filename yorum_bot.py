@@ -147,6 +147,36 @@ def tahmin_cok(istno):
     return out
 
 
+GUN_ADLARI = [("pazartesi", 0), ("cumartesi", 5), ("carsamba", 2), ("persembe", 3), ("sali", 1), ("cuma", 4), ("pazar", 6)]
+GUN_EK = r"(?:'?(?:ya|ye|a|e|ki|gunu|gunku|dan|den))?(?![a-z])"
+
+
+def istenen_gun(s, bugun, haric=()):
+    """Yorumdaki gün adını/ifadesini tarihe çevirir: (tarih, ad) ya da None"""
+    if re.search(r"obur gun|obur gun|yarindan sonra|ertesi gun", s):
+        t = bugun + datetime.timedelta(days=2)
+        return t, GUN_UZUN[t.weekday()]
+    bulunan = []
+    for ad, no in GUN_ADLARI:
+        for m in re.finditer(rf"(?<![a-z]){ad}{GUN_EK}", s):
+            if ad == "pazar" and s[m.start():m.start() + 9] == "pazartesi":
+                continue
+            if ad == "cuma" and s[m.start():m.start() + 9] == "cumartesi":
+                continue
+            if ad in haric:  # "Rize Pazar" gibi ilçe adı, gün değil
+                continue
+            bulunan.append((m.start(), no))
+    if not bulunan:
+        return None
+    no = sorted(bulunan)[0][1]
+    t = bugun + datetime.timedelta(days=(no - bugun.weekday()) % 7)
+    ad = "bugün" if t == bugun else "yarın" if t == bugun + datetime.timedelta(days=1) else GUN_UZUN[no]
+    return t, ad
+
+
+GUN_UZUN = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
+
+
 def cevap_metni(yorum, kullanici):
     iller = hedefleri_bul(yorum)
     if not iller:
@@ -165,7 +195,15 @@ def cevap_metni(yorum, kullanici):
         if not bloklar:
             return None
         return f"@{kullanici}\n" + "\n\n".join(bloklar) + "\n\nKaynak: MGM"
-    if "yarin" in s:
+    gun_ad = istenen_gun(s, bugun, {sade(e.split(" (")[0]) for e, _ in iller})
+    if "hafta sonu" in s or "haftasonu" in s:
+        gun_ad = None
+    if gun_ad:
+        gunler = [gun_ad]
+        if (gun_ad[0] - bugun).days > 4:
+            return (f"@{kullanici}\n📅 {gun_ad[1]} ({gun_ad[0].day} {AYLAR[gun_ad[0].month]}) için MGM tahmini henüz yayınlanmadı. "
+                    f"Tahminler en fazla 5 gün sonrası için veriliyor, birkaç gün sonra tekrar sorabilirsin 🙂")
+    elif "yarin" in s:
         gunler = [(bugun + datetime.timedelta(days=1), "yarın")]
     elif "hafta sonu" in s or "haftasonu" in s:
         cmt = bugun + datetime.timedelta(days=(5 - bugun.weekday()) % 7)
