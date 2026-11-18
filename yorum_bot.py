@@ -201,6 +201,7 @@ def main():
         sys.exit("IG_TOKEN yok – yorum cevaplama atlandı")
     durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) else {}
     cevaplanan = set(durum.get("cevaplanan_yorumlar", []))
+    yanitlar = set(durum.get("cevaplanan_yanitlar", []))  # yorumlara yazılan yanıtlar ayrı tutulur
     sayilar = durum.get("yorum_sayilari", {})
     # 1 istek: son gönderiler + yorum sayıları. Sadece yorumu artan gönderilere bakılır (API sınırı için)
     medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count", "limit": SON_GONDERI}, "GET").get("data", [])
@@ -235,18 +236,18 @@ def main():
                     yorumlar.append(dict(r, ust=y["id"]))  # yanıta cevap, ana yorumun altına yazılır
         print(f"Gönderi {m['id']}: {len(ham)} yorum, {len(yorumlar) - len(ham)} yeni yanıt")
         for y in yorumlar:
-            if y["id"] in cevaplanan or y.get("username") == hesap:
-                if y["id"] != y["ust"] and y.get("username") != hesap:
-                    print("Daha önce işlenmiş yanıt:", y.get("username"), "|", y.get("text", "")[:60])
+            yanit = y["id"] != y["ust"]
+            kume = yanitlar if yanit else cevaplanan
+            if y["id"] in kume or y.get("username") == hesap:
                 continue
-            cevaplanan.add(y["id"])
+            kume.add(y["id"])
             try:
                 metin = cevap_metni(y.get("text", ""), y.get("username", ""))
             except Exception as e:
                 print("Tahmin alınamadı:", e)
                 continue
             if not metin:
-                if y["id"] != y["ust"]:
+                if yanit:
                     print("Yanıtta yer bulunamadı:", y.get("username"), "|", y.get("text", "")[:80])
                 continue
             ig.istek(f"{y['ust']}/replies", {"message": metin[:2000]})
@@ -256,6 +257,7 @@ def main():
                 break
     durum["yorum_sayilari"] = {k: v for k, v in sayilar.items() if k in {m["id"] for m in medya}}
     durum["cevaplanan_yorumlar"] = list(cevaplanan)[-5000:]
+    durum["cevaplanan_yanitlar"] = list(yanitlar)[-3000:]
     json.dump(durum, open(DURUM, "w", encoding="utf-8"), ensure_ascii=False)
     print(yeni, "yoruma cevap verildi")
 
