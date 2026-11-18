@@ -35,7 +35,9 @@ def gunluk(istno):
 def veri_cek(il):
     merkez = gunluk(merkezleri_yukle()[il])
     ilceler = mgm_get("/merkezler/ililcesi?il=" + urllib.parse.quote(il))
-    ilceler = [x for x in ilceler if x.get("ilce") and x.get("ilce") != il and x.get("ilce") != "Merkez"]
+    haric = ("havaliman", "kayak", "merkezi", "baraj", "liman", "istasyon", "üniversite", "tesis", "dağı", "gölü", "geçidi")
+    ilceler = [x for x in ilceler if x.get("ilce") and x.get("ilce") not in (il, "Merkez")
+               and not any(h in x["ilce"].lower() for h in haric)]
 
     def al(x):
         try:
@@ -90,7 +92,9 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     d.text((W - M - d.textlength(alt, font=f_a), 320), alt, font=f_a, fill=(255, 255, 255, 230))
     # --- ilçeler (4 sütun)
     y0, sut = 380, 4
-    kw, kh, gap = (W - 2 * M - gap_x(3)) / sut, 112, 12
+    satir_n = (min(len(ilce_v), 20) + sut - 1) // sut
+    kh = min(112, (H - 225 - 225 - y0) / max(1, satir_n) - 12)  # alttan: 5 günlük (≈225) + bantlar (≈225)
+    kw, gap = (W - 2 * M - gap_x(3)) / sut, 12
     for i, v in enumerate(ilce_v[:20]):
         c, r = i % sut, i // sut
         x, y = M + c * (kw + gap_x(1)), y0 + r * (kh + gap)
