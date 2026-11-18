@@ -42,13 +42,80 @@ def illeri_bul(metin):
     return sirali[:3]
 
 
-def tahmin(il, tarih):
-    t = mgm_get(f"/tahminler/gunluk?istno={merkezleri_yukle()[il]}")
+ILCE_DOSYA = "ilceler.json"
+HARIC = ("havaliman", "kayak", "merkezi", "baraj", "liman", "istasyon", "üniversite", "tesis", "dağı", "gölü", "geçidi")
+# günlük dilde başka anlamı olan ilçe adları: ancak il adı da yazılmışsa ilçe sayılır
+GENEL_KELIME = {"pazar", "cay", "kale", "bor", "saray", "kas", "merkez", "guney", "kemer", "bahce", "hani", "tut", "cal",
+                "can", "sur", "kartal", "fatih", "selim", "selcuk", "ulas", "kiraz", "mut", "bayat", "cat", "bucak", "ulus",
+                "of", "susuz", "hacilar", "karasu", "konak", "golbasi", "aksu", "ortakoy", "yenice", "kocaali", "esenler",
+                "ova"}
+EK = r"(?:'?(?:da|de|ta|te|ya|ye|a|e|in|un|ın|nin|nun|dan|den|tan|ten|li|lu|lar|ler|daki|deki|ilcesi|ilcesinde))?"
+_ILCE = {}
+
+
+def ilceleri_yukle():
+    """{il: {ilçe: istasyon no}} – ilk çalışmada MGM'den çekilip ilceler.json'a kaydedilir."""
+    if _ILCE:
+        return _ILCE
+    if os.path.exists(ILCE_DOSYA):
+        _ILCE.update(json.load(open(ILCE_DOSYA, encoding="utf-8")))
+        return _ILCE
+    import urllib.parse
+    from concurrent.futures import ThreadPoolExecutor
+
+    def al(il):
+        try:
+            lst = mgm_get("/merkezler/ililcesi?il=" + urllib.parse.quote(il))
+            return il, {x["ilce"]: x["gunlukTahminIstNo"] for x in lst if x.get("ilce") and x.get("gunlukTahminIstNo")
+                        and x["ilce"] not in (il, "Merkez") and not any(h in x["ilce"].lower() for h in HARIC)}
+        except Exception as e:
+            print("İlçe listesi alınamadı:", il, e)
+            return il, None
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        sonuc = dict(ex.map(al, ILLER))
+    _ILCE.update({k: v for k, v in sonuc.items() if v})
+    if all(sonuc.values()):  # eksiksizse kalıcı kaydet
+        json.dump(_ILCE, open(ILCE_DOSYA, "w", encoding="utf-8"), ensure_ascii=False, indent=0)
+    return _ILCE
+
+
+def hedefleri_bul(metin):
+    """Yorumdaki il/ilçeleri bulur: [(etiket, istasyon no), ...] (yorumdaki sıraya göre, en fazla 3)"""
+    s = sade(metin)
+    iller = illeri_bul(metin)
+    merkez = merkezleri_yukle()
+    bulunan = []  # (konum, etiket, istno, il)
+    for il, ilceler in ilceleri_yukle().items():
+        for ilce, istno in ilceler.items():
+            ad = sade(ilce.replace("İ", "i").replace("I", "ı"))
+            m = re.search(rf"(?<![a-z]){re.escape(ad)}{EK}(?![a-z])", s)
+            if not m or (ad in GENEL_KELIME and il not in iller):
+                continue
+            bulunan.append((m.start(), f"{ilce} ({il})", istno, il))
+    # aynı ilçe adı birden çok ilde varsa ve il yazılmışsa sadece o il
+    if bulunan:
+        ad_say = {}
+        for b in bulunan:
+            ad_say.setdefault(b[1].split(" (")[0], []).append(b)
+        bulunan = []
+        for adaylar in ad_say.values():
+            secili = [b for b in adaylar if b[3] in iller] or adaylar[:2]
+            bulunan += secili
+    ilce_illeri = {b[3] for b in bulunan}
+    for il in iller:
+        if il not in ilce_illeri and il in merkez:  # ilçesi sorulan ilin merkezini ayrıca verme
+            konum = min([m.start() for ad, x in SADE_IL.items() if x == il for m in re.finditer(ad, s)] or [999])
+            bulunan.append((konum, il, merkez[il], il))
+    return [(b[1], b[2]) for b in sorted(bulunan)][:3]
+
+
+def tahmin(istno, tarih):
+    t = mgm_get(f"/tahminler/gunluk?istno={istno}")
     t = t[0] if isinstance(t, list) else t
     for i in range(1, 6):
         if str(t.get(f"tarihGun{i}", ""))[:10] == tarih.isoformat():
             return (HADISE.get(t.get(f"hadiseGun{i}"), (t.get(f"hadiseGun{i}"), ""))[0],
-                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}"))
+                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}"), t.get(f"ruzgarHizGun{i}"))
     return None
 
 
@@ -62,9 +129,9 @@ def simge(hadise_metni):
 COK_GUN = r"(5|bes|7|yedi)\s*gun|haftalik|bir hafta|1 hafta|bu hafta|hafta boyu|onumuzdeki gunler|gunluk tahmin|uzun vade"
 
 
-def tahmin_cok(il):
-    """MGM'nin 5 günlük tahmini: [(tarih, hadise metni, max, min), ...]"""
-    t = mgm_get(f"/tahminler/gunluk?istno={merkezleri_yukle()[il]}")
+def tahmin_cok(istno):
+    """MGM'nin 5 günlük tahmini: [(tarih, hadise metni, max, min, rüzgar), ...]"""
+    t = mgm_get(f"/tahminler/gunluk?istno={istno}")
     t = t[0] if isinstance(t, list) else t
     bugun = datetime.datetime.now(TR).date()
     out = []
@@ -76,22 +143,24 @@ def tahmin_cok(il):
         if tarih < bugun:
             continue
         out.append((tarih, HADISE.get(t.get(f"hadiseGun{i}"), (t.get(f"hadiseGun{i}"), ""))[0],
-                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}")))
+                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}"), t.get(f"ruzgarHizGun{i}")))
     return out
 
 
 def cevap_metni(yorum, kullanici):
-    iller = illeri_bul(yorum)
+    iller = hedefleri_bul(yorum)
     if not iller:
         return None
     s = sade(yorum)
+    ruzgar_iste = "ruzgar" in s or "firtina" in s
     bugun = datetime.datetime.now(TR).date()
     if re.search(COK_GUN, s) and "hafta sonu" not in s and "haftasonu" not in s:
         bloklar = []
-        for il in iller[:2]:  # uzun cevap olmasın diye en fazla 2 il
-            gunler = tahmin_cok(il)
+        for il, istno in iller[:2]:  # uzun cevap olmasın diye en fazla 2 yer
+            gunler = tahmin_cok(istno)
             if gunler:
-                satirlar = [f"{simge(h)} {GUN_KISA[t.weekday()]} {t.day} {AYLAR[t.month][:3]}  {mx}° / {mn}°  {h}" for t, h, mx, mn in gunler]
+                satirlar = [f"{simge(h)} {GUN_KISA[t.weekday()]} {t.day} {AYLAR[t.month][:3]}  {mx}° / {mn}°  {h}"
+                            + (f" · 💨{rz} km/sa" if ruzgar_iste and rz is not None else "") for t, h, mx, mn, rz in gunler]
                 bloklar.append(f"📍 {il} – {len(gunler)} günlük\n" + "\n".join(satirlar))
         if not bloklar:
             return None
@@ -104,15 +173,16 @@ def cevap_metni(yorum, kullanici):
     else:
         gunler = [(bugun, "bugün")]
     satirlar = []
-    for il in iller:
+    for il, istno in iller:
         parcalar = []
         for tarih, ad in gunler:
-            v = tahmin(il, tarih)
+            v = tahmin(istno, tarih)
             if v is None and ad == "bugün":  # öğleden sonra MGM bugünü kaldırıyor -> yarını ver
                 tarih, ad = bugun + datetime.timedelta(days=1), "yarın"
-                v = tahmin(il, tarih)
+                v = tahmin(istno, tarih)
             if v:
-                parcalar.append(f"{simge(v[0])} {ad.capitalize()} ({tarih.day} {AYLAR[tarih.month]}): {v[0]}\n🌡️ En yüksek {v[1]}° · En düşük {v[2]}°")
+                parcalar.append(f"{simge(v[0])} {ad.capitalize()} ({tarih.day} {AYLAR[tarih.month]}): {v[0]}\n🌡️ En yüksek {v[1]}° · En düşük {v[2]}°"
+                                + (f"\n💨 Rüzgar {v[3]} km/sa" if v[3] is not None else ""))
         if parcalar:
             satirlar.append(f"📍 {il}\n" + "\n".join(parcalar))
     if not satirlar:
@@ -154,7 +224,15 @@ def main():
     yeni = 0
     for m in degisen:
         sayilar[m["id"]] = m.get("comments_count", 0)
-        yorumlar = ig.istek(f"{m['id']}/comments", {"fields": "id,text,username,timestamp", "limit": 50}, "GET").get("data", [])
+        ham = ig.istek(f"{m['id']}/comments", {"fields": "id,text,username,timestamp,replies{id,text,username,timestamp}",
+                                              "limit": 50}, "GET").get("data", [])
+        yorumlar = []
+        sinir = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S")
+        for y in ham:
+            yorumlar.append(dict(y, ust=y["id"]))
+            for r in (y.get("replies") or {}).get("data", []):
+                if r.get("timestamp", "") >= sinir:  # eski yanıtlara toplu cevap yağmasın
+                    yorumlar.append(dict(r, ust=y["id"]))  # yanıta cevap, ana yorumun altına yazılır
         for y in yorumlar:
             if y["id"] in cevaplanan or y.get("username") == hesap:
                 continue
@@ -166,7 +244,7 @@ def main():
                 continue
             if not metin:
                 continue
-            ig.istek(f"{y['id']}/replies", {"message": metin[:2000]})
+            ig.istek(f"{y['ust']}/replies", {"message": metin[:2000]})
             print("Cevaplandı:", y.get("username"), "|", y.get("text", "")[:60], "->", metin[:90])
             yeni += 1
             if yeni >= TUR_BASINA_EN_FAZLA:
