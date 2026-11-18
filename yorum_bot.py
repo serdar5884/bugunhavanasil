@@ -233,6 +233,7 @@ def main():
             for r in (y.get("replies") or {}).get("data", []):
                 if r.get("timestamp", "") >= sinir:  # eski yanıtlara toplu cevap yağmasın
                     yorumlar.append(dict(r, ust=y["id"]))  # yanıta cevap, ana yorumun altına yazılır
+        print(f"Gönderi {m['id']}: {len(ham)} yorum, {len(yorumlar) - len(ham)} yeni yanıt")
         for y in yorumlar:
             if y["id"] in cevaplanan or y.get("username") == hesap:
                 continue
