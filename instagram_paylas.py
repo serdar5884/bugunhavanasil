@@ -101,26 +101,31 @@ def uyari(klasor):
 
 
 def ozel(gorsel_yolu, il):
-    """İle özel tek görseli paylaşır; ortaklar.json'da sayfa varsa ortak gönderi (Collab) daveti gönderir."""
+    """İle özel görseli normal gönderi + (video varsa) Reels olarak paylaşır;
+    ortaklar.json'da sayfa varsa ikisine de ortak gönderi (Collab) daveti gönderir."""
     caption = open(gorsel_yolu[:-4] + ".txt", encoding="utf-8").read()
     ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
+    gonderi_cap = caption.split("\n\n🎵")[0]  # müzik satırı sadece Reels'te
+    isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
     mp4 = gorsel_yolu[:-4] + ".mp4"
-    if os.path.exists(mp4):  # Reels olarak (iki sayfanın akışında da görünür)
-        veri = {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
-                "caption": caption, "share_to_feed": "true"}
-    else:
-        veri = {"image_url": url(gorsel_yolu), "caption": caption}
-    if ortak:
+    if os.path.exists(mp4):
+        isler.append(("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
+                                "caption": caption + " #reels", "share_to_feed": "true"}))
+    for ad, veri in isler:
         try:
-            cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(ortak[:3])))["id"]
-            print("Ortak gönderi daveti:", ", ".join(ortak))
-        except RuntimeError as e:
-            print("Ortak gönderi kurulamadı, tek başına paylaşılıyor:", e)
-            cid = istek(f"{USER}/media", veri)["id"]
-    else:
-        cid = istek(f"{USER}/media", veri)["id"]
-    hazir_bekle(cid, deneme=60)
-    print(f"{il} gönderisi paylaşıldı:", yayinla(cid))
+            if ortak:
+                try:
+                    cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(ortak[:3])))["id"]
+                    print(f"{ad}: ortak gönderi daveti ->", ", ".join(ortak))
+                except RuntimeError as e:
+                    print(f"{ad}: ortak gönderi kurulamadı, tek başına paylaşılıyor:", e)
+                    cid = istek(f"{USER}/media", veri)["id"]
+            else:
+                cid = istek(f"{USER}/media", veri)["id"]
+            hazir_bekle(cid, deneme=60)
+            print(f"{il} {ad} paylaşıldı:", yayinla(cid))
+        except Exception as e:
+            print(f"{il} {ad} paylaşılamadı:", e)
 
 
 if __name__ == "__main__":
