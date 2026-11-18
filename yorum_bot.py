@@ -236,6 +236,8 @@ def main():
         print(f"Gönderi {m['id']}: {len(ham)} yorum, {len(yorumlar) - len(ham)} yeni yanıt")
         for y in yorumlar:
             if y["id"] in cevaplanan or y.get("username") == hesap:
+                if y["id"] != y["ust"] and y.get("username") != hesap:
+                    print("Daha önce işlenmiş yanıt:", y.get("username"), "|", y.get("text", "")[:60])
                 continue
             cevaplanan.add(y["id"])
             try:
@@ -244,6 +246,8 @@ def main():
                 print("Tahmin alınamadı:", e)
                 continue
             if not metin:
+                if y["id"] != y["ust"]:
+                    print("Yanıtta yer bulunamadı:", y.get("username"), "|", y.get("text", "")[:80])
                 continue
             ig.istek(f"{y['ust']}/replies", {"message": metin[:2000]})
             print("Cevaplandı:", y.get("username"), "|", y.get("text", "")[:60], "->", metin[:90])
