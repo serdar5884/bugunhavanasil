@@ -100,6 +100,23 @@ def uyari(klasor):
             print("Gönderi:", yayinla(g))
 
 
+def ozel(gorsel_yolu, il):
+    """İle özel tek görseli paylaşır; ortaklar.json'da sayfa varsa ortak gönderi (Collab) daveti gönderir."""
+    caption = open(gorsel_yolu[:-4] + ".txt", encoding="utf-8").read()
+    ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
+    veri = {"image_url": url(gorsel_yolu), "caption": caption}
+    if ortak:
+        try:
+            cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(ortak[:3])))["id"]
+            print("Ortak gönderi daveti:", ", ".join(ortak))
+        except RuntimeError as e:
+            print("Ortak gönderi kurulamadı, tek başına paylaşılıyor:", e)
+            cid = istek(f"{USER}/media", veri)["id"]
+    else:
+        cid = istek(f"{USER}/media", veri)["id"]
+    print(f"{il} gönderisi paylaşıldı:", yayinla(cid))
+
+
 if __name__ == "__main__":
     if not TOKEN:
         sys.exit("IG_TOKEN tanımlı değil – Instagram paylaşımı atlandı")
@@ -116,5 +133,7 @@ if __name__ == "__main__":
         reels(sys.argv[2])
     elif komut == "reels-test":
         reels(sys.argv[2], yayinlama=False)
+    elif komut == "ozel":
+        ozel(sys.argv[2], sys.argv[3])
     elif komut == "uyari":
         uyari(sys.argv[2])

@@ -31,16 +31,19 @@ jobs:
           if [ "${{ github.event.schedule }}" = "13 17 * * *" ]; then GUN=2; else GUN=${{ inputs.gun || '1' }}; fi
           if [ "$GUN" = "2" ]; then KLASOR=yayin/aksam; elif [ "$GUN" = "hs" ]; then KLASOR=yayin/haftasonu; else KLASOR=yayin/gunluk; fi
           echo "KLASOR=$KLASOR" >> $GITHUB_ENV
+          echo "GUN=$GUN" >> $GITHUB_ENV
           if [ "$GUN" = "hs" ]; then python -u hava_bot.py --hafta-sonu --cikti $KLASOR; else python -u hava_bot.py --gun $GUN --cikti $KLASOR; fi
           rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt
           if [ "$GUN" = "1" ]; then python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"; fi
           # yurt geneli önemli gelişmeler (kar geliyor, soğuk hava dalgası...)
+          # ortak sayfalı illere özel görsel (sadece sabah)
+          if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do python -u il_ozel.py --il $IL --gun 1 --cikti yayin/il_ozel/$IL || echo "$IL görseli üretilemedi"; done; fi
           if [ "$GUN" != "hs" ]; then python -u ulke_bot.py --cikti yayin/ulke || echo "Yurt geneli kontrol hatası"; fi
       - name: Görselleri depoya kaydet
         run: |
           git config user.name "hava-bot"
           git config user.email "hava-bot@users.noreply.github.com"
-          git add $KLASOR yayin/ulke ulke_durum.json 2>/dev/null; git add $KLASOR
+          git add yayin/il_ozel 2>/dev/null; git add $KLASOR yayin/ulke ulke_durum.json 2>/dev/null; git add $KLASOR
           git commit -m "Hava görselleri ($KLASOR) $(date +%F)" || echo "değişiklik yok"
           git pull --rebase -q origin main && git push
       - name: Instagram'a paylaş
@@ -51,4 +54,5 @@ jobs:
         run: |
           python -u instagram_paylas.py karusel $KLASOR
           if [ -f $KLASOR/reels.mp4 ]; then python -u instagram_paylas.py reels $KLASOR || echo "Reels paylaşılamadı"; fi
+          if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do [ -f yayin/il_ozel/$IL/son.txt ] && python -u instagram_paylas.py ozel "$(cat yayin/il_ozel/$IL/son.txt)" $IL || echo "$IL paylaşılamadı"; done; fi
           if [ "$GUN" != "hs" ] && [ -f yayin/ulke/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi

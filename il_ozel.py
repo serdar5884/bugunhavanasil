@@ -149,6 +149,15 @@ def main():
     ascii_ad = a.il.translate(str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU"))
     yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}.jpg")
     gorsel(a.il, merkez, ilceler, tarih, yol, a.gun)
+    gun_ad = "Bugün" if a.gun == 1 else "Yarın"
+    etiket = ascii_ad.lower()
+    cap = (f"📍 {a.il} – {gun_ad.lower()} hava nasıl? Merkez, tüm ilçeler ve 5 günlük tahmin 👇\n\n"
+           f"💬 Yorumlara \"{a.il} 5 günlük\" yaz, tahmini hemen gönderelim!\n"
+           f"🔁 Hemşehrilerinle paylaş, takip edip bildirimleri açarak destek ol!\n\n"
+           f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
+           f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
+    open(yol[:-4] + ".txt", "w", encoding="utf-8").write(cap)
+    open(os.path.join(a.cikti, "son.txt"), "w").write(yol)
     print("Hazır:", yol, len(ilceler), "ilçe")
 
 
