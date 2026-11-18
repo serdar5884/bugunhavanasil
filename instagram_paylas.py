@@ -104,7 +104,12 @@ def ozel(gorsel_yolu, il):
     """İle özel tek görseli paylaşır; ortaklar.json'da sayfa varsa ortak gönderi (Collab) daveti gönderir."""
     caption = open(gorsel_yolu[:-4] + ".txt", encoding="utf-8").read()
     ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
-    veri = {"image_url": url(gorsel_yolu), "caption": caption}
+    mp4 = gorsel_yolu[:-4] + ".mp4"
+    if os.path.exists(mp4):  # Reels olarak (iki sayfanın akışında da görünür)
+        veri = {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
+                "caption": caption, "share_to_feed": "true"}
+    else:
+        veri = {"image_url": url(gorsel_yolu), "caption": caption}
     if ortak:
         try:
             cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(ortak[:3])))["id"]
@@ -114,6 +119,7 @@ def ozel(gorsel_yolu, il):
             cid = istek(f"{USER}/media", veri)["id"]
     else:
         cid = istek(f"{USER}/media", veri)["id"]
+    hazir_bekle(cid, deneme=60)
     print(f"{il} gönderisi paylaşıldı:", yayinla(cid))
 
 

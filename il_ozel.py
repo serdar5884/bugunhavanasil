@@ -136,12 +136,38 @@ def gap_x(n):
     return 12 * n
 
 
+def video(gorsel_yolu, sure=12):
+    """Görseli 9:16 Reels videosuna çevirir (bulanık arka plan + Pixabay müziği). Döner: (video, kapak, sanatçı)"""
+    import glob, subprocess
+    from reels_bot import dikey
+    kapak = gorsel_yolu[:-4] + "_kapak.jpg"
+    mp4 = gorsel_yolu[:-4] + ".mp4"
+    dikey(gorsel_yolu, kapak)
+    parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
+    girdi = ["-loop", "1", "-t", str(sure), "-i", kapak]
+    sanatci = None
+    if parcalar:
+        parca = parcalar[(datetime.date.today().toordinal() + 5) % len(parcalar)]  # sabah reels'inden farklı parça
+        girdi += ["-i", parca]
+        ad = os.path.basename(parca)[3:-4]
+        sanatci = {"alex": "Alex Morgan", "atlasaudio": "AtlasAudio", "nastelbom": "Nastelbom",
+                   "velariomusic": "VelarioMusic", "andriig": "AndriiG"}.get(ad.split("-")[0], ad.split("-")[0])
+    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi,
+             "-vf", f"fade=t=in:d=0.6,fade=t=out:st={sure - 0.8}:d=0.8,format=yuv420p", "-r", "30",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "20"]
+    if sanatci:
+        komut += ["-af", f"afade=t=in:d=0.8,afade=t=out:st={sure - 2}:d=2", "-c:a", "aac", "-b:a", "128k", "-shortest"]
+    subprocess.run(komut + ["-t", str(sure), mp4], check=True)
+    return mp4, kapak, sanatci
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--il", default="Sivas")
     ap.add_argument("--gun", type=int, default=1)
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--cikti", default="yayin/il_ozel")
+    ap.add_argument("--video", action="store_true", help="Reels videosu da üret")
     a = ap.parse_args()
     os.makedirs(a.cikti, exist_ok=True)
     tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=a.gun - 1)
@@ -156,6 +182,11 @@ def main():
            f"🔁 Hemşehrilerinle paylaş, takip edip bildirimleri açarak destek ol!\n\n"
            f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
            f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
+    if a.video:
+        mp4, kapak, sanatci = video(yol)
+        if sanatci:
+            cap += f"\n\n🎵 Müzik: {sanatci} (Pixabay)"
+        print("Video:", mp4)
     open(yol[:-4] + ".txt", "w", encoding="utf-8").write(cap)
     open(os.path.join(a.cikti, "son.txt"), "w").write(yol)
     print("Hazır:", yol, len(ilceler), "ilçe")
