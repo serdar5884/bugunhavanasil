@@ -1,3 +1,6 @@
 {
-  "Sivas": ["sivaskulishaberr"]
+  "Sivas": [
+    "sivaskulishaberr",
+    "global.sivas.haber"
+  ]
 }
