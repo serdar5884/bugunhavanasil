@@ -114,6 +114,7 @@ def demo_tahmin(il, gun):
 
 # ---------------------------------------------------------------- ÇİZİM
 W, H = 1080, 1350
+FAZ = None  # animasyon karesi (0..1); None = sabit görsel
 FONT_DIR = "/usr/share/fonts/opentype/inter/"
 
 
@@ -143,15 +144,20 @@ def ikon(d, tip, cx, cy, s):
     """Basit vektör hava ikonları (emoji fontu gerektirmez)."""
     sari, beyaz, gri, mavi = (255, 200, 40), (255, 255, 255), (200, 210, 225), (110, 190, 255)
 
+    import math
+    faz = FAZ or 0
+    sal = math.sin(2 * math.pi * faz) * s * .03 if FAZ is not None else 0  # bulut salınımı
+
     def gunes(x, y, r):
         for a in range(0, 360, 45):
-            import math
+            a = a + faz * 45
             rx, ry = math.cos(math.radians(a)), math.sin(math.radians(a))
             d.line([(x + rx * r * 1.35, y + ry * r * 1.35), (x + rx * r * 1.75, y + ry * r * 1.75)],
                    fill=sari, width=max(2, s // 14))
         d.ellipse([x - r, y - r, x + r, y + r], fill=sari)
 
     def bulut(x, y, k, renk=beyaz):
+        x = x + sal
         d.ellipse([x - k * .9, y - k * .35, x - k * .1, y + k * .45], fill=renk)
         d.ellipse([x - k * .45, y - k * .75, x + k * .4, y + k * .3], fill=renk)
         d.ellipse([x + k * .05, y - k * .45, x + k * .85, y + k * .45], fill=renk)
@@ -170,6 +176,10 @@ def ikon(d, tip, cx, cy, s):
         for i in range(3):
             x = cx - s * .22 + i * s * .22
             y = cy + s * .24
+            if FAZ is not None:  # damlalar/taneler aşağı akar
+                k = (faz * 4 + i * .37) % 1
+                y = cy + s * .16 + k * s * .18
+                x -= k * s * .04
             if tip == "kar" or (tip == "karla_yagmur" and i == 1):
                 r = s * .05
                 d.ellipse([x - r, y - r + s * .06, x + r, y + r + s * .06], fill=beyaz)
@@ -231,6 +241,8 @@ def _bulut_katman(img, rnd, adet, renk, alfa, y_aralik, boyut, blur):
     d = ImageDraw.Draw(kat)
     for _ in range(adet):
         cx, cy = rnd.randint(-100, W + 100), rnd.randint(*y_aralik)
+        if FAZ is not None:  # bulutlar yavaşça sağa sola süzülür
+            cx += math.sin(2 * math.pi * (FAZ + cy / 900)) * (25 + boyut[0] * .15)
         k = rnd.randint(*boyut)
         for _ in range(7):
             ox, oy = rnd.randint(-k, k), rnd.randint(-k // 3, k // 4)
@@ -240,33 +252,47 @@ def _bulut_katman(img, rnd, adet, renk, alfa, y_aralik, boyut, blur):
 
 
 def kar_ciz(img, rnd):
-    """Belirgin kar: hafif gölgeli büyük taneler + kristal şekilleri, ön planda keskin."""
+    """Belirgin kar: hafif gölgeli büyük taneler + kristal şekilleri, ön planda keskin.
+    Animasyonda desen dikeyde P periyotlu tekrar eder; döngü başına P kadar iner (yavaş ve kesintisiz)."""
     from PIL import ImageFilter
     golge = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     kar = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     gd, d = ImageDraw.Draw(golge), ImageDraw.Draw(kar)
-    for _ in range(380):  # yuvarlak taneler
+    P = (H + 60) / 2
+
+    def konumlar(x, y, r):
+        if FAZ is None:
+            return [(x, y)]
+        yy = (y % P + FAZ * P) % P - 30
+        sal = math.sin(2 * math.pi * (FAZ + x / 300)) * (6 + r * .8)
+        return [(x + sal, yy), (x + sal, yy + P)]
+    adet = 380 if FAZ is None else 200
+    for _ in range(adet):  # yuvarlak taneler
         x, y = rnd.randint(0, W), rnd.randint(0, H)
         r = rnd.choice([3, 4, 5, 5, 6, 7, 9, 11])
-        gd.ellipse([x - r - 2, y - r - 2, x + r + 2, y + r + 2], fill=(20, 40, 70, 90))
-        d.ellipse([x - r, y - r, x + r, y + r], fill=(255, 255, 255, rnd.randint(200, 255)))
-    for _ in range(30):  # kristal kar taneleri
-        x, y = rnd.randint(20, W - 20), rnd.randint(20, H - 20)
+        alfa = rnd.randint(200, 255)
+        for x_, y_ in konumlar(x, y, r):
+            gd.ellipse([x_ - r - 2, y_ - r - 2, x_ + r + 2, y_ + r + 2], fill=(20, 40, 70, 90))
+            d.ellipse([x_ - r, y_ - r, x_ + r, y_ + r], fill=(255, 255, 255, alfa))
+    for _ in range(30 if FAZ is None else 16):  # kristal kar taneleri
+        x0, y0 = rnd.randint(20, W - 20), rnd.randint(20, H - 20)
         R = rnd.randint(14, 30)
         w = max(2, R // 7)
-        for k in range(6):
-            a = math.radians(k * 60 + rnd.random() * 0)
-            ux, uy = math.cos(a), math.sin(a)
-            uc = (x + ux * R, y + uy * R)
-            for hedef, kal in ((gd, w + 3), (d, w)):
-                renk = (20, 40, 70, 90) if hedef is gd else (255, 255, 255, 245)
-                hedef.line([(x, y), uc], fill=renk, width=kal)
-                for t in (0.5, 0.75):  # dallar
-                    px, py = x + ux * R * t, y + uy * R * t
-                    for s_ in (-1, 1):
-                        b = a + s_ * math.radians(45)
-                        hedef.line([(px, py), (px + math.cos(b) * R * .3, py + math.sin(b) * R * .3)],
-                                   fill=renk, width=max(1, kal - 1))
+        don = (FAZ or 0) * 60  # kristaller yavaşça döner (60° simetri -> kesintisiz)
+        for x, y in konumlar(x0, y0, 9):
+            for k in range(6):
+                a = math.radians(k * 60 + don)
+                ux, uy = math.cos(a), math.sin(a)
+                uc = (x + ux * R, y + uy * R)
+                for hedef, kal in ((gd, w + 3), (d, w)):
+                    renk = (20, 40, 70, 90) if hedef is gd else (255, 255, 255, 245)
+                    hedef.line([(x, y), uc], fill=renk, width=kal)
+                    for t in (0.5, 0.75):  # dallar
+                        px, py = x + ux * R * t, y + uy * R * t
+                        for s_ in (-1, 1):
+                            b = a + s_ * math.radians(45)
+                            hedef.line([(px, py), (px + math.cos(b) * R * .3, py + math.sin(b) * R * .3)],
+                                       fill=renk, width=max(1, kal - 1))
     img.alpha_composite(golge.filter(ImageFilter.GaussianBlur(4)))
     img.alpha_composite(kar)
 
@@ -288,7 +314,9 @@ def sahne_ciz(sahne, bolge):
     elif sahne in ("yagmurlu", "firtinali"):
         koyu = (55, 60, 75) if sahne == "yagmurlu" else (30, 30, 48)
         _bulut_katman(img, rnd, 14, koyu, 220, (-100, 450), (140, 240), 24)
-        if sahne == "firtinali":
+        if sahne == "firtinali" and (FAZ is None or 0.42 <= FAZ < 0.5 or 0.55 <= FAZ < 0.58):
+            if FAZ is not None:  # şimşek çakınca gökyüzü aydınlanır
+                img.alpha_composite(Image.new("RGBA", (W, H), (230, 230, 255, 45)))
             sim = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             d = ImageDraw.Draw(sim)
             x, y = rnd.randint(650, 900), -20
@@ -303,6 +331,10 @@ def sahne_ciz(sahne, bolge):
         for _ in range(700):
             x, y = rnd.randint(-200, W), rnd.randint(-50, H)
             l = rnd.randint(25, 60)
+            if FAZ is not None:  # 3 tam tur aşağı akış (yağmur hızlı)
+                dy = FAZ * 3 * (H + 50)
+                y = (y + 50 + dy) % (H + 50) - 50
+                x = (x + 200 + dy * .25) % (W + 200) - 200
             d.line([(x, y), (x + l * .25, y + l)], fill=(200, 215, 235, rnd.randint(60, 140)), width=2)
         img.alpha_composite(yag)
     elif sahne == "karli":
@@ -325,7 +357,7 @@ def sahne_ciz(sahne, bolge):
             for r, a in [(520, 40), (360, 60), (230, 90), (150, 160)]:
                 d.ellipse([gx - r, gy - r, gx + r, gy + r], fill=(255, 230, 150, a))
             for i in range(12):
-                ang = math.radians(i * 30 + 8)
+                ang = math.radians(i * 30 + 8 + (FAZ or 0) * 30)
                 d.polygon([(gx, gy), (gx + math.cos(ang - .05) * 1500, gy + math.sin(ang - .05) * 1500),
                            (gx + math.cos(ang + .05) * 1500, gy + math.sin(ang + .05) * 1500)],
                           fill=(255, 240, 190, 18))
@@ -506,6 +538,28 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
     return yol
 
 
+def bolge_animasyon(bolge, veriler, tarih, cikti, gun_no=1, sure=6, fps=20):
+    """Kartın hareketli hali: bulut, yağmur, kar, şimşek, güneş ışınları akar. MP4 (6 sn, kesintisiz döngü)."""
+    global FAZ
+    import shutil, subprocess, tempfile
+    tmp = tempfile.mkdtemp()
+    n = sure * fps
+    try:
+        for i in range(n):
+            FAZ = i / n
+            yol = bolge_gorseli(bolge, veriler, tarih, tmp, gun_no)
+            os.replace(yol, os.path.join(tmp, f"k{i:03d}.jpg"))
+    finally:
+        FAZ = None
+    ascii_ad = bolge.translate(str.maketrans("çğıöşüÇĞİÖŞÜ ", "cgiosuCGIOSU_"))
+    mp4 = os.path.join(cikti, f"{list(BOLGELER).index(bolge) + 1:02d}_{ascii_ad}.mp4")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps),
+                    "-i", os.path.join(tmp, "k%03d.jpg"), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+                    "-pix_fmt", "yuv420p", "-movflags", "+faststart", mp4], check=True)
+    shutil.rmtree(tmp)
+    return mp4
+
+
 def _kucuk(il):
     return il.replace("İ", "i").replace("I", "ı").lower().replace(" ", "")
 
@@ -557,6 +611,7 @@ def main():
     ap.add_argument("--gun", type=int, default=1, choices=range(1, 6))
     ap.add_argument("--hafta-sonu", action="store_true", help="Cumartesi + Pazar tahmini (Cuma akşamı)")
     ap.add_argument("--cikti", default="cikti")
+    ap.add_argument("--animasyon", action="store_true", help="Her bölge için hareketli 6 sn video da üret")
     a = ap.parse_args()
     gun_no = a.gun
     if a.hafta_sonu:
@@ -589,6 +644,15 @@ def main():
             tum[bolge] = list(ex.map(guvenli, iller))
     for bolge in BOLGELER:
         print(bolge, baskin_sahne(tum[bolge]), "->", bolge_gorseli(bolge, tum[bolge], tarih, a.cikti, gun_no), flush=True)
+    if a.animasyon:
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=os.cpu_count() or 2) as ex:
+            isler = [ex.submit(bolge_animasyon, b, tum[b], tarih, a.cikti, gun_no) for b in BOLGELER]
+            for i in isler:
+                try:
+                    print("Hareketli:", i.result(), flush=True)
+                except Exception as e:
+                    print("Hareketli kart üretilemedi:", e, flush=True)
 
     with open(os.path.join(a.cikti, "caption.txt"), "w", encoding="utf-8") as f:
         f.write(caption(tarih, tum, gun_no))

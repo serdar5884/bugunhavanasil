@@ -32,8 +32,30 @@ def istek(yol, veri=None, yontem="POST"):
         raise RuntimeError(f"Instagram hatası ({yol}): {e.read().decode(errors='replace')}")
 
 
+_MEDYA_SHA = None
+
+
+def medya_yukle():
+    """Videolar ana dala girmesin (depo şişmesin): yayin/ altındaki tüm .mp4'ler tek commit'le 'medya' dalına
+    zorla gönderilir; eski videolar geçmişte birikmez. Döner: commit kimliği."""
+    global _MEDYA_SHA
+    if _MEDYA_SHA:
+        return _MEDYA_SHA
+    import tempfile
+    videolar = sorted(glob.glob("yayin/**/*.mp4", recursive=True))
+    env = dict(os.environ, GIT_INDEX_FILE=os.path.join(tempfile.mkdtemp(), "index"))
+    subprocess.run(["git", "add", "-f", *videolar], env=env, check=True)
+    agac = subprocess.check_output(["git", "write-tree"], env=env, text=True).strip()
+    sha = subprocess.check_output(["git", "-c", "user.name=hava-bot", "-c", "user.email=hava-bot@users.noreply.github.com",
+                                   "commit-tree", agac, "-m", "medya"], text=True).strip()
+    subprocess.run(["git", "push", "-q", "-f", "origin", f"{sha}:refs/heads/medya"], check=True)
+    _MEDYA_SHA = sha
+    print("Videolar medya dalına yüklendi:", len(videolar))
+    return sha
+
+
 def url(dosya):
-    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    sha = medya_yukle() if dosya.endswith(".mp4") else subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     return f"https://raw.githubusercontent.com/{REPO}/{sha}/{urllib.parse.quote(dosya)}"
 
 
@@ -57,9 +79,22 @@ def karusel(klasor):
     gorseller = sorted(g for g in glob.glob(os.path.join(klasor, "*.jpg")) if "kapak" not in os.path.basename(g))[:10]
     if len(gorseller) < 2:
         sys.exit("Paylaşılacak görsel yok")
-    cocuklar = [istek(f"{USER}/media", {"image_url": url(g), "is_carousel_item": "true"})["id"] for g in gorseller]
+    cocuklar = []
+    for g in gorseller:
+        mp4 = g[:-4] + ".mp4"
+        cid = None
+        if os.path.exists(mp4):  # hareketli kart (6 sn video)
+            try:
+                cid = istek(f"{USER}/media", {"media_type": "VIDEO", "video_url": url(mp4), "is_carousel_item": "true"})["id"]
+                hazir_bekle(cid, deneme=60)
+            except Exception as e:
+                print("Hareketli kart yüklenemedi, sabit görsel kullanılıyor:", os.path.basename(g), e)
+                cid = None
+        if not cid:
+            cid = istek(f"{USER}/media", {"image_url": url(g), "is_carousel_item": "true"})["id"]
+        cocuklar.append(cid)
     for c in cocuklar:
-        hazir_bekle(c)
+        hazir_bekle(c, deneme=60)
     caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read()
     kap = istek(f"{USER}/media", {"media_type": "CAROUSEL", "children": ",".join(cocuklar), "caption": caption})["id"]
     mid = yayinla(kap)

@@ -4,3 +4,5 @@ cikti_uyari/
 test/
 *_onizleme.jpg
 ses_model/
+# videolar 'medya' dalında tutulur (instagram_paylas.medya_yukle)
+yayin/**/*.mp4

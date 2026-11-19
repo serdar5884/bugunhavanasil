@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 from hava_bot import font, destek_bandi, HESAP
 
 W, H = 1080, 1920
-ACILIS, BOLGE, KAPANIS, GECIS = 2.5, 5.0, 3.5, 0.5  # saniye: bölge görselleri okunabilsin diye uzun
+ACILIS, BOLGE, KAPANIS, GECIS = 2.5, 6.0, 3.5, 0.5  # saniye: bölge görselleri okunabilsin diye uzun
 
 
 def dikey(src_yol, hedef):
@@ -68,13 +68,24 @@ def main(klasor):
     sureler = [ACILIS] + [BOLGE] * (n - 2) + [KAPANIS]
     toplam = sum(sureler) - (n - 1) * GECIS
     girdiler, filtre = [], []
+    gi = 0  # ffmpeg girdi sırası
     for i, k in enumerate(kareler):
         SURE = sureler[i]
         girdiler += ["-loop", "1", "-t", str(SURE), "-i", k]
+        hareketli = bolgeler[i - 1][:-4] + ".mp4" if 0 < i <= len(bolgeler) else None
+        if hareketli and os.path.exists(hareketli):
+            # hareketli bölge kartı (yağmur/kar/bulut akar), bulanık arka planın ortasına
+            girdiler += ["-stream_loop", "-1", "-t", str(SURE), "-i", hareketli]
+            filtre.append(f"[{gi}:v]fps=30,setsar=1[a{i}];[{gi + 1}:v]fps=30,setsar=1[h{i}];"
+                          f"[a{i}][h{i}]overlay=0:{(H - 1350) // 2}:shortest=1,trim=duration={SURE},setpts=PTS-STARTPTS,"
+                          f"format=yuv420p[v{i}]")
+            gi += 2
+            continue
         # çok hafif yakınlaşma (bölgelerde daha yavaş, yazı rahat okunsun)
         hiz = 0.0009 if i == 0 else 0.0003
-        filtre.append(f"[{i}:v]scale=1188:2112,zoompan=z='min(zoom+{hiz},1.06)':d={int(SURE * 30)}:"
+        filtre.append(f"[{gi}:v]scale=1188:2112,zoompan=z='min(zoom+{hiz},1.06)':d={int(SURE * 30)}:"
                       f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={W}x{H}:fps=30,setsar=1,format=yuv420p[v{i}]")
+        gi += 1
     son_et = "v0"
     ofset = 0.0
     for i in range(1, n):
@@ -86,7 +97,7 @@ def main(klasor):
     if parcalar:
         parca = parcalar[bugun.toordinal() % len(parcalar)]
         girdiler += ["-stream_loop", "-1", "-i", parca]
-        filtre.append(f"[{n}:a]atrim=0:{toplam:.2f},asetpts=PTS-STARTPTS,volume=0.85,afade=t=in:d=0.8,"
+        filtre.append(f"[{gi}:a]atrim=0:{toplam:.2f},asetpts=PTS-STARTPTS,volume=0.85,afade=t=in:d=0.8,"
                       f"afade=t=out:st={toplam - 2.5:.2f}:d=2.5,aformat=channel_layouts=stereo[a]")
         dosya = os.path.basename(parca)[3:-4]
         sanatci = next((ad for on, ad in (("alex-morgan", "Alex Morgan"), ("atlasaudio", "AtlasAudio"), ("nastelbom", "Nastelbom"),

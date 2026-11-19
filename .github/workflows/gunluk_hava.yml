@@ -32,7 +32,7 @@ jobs:
           if [ "$GUN" = "2" ]; then KLASOR=yayin/aksam; elif [ "$GUN" = "hs" ]; then KLASOR=yayin/haftasonu; else KLASOR=yayin/gunluk; fi
           echo "KLASOR=$KLASOR" >> $GITHUB_ENV
           echo "GUN=$GUN" >> $GITHUB_ENV
-          if [ "$GUN" = "hs" ]; then python -u hava_bot.py --hafta-sonu --cikti $KLASOR; else python -u hava_bot.py --gun $GUN --cikti $KLASOR; fi
+          if [ "$GUN" = "hs" ]; then python -u hava_bot.py --hafta-sonu --animasyon --cikti $KLASOR; else python -u hava_bot.py --gun $GUN --animasyon --cikti $KLASOR; fi
           rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt
           if [ "$GUN" = "1" ]; then python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"; fi
           # yurt geneli önemli gelişmeler (kar geliyor, soğuk hava dalgası...)
