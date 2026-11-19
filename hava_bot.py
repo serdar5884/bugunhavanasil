@@ -118,7 +118,20 @@ FAZ = None  # animasyon karesi (0..1); None = sabit görsel
 FONT_DIR = "/usr/share/fonts/opentype/inter/"
 
 
+NUNITO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts", "Nunito.ttf")
+# NeHaberÖzet ile aynı yuvarlak yazı tipi; başlıklar çok kalın, açıklamalar ince (belirgin kontrast)
+NUNITO_AGIRLIK = {"Black": "Black", "ExtraBold": "Black", "Bold": "ExtraBold", "SemiBold": "Bold",
+                  "Medium": "Regular", "Regular": "Regular", "Light": "Light"}
+
+
 def font(stil, boyut):
+    if os.path.exists(NUNITO):
+        try:
+            f = ImageFont.truetype(NUNITO, boyut)
+            f.set_variation_by_name(NUNITO_AGIRLIK.get(stil, "Regular"))
+            return f
+        except Exception:
+            pass
     adaylar = [os.path.join(os.path.dirname(__file__), "fonts", f"Inter-{stil}.otf"),
                os.path.join(FONT_DIR, f"Inter-{stil}.otf"),
                os.path.join(FONT_DIR, f"Inter-{stil}.ttf"),
@@ -458,7 +471,7 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         golge = (0, 0, 0, 110)
         d.text((M + 3, 33), gun_kelime, font=f_gun, fill=golge)
         d.text((M, 30), gun_kelime, font=f_gun, fill=(255, 205, 0))
-        gx = M + d.textlength(gun_kelime, font=f_gun) + 16
+        gx = M + d.textlength(gun_kelime, font=f_gun) + 26
     else:
         gx = M
     d.text((gx, 52), "HAVA NASIL?", font=f_hn, fill=(255, 255, 255, 235))
@@ -509,10 +522,10 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
                 t2 = f"/{mn}°" if mn is not None else ""
                 d.text((sag - d.textlength(t + t2, font=f_g), yy), t, font=f_g, fill="white")
                 d.text((sag - d.textlength(t2, font=f_g), yy), t2, font=f_g, fill=(255, 255, 255, 170))
-            f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .27), sag - gen - 12 - tx)
-            d.text((tx, y0 + kart_h * .17), v["il"], font=f_il, fill="white")
+            f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .34), sag - gen - 12 - tx)
+            d.text((tx, y0 + kart_h * .1), v["il"], font=f_il, fill="white")
             f_dur = metni_sigdir(d, metin, "Regular", int(kart_h * .19), sag - gen - 12 - tx)
-            d.text((tx, y0 + kart_h * .56), metin, font=f_dur, fill=(255, 255, 255, 200))
+            d.text((tx, y0 + kart_h * .58), metin, font=f_dur, fill=(255, 255, 255, 200))
             continue
         sicak = f"{v['max']}°" if v["max"] is not None else "-"
         f_sic = font("ExtraBold", int(kart_h * .38))
@@ -522,10 +535,10 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         mw = d.textlength(mn, font=f_min)
         sag = x0 + kart_w - 20
         isim_w = sag - mw - sw - 16 - tx
-        f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .27), isim_w)
-        d.text((tx, y0 + kart_h * .17), v["il"], font=f_il, fill="white")
+        f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .34), isim_w)
+        d.text((tx, y0 + kart_h * .1), v["il"], font=f_il, fill="white")
         f_dur = metni_sigdir(d, metin, "Regular", int(kart_h * .19), sag - tx)
-        d.text((tx, y0 + kart_h * .56), metin, font=f_dur, fill=(255, 255, 255, 200))
+        d.text((tx, y0 + kart_h * .58), metin, font=f_dur, fill=(255, 255, 255, 200))
         d.text((sag - mw - sw - 8, y0 + kart_h * .1), sicak, font=f_sic, fill="white")
         d.text((sag - mw, y0 + kart_h * .22), mn, font=f_min, fill=(255, 255, 255, 190))
 
