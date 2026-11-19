@@ -136,15 +136,43 @@ def gap_x(n):
     return 12 * n
 
 
+def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20):
+    """Görselin hareketli hali (kar/yağmur/bulut akar): <ad>_hareketli.mp4, 6 sn kesintisiz döngü."""
+    import shutil, subprocess, tempfile
+    import hava_bot
+    tmp = tempfile.mkdtemp()
+    n = sure * fps
+    try:
+        for i in range(n):
+            hava_bot.FAZ = i / n
+            gorsel(il, merkez, ilceler, tarih, os.path.join(tmp, f"k{i:03d}.jpg"), gun_no)
+    finally:
+        hava_bot.FAZ = None
+    mp4 = yol[:-4] + "_hareketli.mp4"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", os.path.join(tmp, "k%03d.jpg"),
+                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p",
+                    "-movflags", "+faststart", mp4], check=True)
+    shutil.rmtree(tmp)
+    return mp4
+
+
 def video(gorsel_yolu, sure=12):
-    """Görseli 9:16 Reels videosuna çevirir (bulanık arka plan + Pixabay müziği). Döner: (video, kapak, sanatçı)"""
+    """9:16 Reels: bulanık arka plan ortasında hareketli kart + Pixabay müziği. Döner: (video, kapak, sanatçı)"""
     import glob, subprocess
     from reels_bot import dikey
     kapak = gorsel_yolu[:-4] + "_kapak.jpg"
     mp4 = gorsel_yolu[:-4] + ".mp4"
+    hareketli = gorsel_yolu[:-4] + "_hareketli.mp4"
     dikey(gorsel_yolu, kapak)
     parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
     girdi = ["-loop", "1", "-t", str(sure), "-i", kapak]
+    if os.path.exists(hareketli):
+        girdi += ["-stream_loop", "-1", "-t", str(sure), "-i", hareketli]
+        vf = (f"[0:v]fps=30,setsar=1[a];[1:v]fps=30,setsar=1[h];[a][h]overlay=0:(H-h)/2:shortest=1,"
+              f"fade=t=in:d=0.6,fade=t=out:st={sure - 0.8}:d=0.8,format=yuv420p[v]")
+    else:
+        vf = f"[0:v]fade=t=in:d=0.6,fade=t=out:st={sure - 0.8}:d=0.8,format=yuv420p[v]"
+    ses = 2 if os.path.exists(hareketli) else 1  # müzik girdisinin sırası
     sanatci = None
     if parcalar:
         parca = parcalar[(datetime.date.today().toordinal() + 5) % len(parcalar)]  # sabah reels'inden farklı parça
@@ -152,11 +180,11 @@ def video(gorsel_yolu, sure=12):
         ad = os.path.basename(parca)[3:-4]
         sanatci = {"alex": "Alex Morgan", "atlasaudio": "AtlasAudio", "nastelbom": "Nastelbom",
                    "velariomusic": "VelarioMusic", "andriig": "AndriiG"}.get(ad.split("-")[0], ad.split("-")[0])
-    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi,
-             "-vf", f"fade=t=in:d=0.6,fade=t=out:st={sure - 0.8}:d=0.8,format=yuv420p", "-r", "30",
-             "-c:v", "libx264", "-preset", "veryfast", "-crf", "20"]
+    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi, "-filter_complex", vf, "-map", "[v]", "-r", "30",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-movflags", "+faststart"]
     if sanatci:
-        komut += ["-af", f"afade=t=in:d=0.8,afade=t=out:st={sure - 2}:d=2", "-c:a", "aac", "-b:a", "128k", "-shortest"]
+        komut += ["-map", f"{ses}:a", "-af", f"afade=t=in:d=0.8,afade=t=out:st={sure - 2}:d=2",
+                  "-c:a", "aac", "-b:a", "128k"]
     subprocess.run(komut + ["-t", str(sure), mp4], check=True)
     return mp4, kapak, sanatci
 
@@ -183,6 +211,10 @@ def main():
            f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
            f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
     if a.video:
+        try:
+            print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, a.gun))
+        except Exception as e:
+            print("Hareketli görsel üretilemedi:", e)
         mp4, kapak, sanatci = video(yol)
         if sanatci:
             cap += f"\n\n🎵 Müzik: {sanatci} (Pixabay)"

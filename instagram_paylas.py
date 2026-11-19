@@ -142,6 +142,16 @@ def ozel(gorsel_yolu, il):
     ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
     gonderi_cap = caption.split("\n\n🎵")[0]  # müzik satırı sadece Reels'te
     isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
+    hareketli = gorsel_yolu[:-4] + "_hareketli.mp4"
+    if os.path.exists(hareketli):  # kaydırmalı gönderi: 1) hareketli kart 2) sabit görsel
+        try:
+            v = istek(f"{USER}/media", {"media_type": "VIDEO", "video_url": url(hareketli), "is_carousel_item": "true"})["id"]
+            g = istek(f"{USER}/media", {"image_url": url(gorsel_yolu), "is_carousel_item": "true"})["id"]
+            hazir_bekle(v, deneme=60)
+            hazir_bekle(g)
+            isler[0] = ("Gönderi", {"media_type": "CAROUSEL", "children": f"{v},{g}", "caption": gonderi_cap})
+        except Exception as e:
+            print("Hareketli gönderi hazırlanamadı, sabit görsel paylaşılıyor:", e)
     mp4 = gorsel_yolu[:-4] + ".mp4"
     if os.path.exists(mp4):
         isler.append(("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
