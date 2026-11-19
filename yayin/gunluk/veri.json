@@ -3,137 +3,137 @@
   {
    "il": "Balıkesir",
    "hadise": "CB",
-   "min": 13,
-   "max": 21,
-   "ruzgar": 21
+   "min": 16,
+   "max": 23,
+   "ruzgar": 19
   },
   {
    "il": "Bilecik",
    "hadise": "SY",
-   "min": 9,
+   "min": 14,
    "max": 19,
    "ruzgar": 14
   },
   {
    "il": "Bursa",
    "hadise": "SY",
-   "min": 14,
-   "max": 23,
+   "min": 18,
+   "max": 24,
    "ruzgar": 21
   },
   {
    "il": "Çanakkale",
    "hadise": "CB",
-   "min": 15,
-   "max": 21,
-   "ruzgar": 30
+   "min": 18,
+   "max": 22,
+   "ruzgar": 28
   },
   {
    "il": "Edirne",
-   "hadise": "SY",
-   "min": 12,
-   "max": 20,
-   "ruzgar": 18
+   "hadise": "PB",
+   "min": 13,
+   "max": 22,
+   "ruzgar": 16
   },
   {
    "il": "İstanbul",
-   "hadise": "SY",
+   "hadise": "PB",
    "min": 15,
-   "max": 19,
-   "ruzgar": 35
+   "max": 20,
+   "ruzgar": 33
   },
   {
    "il": "Kırklareli",
-   "hadise": "SY",
-   "min": 11,
-   "max": 18,
-   "ruzgar": 24
+   "hadise": "PB",
+   "min": 14,
+   "max": 21,
+   "ruzgar": 15
   },
   {
    "il": "Kocaeli",
-   "hadise": "SY",
-   "min": 13,
-   "max": 23,
-   "ruzgar": 9
+   "hadise": "HSY",
+   "min": 15,
+   "max": 24,
+   "ruzgar": 19
   },
   {
    "il": "Sakarya",
    "hadise": "SY",
-   "min": 11,
-   "max": 22,
-   "ruzgar": 15
+   "min": 14,
+   "max": 24,
+   "ruzgar": 10
   },
   {
    "il": "Tekirdağ",
    "hadise": "CB",
-   "min": 14,
-   "max": 21,
-   "ruzgar": 30
+   "min": 17,
+   "max": 23,
+   "ruzgar": 27
   },
   {
    "il": "Yalova",
    "hadise": "SY",
-   "min": 15,
-   "max": 23,
+   "min": 20,
+   "max": 24,
    "ruzgar": 26
   }
  ],
  "Ege": [
   {
    "il": "Afyonkarahisar",
-   "hadise": "R",
-   "min": 7,
-   "max": 17,
-   "ruzgar": 18
+   "hadise": "SY",
+   "min": 11,
+   "max": 18,
+   "ruzgar": 20
   },
   {
    "il": "Aydın",
-   "hadise": "SY",
-   "min": 15,
-   "max": 23,
-   "ruzgar": 13
+   "hadise": "GSY",
+   "min": 16,
+   "max": 24,
+   "ruzgar": 7
   },
   {
    "il": "Denizli",
-   "hadise": "R",
-   "min": 12,
-   "max": 21,
-   "ruzgar": 8
+   "hadise": "SY",
+   "min": 15,
+   "max": 22,
+   "ruzgar": 5
   },
   {
    "il": "İzmir",
    "hadise": "SY",
-   "min": 16,
-   "max": 23,
-   "ruzgar": 15
+   "min": 18,
+   "max": 25,
+   "ruzgar": 14
   },
   {
    "il": "Kütahya",
-   "hadise": "SY",
-   "min": 8,
-   "max": 17,
-   "ruzgar": 30
+   "hadise": "CB",
+   "min": 10,
+   "max": 18,
+   "ruzgar": 19
   },
   {
    "il": "Manisa",
-   "hadise": "SY",
-   "min": 15,
-   "max": 23,
-   "ruzgar": 13
+   "hadise": "CB",
+   "min": 16,
+   "max": 24,
+   "ruzgar": 10
   },
   {
    "il": "Muğla",
    "hadise": "GSY",
    "min": 12,
-   "max": 17,
-   "ruzgar": 15
+   "max": 18,
+   "ruzgar": 9
   },
   {
    "il": "Uşak",
-   "hadise": "R",
-   "min": 8,
-   "max": 17,
-   "ruzgar": 22
+   "hadise": "SY",
+   "min": 10,
+   "max": 18,
+   "ruzgar": 18
   }
  ],
  "Akdeniz": [
@@ -142,341 +142,341 @@
    "hadise": "GSY",
    "min": 13,
    "max": 21,
-   "ruzgar": 9
+   "ruzgar": 10
   },
   {
    "il": "Antalya",
    "hadise": "GSY",
-   "min": 15,
-   "max": 22,
-   "ruzgar": 12
+   "min": 17,
+   "max": 24,
+   "ruzgar": 11
   },
   {
    "il": "Burdur",
-   "hadise": "CB",
-   "min": 8,
-   "max": 18,
-   "ruzgar": 20
+   "hadise": "SY",
+   "min": 11,
+   "max": 21,
+   "ruzgar": 17
   },
   {
    "il": "Hatay",
-   "hadise": "GSY",
-   "min": 12,
+   "hadise": "KGY",
+   "min": 13,
    "max": 20,
-   "ruzgar": 10
+   "ruzgar": 18
   },
   {
    "il": "Isparta",
    "hadise": "SY",
-   "min": 7,
-   "max": 17,
-   "ruzgar": 14
+   "min": 11,
+   "max": 18,
+   "ruzgar": 11
   },
   {
    "il": "Kahramanmaraş",
    "hadise": "SY",
-   "min": 10,
-   "max": 17,
-   "ruzgar": 5
+   "min": 12,
+   "max": 16,
+   "ruzgar": 4
   },
   {
    "il": "Mersin",
-   "hadise": "MSY",
-   "min": 16,
-   "max": 23,
-   "ruzgar": 8
+   "hadise": "GSY",
+   "min": 17,
+   "max": 22,
+   "ruzgar": 12
   },
   {
    "il": "Osmaniye",
-   "hadise": "GSY",
-   "min": 12,
-   "max": 21,
-   "ruzgar": 7
+   "hadise": "KGY",
+   "min": 13,
+   "max": 19,
+   "ruzgar": 14
   }
  ],
  "İç Anadolu": [
   {
    "il": "Sivas",
-   "hadise": "CB",
-   "min": 3,
+   "hadise": "SY",
+   "min": 8,
    "max": 15,
-   "ruzgar": 16
+   "ruzgar": 27
   },
   {
    "il": "Aksaray",
-   "hadise": "PUS",
-   "min": 7,
-   "max": 19,
+   "hadise": "HSY",
+   "min": 12,
+   "max": 20,
    "ruzgar": 19
   },
   {
    "il": "Ankara",
-   "hadise": "PUS",
-   "min": 7,
-   "max": 16,
-   "ruzgar": 15
+   "hadise": "SY",
+   "min": 12,
+   "max": 17,
+   "ruzgar": 22
   },
   {
    "il": "Çankırı",
-   "hadise": "PUS",
-   "min": 6,
-   "max": 16,
-   "ruzgar": 11
+   "hadise": "SY",
+   "min": 10,
+   "max": 19,
+   "ruzgar": 14
   },
   {
    "il": "Eskişehir",
-   "hadise": "SY",
-   "min": 7,
-   "max": 18,
-   "ruzgar": 19
+   "hadise": "HSY",
+   "min": 12,
+   "max": 19,
+   "ruzgar": 23
   },
   {
    "il": "Karaman",
-   "hadise": "PUS",
-   "min": 4,
-   "max": 17,
+   "hadise": "PB",
+   "min": 9,
+   "max": 20,
    "ruzgar": 16
   },
   {
    "il": "Kayseri",
-   "hadise": "CB",
-   "min": 4,
-   "max": 18,
-   "ruzgar": 6
+   "hadise": "SY",
+   "min": 7,
+   "max": 19,
+   "ruzgar": 10
   },
   {
    "il": "Kırıkkale",
-   "hadise": "CB",
-   "min": 7,
-   "max": 17,
-   "ruzgar": 17
+   "hadise": "SY",
+   "min": 12,
+   "max": 19,
+   "ruzgar": 20
   },
   {
    "il": "Kırşehir",
    "hadise": "SY",
-   "min": 5,
-   "max": 17,
-   "ruzgar": 16
+   "min": 9,
+   "max": 18,
+   "ruzgar": 22
   },
   {
    "il": "Konya",
-   "hadise": "CB",
-   "min": 7,
-   "max": 18,
+   "hadise": "PB",
+   "min": 11,
+   "max": 20,
    "ruzgar": 17
   },
   {
    "il": "Nevşehir",
-   "hadise": "CB",
-   "min": 6,
+   "hadise": "SY",
+   "min": 11,
    "max": 17,
-   "ruzgar": 18
+   "ruzgar": 25
   },
   {
    "il": "Niğde",
-   "hadise": "CB",
-   "min": 5,
+   "hadise": "HSY",
+   "min": 7,
    "max": 17,
-   "ruzgar": 14
+   "ruzgar": 15
   },
   {
    "il": "Yozgat",
    "hadise": "SY",
-   "min": 4,
+   "min": 8,
    "max": 14,
-   "ruzgar": 26
+   "ruzgar": 25
   }
  ],
  "Karadeniz": [
   {
    "il": "Amasya",
-   "hadise": "CB",
-   "min": 8,
+   "hadise": "SY",
+   "min": 13,
    "max": 19,
-   "ruzgar": 6
+   "ruzgar": 9
   },
   {
    "il": "Artvin",
-   "hadise": "Y",
-   "min": 7,
-   "max": 17,
+   "hadise": "KSY",
+   "min": 8,
+   "max": 14,
    "ruzgar": 5
   },
   {
    "il": "Bartın",
-   "hadise": "SY",
-   "min": 10,
-   "max": 23,
-   "ruzgar": 8
+   "hadise": "KSY",
+   "min": 13,
+   "max": 19,
+   "ruzgar": 13
   },
   {
    "il": "Bayburt",
-   "hadise": "PB",
-   "min": 1,
-   "max": 11,
-   "ruzgar": 12
+   "hadise": "Y",
+   "min": 4,
+   "max": 9,
+   "ruzgar": 4
   },
   {
    "il": "Bolu",
    "hadise": "SY",
-   "min": 7,
-   "max": 17,
-   "ruzgar": 17
+   "min": 12,
+   "max": 16,
+   "ruzgar": 14
   },
   {
    "il": "Çorum",
-   "hadise": "CB",
-   "min": 6,
-   "max": 18,
-   "ruzgar": 15
+   "hadise": "SY",
+   "min": 11,
+   "max": 15,
+   "ruzgar": 17
   },
   {
    "il": "Düzce",
-   "hadise": "SY",
-   "min": 10,
-   "max": 22,
+   "hadise": "KSY",
+   "min": 14,
+   "max": 20,
    "ruzgar": 8
   },
   {
    "il": "Giresun",
-   "hadise": "CB",
-   "min": 12,
-   "max": 21,
-   "ruzgar": 18
+   "hadise": "KSY",
+   "min": 16,
+   "max": 22,
+   "ruzgar": 25
   },
   {
    "il": "Gümüşhane",
-   "hadise": "CB",
-   "min": 3,
-   "max": 13,
-   "ruzgar": 12
+   "hadise": "Y",
+   "min": 6,
+   "max": 12,
+   "ruzgar": 13
   },
   {
    "il": "Karabük",
-   "hadise": "CB",
-   "min": 6,
-   "max": 17,
+   "hadise": "KSY",
+   "min": 10,
+   "max": 14,
    "ruzgar": 5
   },
   {
    "il": "Kastamonu",
-   "hadise": "SY",
-   "min": 3,
-   "max": 15,
-   "ruzgar": 7
+   "hadise": "KSY",
+   "min": 7,
+   "max": 13,
+   "ruzgar": 18
   },
   {
    "il": "Ordu",
-   "hadise": "CB",
-   "min": 12,
-   "max": 21,
-   "ruzgar": 12
+   "hadise": "KSY",
+   "min": 17,
+   "max": 22,
+   "ruzgar": 21
   },
   {
    "il": "Rize",
-   "hadise": "SY",
-   "min": 11,
-   "max": 19,
-   "ruzgar": 15
+   "hadise": "KSY",
+   "min": 14,
+   "max": 22,
+   "ruzgar": 16
   },
   {
    "il": "Samsun",
-   "hadise": "CB",
-   "min": 13,
-   "max": 22,
-   "ruzgar": 12
+   "hadise": "SY",
+   "min": 16,
+   "max": 21,
+   "ruzgar": 31
   },
   {
    "il": "Sinop",
-   "hadise": "CB",
-   "min": 11,
+   "hadise": "KSY",
+   "min": 14,
    "max": 21,
-   "ruzgar": 14
+   "ruzgar": 34
   },
   {
    "il": "Tokat",
-   "hadise": "CB",
-   "min": 7,
-   "max": 19,
-   "ruzgar": 12
+   "hadise": "SY",
+   "min": 12,
+   "max": 17,
+   "ruzgar": 16
   },
   {
    "il": "Trabzon",
-   "hadise": "CB",
-   "min": 12,
-   "max": 18,
-   "ruzgar": 17
+   "hadise": "KSY",
+   "min": 16,
+   "max": 23,
+   "ruzgar": 32
   },
   {
    "il": "Zonguldak",
-   "hadise": "SY",
-   "min": 13,
-   "max": 23,
-   "ruzgar": 18
+   "hadise": "KSY",
+   "min": 15,
+   "max": 18,
+   "ruzgar": 23
   }
  ],
  "Doğu Anadolu": [
   {
    "il": "Ağrı",
    "hadise": "KKY",
-   "min": 1,
-   "max": 11,
-   "ruzgar": 12
+   "min": 3,
+   "max": 10,
+   "ruzgar": 14
   },
   {
    "il": "Ardahan",
-   "hadise": "KKY",
-   "min": -3,
-   "max": 8,
-   "ruzgar": 12
+   "hadise": "KSY",
+   "min": -2,
+   "max": 7,
+   "ruzgar": 18
   },
   {
    "il": "Bingöl",
-   "hadise": "CB",
-   "min": 6,
-   "max": 13,
-   "ruzgar": 10
+   "hadise": "KY",
+   "min": 7,
+   "max": 11,
+   "ruzgar": 11
   },
   {
    "il": "Bitlis",
-   "hadise": "KKY",
-   "min": 3,
-   "max": 7,
-   "ruzgar": 12
+   "hadise": "KY",
+   "min": 1,
+   "max": 6,
+   "ruzgar": 18
   },
   {
    "il": "Elazığ",
-   "hadise": "CB",
-   "min": 5,
-   "max": 15,
-   "ruzgar": 9
+   "hadise": "SY",
+   "min": 8,
+   "max": 16,
+   "ruzgar": 11
   },
   {
    "il": "Erzincan",
-   "hadise": "PB",
-   "min": 4,
-   "max": 13,
+   "hadise": "KY",
+   "min": 6,
+   "max": 12,
    "ruzgar": 4
   },
   {
    "il": "Erzurum",
-   "hadise": "KKY",
-   "min": -1,
+   "hadise": "SY",
+   "min": 0,
    "max": 8,
-   "ruzgar": 13
+   "ruzgar": 10
   },
   {
    "il": "Hakkari",
-   "hadise": "KKY",
-   "min": 2,
+   "hadise": "Y",
+   "min": 4,
    "max": 9,
-   "ruzgar": 6
+   "ruzgar": 9
   },
   {
    "il": "Iğdır",
    "hadise": "Y",
    "min": 5,
-   "max": 13,
+   "max": 11,
    "ruzgar": 5
   },
   {
@@ -484,100 +484,100 @@
    "hadise": "KKY",
    "min": -1,
    "max": 9,
-   "ruzgar": 18
+   "ruzgar": 20
   },
   {
    "il": "Malatya",
-   "hadise": "CB",
-   "min": 5,
-   "max": 15,
-   "ruzgar": 5
+   "hadise": "SY",
+   "min": 6,
+   "max": 16,
+   "ruzgar": 8
   },
   {
    "il": "Muş",
-   "hadise": "Y",
+   "hadise": "KY",
    "min": 5,
-   "max": 11,
-   "ruzgar": 3
+   "max": 10,
+   "ruzgar": 4
   },
   {
    "il": "Tunceli",
-   "hadise": "CB",
-   "min": 6,
-   "max": 15,
-   "ruzgar": 7
+   "hadise": "KSY",
+   "min": 8,
+   "max": 13,
+   "ruzgar": 6
   },
   {
    "il": "Van",
    "hadise": "Y",
-   "min": 2,
-   "max": 10,
-   "ruzgar": 10
+   "min": 4,
+   "max": 11,
+   "ruzgar": 11
   }
  ],
  "Güneydoğu Anadolu": [
   {
    "il": "Adıyaman",
    "hadise": "SY",
-   "min": 10,
+   "min": 11,
    "max": 16,
-   "ruzgar": 7
+   "ruzgar": 10
   },
   {
    "il": "Batman",
-   "hadise": "CB",
-   "min": 7,
-   "max": 16,
-   "ruzgar": 7
+   "hadise": "KY",
+   "min": 10,
+   "max": 15,
+   "ruzgar": 8
   },
   {
    "il": "Diyarbakır",
-   "hadise": "CB",
-   "min": 7,
-   "max": 16,
-   "ruzgar": 7
+   "hadise": "SY",
+   "min": 9,
+   "max": 15,
+   "ruzgar": 21
   },
   {
    "il": "Gaziantep",
    "hadise": "SY",
-   "min": 8,
-   "max": 16,
-   "ruzgar": 16
+   "min": 10,
+   "max": 17,
+   "ruzgar": 19
   },
   {
    "il": "Kilis",
-   "hadise": "CB",
+   "hadise": "SY",
    "min": 11,
-   "max": 17,
-   "ruzgar": 11
+   "max": 18,
+   "ruzgar": 20
   },
   {
    "il": "Mardin",
-   "hadise": "CB",
-   "min": 8,
-   "max": 14,
-   "ruzgar": 8
+   "hadise": "SY",
+   "min": 9,
+   "max": 13,
+   "ruzgar": 17
   },
   {
    "il": "Siirt",
-   "hadise": "GSY",
-   "min": 8,
-   "max": 14,
-   "ruzgar": 5
+   "hadise": "KY",
+   "min": 9,
+   "max": 13,
+   "ruzgar": 6
   },
   {
    "il": "Şanlıurfa",
-   "hadise": "CB",
-   "min": 11,
+   "hadise": "SY",
+   "min": 12,
    "max": 18,
-   "ruzgar": 8
+   "ruzgar": 13
   },
   {
    "il": "Şırnak",
-   "hadise": "KGY",
+   "hadise": "SY",
    "min": 7,
    "max": 11,
-   "ruzgar": 5
+   "ruzgar": 4
   }
  ]
 }
