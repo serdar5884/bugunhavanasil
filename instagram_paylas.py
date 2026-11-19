@@ -122,16 +122,43 @@ def reels(klasor, yayinlama=True):
 
 
 def uyari(klasor):
+    """Uyarı / son dakika / yurt geneli kartları: hikâye hareketli video, gönderi hareketli Reels.
+    Video hazırlanamaz ya da yüklenemezse eskisi gibi sabit görsel paylaşılır."""
+    from hareket import hareketlendir, tur_bul
     yol = os.path.join(klasor, "paylasim.json")
     if not os.path.exists(yol):
         return print("Yeni uyarı yok")
     for p in json.load(open(yol, encoding="utf-8")):
         if p.get("paylasildi"):
             continue
-        hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
+        mp4 = None
+        try:
+            mp4 = hareketlendir(p["gorsel"], tur_bul(p.get("caption", "")))
+        except Exception as e:
+            print("Hareketli kart üretilemedi:", e)
+        hik = None
+        if mp4:
+            try:
+                hik = istek(f"{USER}/media", {"video_url": url(mp4), "media_type": "STORIES"})["id"]
+                hazir_bekle(hik, deneme=60)
+            except Exception as e:
+                print("Hareketli hikâye yüklenemedi, sabit görsel:", e)
+                hik = None
+        if not hik:
+            hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
         print("Hikâye:", yayinla(hik))
         if "gonderi" in p["tur"]:
-            g = istek(f"{USER}/media", {"image_url": url(p.get("gonderi_gorsel", p["gorsel"])), "caption": p["caption"]})["id"]
+            g = None
+            if mp4:
+                try:
+                    g = istek(f"{USER}/media", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(p["gorsel"]),
+                                                "caption": p["caption"], "share_to_feed": "true"})["id"]
+                    hazir_bekle(g, deneme=60)
+                except Exception as e:
+                    print("Hareketli gönderi yüklenemedi, sabit görsel:", e)
+                    g = None
+            if not g:
+                g = istek(f"{USER}/media", {"image_url": url(p.get("gonderi_gorsel", p["gorsel"])), "caption": p["caption"]})["id"]
             print("Gönderi:", yayinla(g))
 
 
