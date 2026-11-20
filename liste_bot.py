@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 17:00 liste Reels'i (Kabul Kapısı'ndaki formatın hava durumu uyarlaması):
-- 2 sn merak kapağı: "YARIN KAR YAĞACAK İLLER – Senin ilin var mı?"
-- ardından liste görseli; toplam ~8 sn: liste bu sürede okunamaz, video başa döner -> tekrar izlenme
+- Video doğrudan listeyle açılır (9 sn, solma yok); liste bu sürede okunamaz, video başa döner -> tekrar izlenme
+- Merak kapağı ("YARIN KAR YAĞACAK İLLER – Senin ilin var mı?") sadece Reels/profil kapağı olarak gider
 - açıklama: "Kaydet, sevdiklerine gönder" (kaydetme/gönderme Instagram'da en güçlü sinyal)
 
 Konu MGM'nin yarınki tahminine göre seçilir: kar > yağmur > en soğuk / en sıcak iller.
@@ -154,27 +154,25 @@ def liste(k, tarih, yol):
     return yol
 
 
-def video(kapak_jpg, liste_jpg, hareket, out, sure=6.8):
-    """Kısa video (~8 sn): 1.2 sn kapak + liste. Liste bu sürede okunamaz -> izleyen durdurur ya da
-    video başa döner; her tekrar izlenme sayılır ve izlenme oranı %100'ü geçer (Reels'te en güçlü sinyal)."""
+def video(kapak_jpg, liste_jpg, hareket, out, sure=9):
+    """Döngü için kısa Reels (Kabul Kapısı ile aynı): doğrudan listeyle açılır, solma yok; kapak sadece
+    profil/Reels kapağı olarak gider. Liste 9 sn'de okunamaz -> durdurma ve başa dönme = tekrar izlenme."""
     from hareket import hareketlendir
-    hare = hareketlendir(liste_jpg, hareket, liste_jpg[:-4] + "_hareketli.mp4")
+    hare = hareketlendir(liste_jpg, hareket, liste_jpg[:-4] + "_hareketli.mp4", sure=3)  # 3 sn kesintisiz döngü
     parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
-    girdi = ["-loop", "1", "-t", "1.6", "-i", kapak_jpg, "-stream_loop", "-1", "-t", str(sure), "-i", hare]
+    girdi = ["-stream_loop", "-1", "-t", str(sure), "-i", hare]
     sanatci = None
     if parcalar:
         parca = parcalar[(datetime.date.today().toordinal() + 3) % len(parcalar)]
-        girdi += ["-i", parca]
+        girdi += ["-ss", "20", "-t", str(sure), "-i", parca]
         ad = os.path.basename(parca)[3:-4].split("-")[0]
         sanatci = {"alex": "Alex Morgan", "atlasaudio": "AtlasAudio", "nastelbom": "Nastelbom",
                    "velariomusic": "VelarioMusic", "andriig": "AndriiG"}.get(ad, ad)
-    t = 1.6 + sure - 0.4
-    fc = ("[0:v]fps=30,setsar=1,format=yuv420p[a];[1:v]fps=30,setsar=1,format=yuv420p[b];"
-          "[a][b]xfade=transition=fade:duration=0.4:offset=1.2,format=yuv420p[v]")
-    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi, "-filter_complex", fc, "-map", "[v]"]
+    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi, "-map", "0:v"]
     if sanatci:
-        komut += ["-map", "2:a", "-af", f"afade=t=in:d=0.3,afade=t=out:st={t - 0.6}:d=0.6", "-c:a", "aac", "-b:a", "128k"]
-    komut += ["-t", str(t), "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-movflags", "+faststart", out]
+        komut += ["-map", "1:a", "-c:a", "aac", "-b:a", "160k"]
+    komut += ["-t", str(sure), "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
+              "-movflags", "+faststart", out]
     subprocess.run(komut, check=True)
     return out, sanatci
 
