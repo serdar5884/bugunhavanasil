@@ -53,3 +53,7 @@ jobs:
           if [[ "$GUN" =~ ^(1|3|5)$ ]] && [ "$SAAT" -ge 12 ] && [ "$SAAT" -lt 18 ] && [ "$SON" != "$BUGUN" ]; then
             gh workflow run bilgi.yml --ref main && echo "Bilgi videosu tetiklendi"
           else echo "Bilgi videosu zamanı değil ($GUN $SAAT son=$SON)"; fi
+          LSON=$(python -c "import json;print(json.load(open('liste_durum.json')).get('son',''))" 2>/dev/null || echo "")
+          if [ "$SAAT" -ge 17 ] && [ "$SAAT" -lt 20 ] && [ "$LSON" != "$BUGUN" ]; then
+            gh workflow run liste.yml --ref main && echo "Liste Reels'i tetiklendi"
+          else echo "Liste zamanı değil ($SAAT son=$LSON)"; fi

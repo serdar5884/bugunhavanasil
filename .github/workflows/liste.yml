@@ -1,0 +1,42 @@
+name: Liste Reels'i (17:00)
+
+on:
+  # Her gün 17:00'den sonraki ilk uyarı kontrolü tetikler; elle de çalıştırılabilir
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: liste
+  cancel-in-progress: false
+
+jobs:
+  liste:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Kurulum
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg >/dev/null
+          pip install -q -r requirements.txt
+      - name: Liste Reels'ini üret
+        run: python -u liste_bot.py --cikti yayin/liste
+      - name: Kaydet
+        run: |
+          git config user.name "hava-bot"
+          git config user.email "hava-bot@users.noreply.github.com"
+          git add -A yayin/liste liste_durum.json
+          git commit -qm "Liste Reels'i" || true
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q && break; sleep 3; done
+      - name: Instagram'a paylaş
+        if: ${{ env.IG_TOKEN != '' }}
+        run: |
+          python -u instagram_paylas.py reels yayin/liste
+          python -u instagram_paylas.py hikaye yayin/liste/liste.jpg || echo "Hikâye paylaşılamadı"

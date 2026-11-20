@@ -219,6 +219,10 @@ if __name__ == "__main__":
         reels(sys.argv[2])
     elif komut == "reels-test":
         reels(sys.argv[2], yayinlama=False)
+    elif komut == "hikaye":
+        h = istek(f"{USER}/media", {"image_url": url(sys.argv[2]), "media_type": "STORIES"})["id"]
+        hazir_bekle(h)
+        print("Hikâye:", yayinla(h))
     elif komut == "ozel":
         ozel(sys.argv[2], sys.argv[3])
     elif komut == "uyari":
