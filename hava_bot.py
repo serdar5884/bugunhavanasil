@@ -671,6 +671,7 @@ def main():
         f.write(caption(tarih, tum, gun_no))
     with open(os.path.join(a.cikti, "veri.json"), "w", encoding="utf-8") as f:
         json.dump(tum, f, ensure_ascii=False, indent=1)
+    json.dump({"gun": gun_no, "tarih": tarih.isoformat()}, open(os.path.join(a.cikti, "ozet.json"), "w"))
     if hatalar:
         print("UYARI – veri alınamayan iller:\n  " + "\n  ".join(hatalar))
         if len(hatalar) > 10:

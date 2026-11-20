@@ -107,6 +107,9 @@ def reels(klasor, yayinlama=True):
     if not os.path.exists(video):
         sys.exit("reels.mp4 yok")
     caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read() + " #reels #havadurumureels"
+    kc = os.path.join(klasor, "kanca.txt")
+    if os.path.exists(kc) and open(kc, encoding="utf-8").read().strip():  # dikkat çeken ilk satır
+        caption = open(kc, encoding="utf-8").read().strip() + "\n\n" + caption
     mz = os.path.join(klasor, "muzik.txt")
     if os.path.exists(mz):
         caption += f"\n\n🎵 Müzik: {open(mz, encoding='utf-8').read().strip()} (Pixabay)"

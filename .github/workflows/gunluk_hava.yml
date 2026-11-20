@@ -33,8 +33,8 @@ jobs:
           echo "KLASOR=$KLASOR" >> $GITHUB_ENV
           echo "GUN=$GUN" >> $GITHUB_ENV
           if [ "$GUN" = "hs" ]; then python -u hava_bot.py --hafta-sonu --animasyon --cikti $KLASOR; else python -u hava_bot.py --gun $GUN --animasyon --cikti $KLASOR; fi
-          rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt
-          if [ "$GUN" = "1" ]; then python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"; fi
+          rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt $KLASOR/kanca.txt
+          python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"
           # yurt geneli önemli gelişmeler (kar geliyor, soğuk hava dalgası...)
           # ortak sayfalı illere özel görsel (sadece sabah)
           if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do python -u il_ozel.py --il $IL --gun 1 --video --cikti yayin/il_ozel/$IL || echo "$IL görseli üretilemedi"; done; fi

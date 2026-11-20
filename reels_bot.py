@@ -6,9 +6,9 @@ Sabahki 7 bölge görselinden 9:16 Reels videosu üretir (ffmpeg).
 
 Kullanım: python reels_bot.py yayin/gunluk   -> yayin/gunluk/reels.mp4 + reels_kapak.jpg
 """
-import glob, os, subprocess, sys, tempfile, datetime
+import glob, json, os, subprocess, sys, tempfile, datetime
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
-from hava_bot import font, destek_bandi, HESAP
+from hava_bot import font, destek_bandi, HESAP, HADISE
 
 W, H = 1080, 1920
 ACILIS, BOLGE, KAPANIS, GECIS = 2.5, 6.0, 3.5, 0.5  # saniye: bölge görselleri okunabilsin diye uzun
@@ -35,6 +35,8 @@ def kart(hedef, ust, buyuk, alt, tarih, kapanis=False):
     y = 560
     for metin, f, renk in ((ust, f_u, (255, 205, 0)), (buyuk, f_b, (255, 255, 255)), (alt, f_a, (255, 255, 255))):
         for s in metin.split("\n"):
+            while d.textlength(s, font=f) > W - 90 and f.size > 60:  # uzun satır taşmasın
+                f = font("ExtraBold", f.size - 6)
             d.text((W / 2 - d.textlength(s, font=f) / 2, y), s, font=f, fill=renk)
             y += f.size + 30
         y += 30
@@ -46,6 +48,54 @@ def kart(hedef, ust, buyuk, alt, tarih, kapanis=False):
     img.save(hedef, quality=92)
 
 
+def kanca(klasor):
+    """Reels açılışı için dikkat çeken başlık: ('YARIN', '12 İLDE\nKAR VAR!', alt yazı, caption satırı, tarih)"""
+    aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    oz_yol, veri_yol = os.path.join(klasor, "ozet.json"), os.path.join(klasor, "veri.json")
+    oz = json.load(open(oz_yol)) if os.path.exists(oz_yol) else {}
+    gun = oz.get("gun", 1)
+    t = datetime.date.fromisoformat(oz["tarih"]) if oz.get("tarih") else \
+        datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date()
+    ust = {1: "BUGÜN", 2: "YARIN", "hs": "HAFTA SONU"}.get(gun, "BUGÜN")
+    if gun == "hs":
+        p = t + datetime.timedelta(days=1)
+        tarih = f"{t.day}-{p.day} {aylar[p.month]} {p.year}" if t.month == p.month else f"{t.day} {aylar[t.month]} - {p.day} {aylar[p.month]}"
+    else:
+        tarih = f"{t.day} {aylar[t.month]} {t.year}"
+    tipler = {"kar": set(), "firtina": set(), "yagmur": set()}
+    sicak, soguk = [], []
+    if os.path.exists(veri_yol):
+        for vs in json.load(open(veri_yol, encoding="utf-8")).values():
+            for v in vs:
+                for x in (v, v.get("paz")):
+                    if not x or not x.get("hadise"):
+                        continue
+                    tip = HADISE.get(x["hadise"], ("", ""))[1]
+                    tip = "kar" if tip == "karla_yagmur" else tip
+                    if tip in tipler:
+                        tipler[tip].add(v["il"])
+                    if x.get("max") is not None:
+                        sicak.append((x["max"], v["il"]))
+                    if x.get("min") is not None:
+                        soguk.append((x["min"], v["il"]))
+    kim = {1: "Bugün", 2: "Yarın", "hs": "Hafta sonu"}.get(gun, "Bugün")
+    n_kar, n_fir, n_yag = len(tipler["kar"]), len(tipler["firtina"]), len(tipler["yagmur"])
+    if n_kar >= 3:
+        return ust, f"{n_kar} İLDE\nKAR VAR!", "Senin ilin\nlistede mi?", f"❄️ {kim} {n_kar} ilde kar yağışı var! Senin ilin listede mi?", tarih
+    if n_fir >= 3:
+        return ust, f"{n_fir} İLDE\nFIRTINA!", "Gök gürültülü sağanak\nbekleniyor", f"⛈️ {kim} {n_fir} ilde gök gürültülü sağanak bekleniyor!", tarih
+    if n_yag + n_fir >= 10:
+        n = n_yag + n_fir
+        return ust, f"{n} İLDE\nYAĞMUR VAR!", "Şemsiyeni\nunutma!", f"☔ {kim} {n} ilde yağmur var! Şemsiyeni unutma.", tarih
+    if soguk and min(soguk)[0] <= -5:
+        d, il = min(soguk)
+        return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen soğuk ili", f"🥶 {kim} en soğuk il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
+    if sicak and max(sicak)[0] >= 33:
+        d, il = max(sicak)
+        return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen sıcak ili", f"🔥 {kim} en sıcak il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
+    return ust, "HAVA\nNASIL?", "7 bölge · 81 il", None, tarih
+
+
 def main(klasor):
     bolgeler = sorted(g for g in glob.glob(os.path.join(klasor, "[0-9][0-9]_*.jpg")) if "_gonderi" not in g)
     if len(bolgeler) < 2:
@@ -55,7 +105,9 @@ def main(klasor):
     bugun = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3))).date()
     tarih = f"{bugun.day} {aylar[bugun.month]} {bugun.year}"
     kareler = [os.path.join(tmp, "00.jpg")]
-    kart(kareler[0], "BUGÜN", "HAVA\nNASIL?", "7 bölge · 81 il", tarih)
+    ust, buyuk, alt, satir, tarih = kanca(klasor)
+    kart(kareler[0], ust, buyuk, alt, tarih)
+    open(os.path.join(klasor, "kanca.txt"), "w", encoding="utf-8").write(satir or "")
     for i, b in enumerate(bolgeler, 1):
         k = os.path.join(tmp, f"{i:02d}.jpg")
         dikey(b, k)
