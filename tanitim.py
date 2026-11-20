@@ -45,9 +45,10 @@ def gorsel1(yol):
     ortala(d, 400, "İlini yorumlara yaz,", font("Bold", 46))
     ortala(d, 458, "MGM verisiyle hemen cevaplayalım!", font("Bold", 46))
     f = font("Medium", 36)
-    y = balon(d, 90, 560, 760, "sen", "Sivas yarın nasıl?", f, (255, 255, 255, 235), LACI)
-    y = balon(d, 250, y + 26, 990, HESAP, "Sivas – yarın: Puslu, en yüksek 16°, en düşük 3° · Kaynak: MGM", f, (25, 45, 85, 230), (255, 255, 255))
-    ortala(d, y + 36, "Örnekler:  \"İzmir bugün\"  ·  \"Erzurum yarın\"  ·  \"Antalya hafta sonu\"", font("SemiBold", 30), (255, 255, 255, 230))
+    y = balon(d, 90, 560, 760, "sen", "Zara yarın nasıl?", f, (255, 255, 255, 235), LACI)
+    y = balon(d, 250, y + 26, 990, HESAP, "Zara (Sivas) – yarın: Parçalı bulutlu, en yüksek 9°, en düşük -2° · Rüzgar 15 km/sa · Kaynak: MGM", f, (25, 45, 85, 230), (255, 255, 255))
+    ortala(d, y + 36, "İl, ilçe ya da gün yazabilirsin:", font("SemiBold", 32), (255, 255, 255, 235))
+    ortala(d, y + 82, "\"İzmir 5 günlük\"  ·  \"Onikişubat bugün\"  ·  \"Sivas cumartesi\"", font("SemiBold", 30), SARI)
     destek_bandi(d, 56, H - 165, W - 56, H - 60)
     img.save(yol, quality=93)
 
@@ -60,18 +61,19 @@ def gorsel2(yol):
     maddeler = [
         ("gunes", "Her sabah 07:17", "Bugün hava nasıl? 7 bölge, 81 il"),
         ("az_bulut", "Her akşam 20:13", "Yarının hava durumu"),
+        ("kar", "Her gün 17:00", "Yarın kar ve yağmur yağacak iller listesi"),
         ("bulut", "Her Cuma 17:47", "Hafta sonu hava durumu"),
-        ("firtina", "Anında", "MGM sarı, turuncu, kırmızı uyarılar"),
-        ("kar", "Anında", "Kar, heyelan, sel nedeniyle kapalı yollar"),
-        ("yagmur", "Son dakika", "Sel, çığ, fırtına gibi hava haberleri"),
+        ("firtina", "Anında", "MGM turuncu ve kırmızı kodlu uyarılar"),
+        ("yagmur", "Son dakika", "Sel, kar, sis haberleri ve kapalı yollar"),
+        ("az_bulut", "Yorumlarda", "İl, ilçe ya da gün yaz: 5 günlük tahmin"),
     ]
-    y = 270
+    y = 240
     for tip, ust, alt in maddeler:
-        d.rounded_rectangle([70, y, W - 70, y + 128], radius=28, fill=(15, 30, 55, 120), outline=(255, 255, 255, 70), width=2)
-        ikon(d, tip, 150, y + 64, 92)
-        d.text((225, y + 20), ust, font=font("ExtraBold", 40), fill=SARI)
-        d.text((225, y + 72), alt, font=metni_sigdir(d, alt, "SemiBold", 34, W - 300), fill="white")
-        y += 146
+        d.rounded_rectangle([70, y, W - 70, y + 116], radius=28, fill=(15, 30, 55, 120), outline=(255, 255, 255, 70), width=2)
+        ikon(d, tip, 150, y + 58, 86)
+        d.text((225, y + 14), ust, font=font("ExtraBold", 38), fill=SARI)
+        d.text((225, y + 64), alt, font=metni_sigdir(d, alt, "SemiBold", 33, W - 300), fill="white")
+        y += 130
     ortala(d, y + 8, "Veriler: Meteoroloji Genel Müdürlüğü (MGM) · Karayolları", font("Regular", 26), (255, 255, 255, 200))
     destek_bandi(d, 56, H - 150, W - 56, H - 50)
     img.save(yol, quality=93)
@@ -99,8 +101,47 @@ def gorsel3(yol):
     img.save(yol, quality=93)
 
 
+def reels(k, sure=3.5):
+    """Sabitlenecek tanıtım Reels'i: 3 görsel 9:16, hafif hareketli, yumuşak geçişli, müzikli (~10 sn)."""
+    import datetime, glob, subprocess
+    from reels_bot import dikey
+    from hareket import hareketlendir
+    parcalar_v = []
+    for i, g in enumerate(sorted(glob.glob(os.path.join(k, "0*.jpg")))):
+        dk = os.path.join(k, f"r{i}.jpg")
+        dikey(g, dk)
+        parcalar_v.append(hareketlendir(dk, ["yagmur", None, "kar"][i % 3], dk[:-4] + ".mp4", sure=3))
+    girdi, fc, son = [], [], None
+    for i, v in enumerate(parcalar_v):
+        girdi += ["-stream_loop", "-1", "-t", str(sure), "-i", v]
+        fc.append(f"[{i}:v]fps=30,setsar=1,format=yuv420p[v{i}]")
+    son, t = "v0", sure
+    for i in range(1, len(parcalar_v)):
+        fc.append(f"[{son}][v{i}]xfade=transition=fade:duration=0.4:offset={t - 0.4}[x{i}]")
+        son, t = f"x{i}", t + sure - 0.4
+    muzik = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
+    komut = ["ffmpeg", "-y", "-loglevel", "error", *girdi]
+    if muzik:
+        komut += ["-ss", "15", "-i", muzik[datetime.date.today().toordinal() % len(muzik)]]
+    komut += ["-filter_complex", ";".join(fc), "-map", f"[{son}]"]
+    if muzik:
+        komut += ["-map", f"{len(parcalar_v)}:a", "-af", f"afade=t=in:d=0.5,afade=t=out:st={t - 1}:d=1", "-c:a", "aac", "-b:a", "128k"]
+    out = os.path.join(k, "reels.mp4")
+    komut += ["-t", str(t), "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
+    subprocess.run(komut, check=True)
+    import shutil
+    shutil.copy(os.path.join(k, "r0.jpg"), os.path.join(k, "reels_kapak.jpg"))
+    for f in glob.glob(os.path.join(k, "r[0-9].*")):
+        os.remove(f)
+    if muzik:
+        ad = os.path.basename(muzik[datetime.date.today().toordinal() % len(muzik)])[3:-4].split("-")[0]
+        open(os.path.join(k, "muzik.txt"), "w").write({"alex": "Alex Morgan", "atlasaudio": "AtlasAudio", "nastelbom": "Nastelbom",
+                                                         "velariomusic": "VelarioMusic", "andriig": "AndriiG"}.get(ad, ad))
+    return out
+
+
 if __name__ == "__main__":
-    k = sys.argv[1] if len(sys.argv) > 1 else "yayin/tanitim"
+    k = next((a for a in sys.argv[1:] if not a.startswith("--")), "yayin/tanitim")
     os.makedirs(k, exist_ok=True)
     gorsel1(os.path.join(k, "01_yorum_yaz.jpg"))
     gorsel2(os.path.join(k, "02_neler_var.jpg"))
@@ -108,15 +149,18 @@ if __name__ == "__main__":
     open(os.path.join(k, "caption.txt"), "w", encoding="utf-8").write(
         "🌤 Senin ilinde hava nasıl?\n\n"
         "İlinin adını yorumlara yaz, Meteoroloji Genel Müdürlüğü (MGM) verisiyle hemen cevaplayalım! 💬\n"
-        "Örnek: \"Sivas yarın\", \"İzmir bugün\", \"Antalya hafta sonu\"\n\n"
+        "İl, ilçe ya da gün yazabilirsin: \"İzmir 5 günlük\", \"Zara yarın\", \"Sivas cumartesi\"\n\n"
         "📍 Bu sayfada:\n"
         "☀️ Her sabah 07:17 – Bugün hava nasıl? (7 bölge, 81 il)\n"
         "🌙 Her akşam 20:13 – Yarının hava durumu\n"
+        "📋 Her gün 17:00 – Yarın kar ve yağmur yağacak iller listesi\n"
         "📅 Her Cuma 17:47 – Hafta sonu hava durumu\n"
-        "⚠️ MGM sarı, turuncu ve kırmızı kodlu uyarılar\n"
+        "⚠️ MGM turuncu ve kırmızı kodlu uyarılar\n"
         "🚧 Kar, heyelan, sel nedeniyle kapalı yollar\n"
-        "🔴 Son dakika hava haberleri\n\n"
+        "🔴 Son dakika hava haberleri (sel, kar, sis, fırtına)\n\n"
         "🔔 Takip edip bildirimleri açarak destek olun, hiçbir uyarıyı kaçırmayın!\n"
         "📤 Sevdiklerinle paylaş 👉 @bugun.hava.nasil\n\n"
         "#havadurumu #hava #meteoroloji #mgm #türkiye #havauyarısı #sondakika")
+    if "--reels" in sys.argv:
+        print("Reels:", reels(k))
     print("Tanıtım gönderisi hazır:", k)

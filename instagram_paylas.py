@@ -121,7 +121,9 @@ def reels(klasor, yayinlama=True):
     hazir_bekle(cid, deneme=60)  # video işleme birkaç dakika sürebilir
     if not yayinlama:
         return print("Reels testi: Instagram videoyu kabul etti ve işledi (yayınlanmadı)")
-    print("Reels paylaşıldı:", istek(f"{USER}/media_publish", {"creation_id": cid})["id"])
+    mid = istek(f"{USER}/media_publish", {"creation_id": cid})["id"]
+    print("Reels paylaşıldı:", mid)
+    return mid
 
 
 def uyari(klasor):
