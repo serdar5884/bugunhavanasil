@@ -66,6 +66,18 @@ def konu_sec(veri, tarih):
 
 
 def zemin(tur):
+    """Gerçek fotoğraf zemin (yurt geneli kartlarındaki gibi), okunabilirlik için karartılmış; yoksa degrade."""
+    klasor = os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan",
+                          {"kar": "karli", "yagmur": "yagmurlu", "soguk": "soguk", "sicak": "gunesli"}[tur])
+    fotolar = sorted(glob.glob(os.path.join(klasor, "*.jpg")))
+    if fotolar:
+        src = Image.open(fotolar[datetime.date.today().toordinal() % len(fotolar)]).convert("RGB")
+        oran = max(W / src.width, H / src.height)
+        src = src.resize((int(src.width * oran + 1), int(src.height * oran + 1)))
+        x, y = (src.width - W) // 2, (src.height - H) // 2
+        src = src.crop((x, y, x + W, y + H)).filter(ImageFilter.GaussianBlur(3))
+        src = ImageEnhance.Brightness(src).enhance(0.55)
+        return src.convert("RGBA")
     renk = {"kar": ((70, 100, 140), (20, 35, 60)), "yagmur": ((55, 70, 95), (18, 24, 38)),
             "soguk": ((40, 90, 150), (12, 25, 55)), "sicak": ((230, 120, 40), (120, 30, 20))}[tur]
     img = Image.new("RGB", (W, H))

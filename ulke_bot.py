@@ -83,7 +83,7 @@ def tespit(veri):
             return sorted([il for il, x in g.items() if x["hadise"] in kodlar], key=lambda il: list(IL_BOLGE).index(il))
 
         kar = say(KAR)
-        if len(kar) >= 8:
+        if len(kar) >= 5:
             en_soguk = min(kar, key=lambda il: g[il]["min"] if g[il]["min"] is not None else 99)
             olaylar.append({"tur": "KAR", "baslik": "KAR GELİYOR!", "sahne": "karli", "iller": kar, "tarih": tarih,
                             "ek": f"En düşük sıcaklık {bulunma(en_soguk)} {g[en_soguk]['min']}°C olacak."})
@@ -96,6 +96,27 @@ def tespit(veri):
         if len(yagisli) >= 40 and len(onceki_yagisli) <= 20:
             olaylar.append({"tur": "YAGMUR", "baslik": "YAĞMURLU HAVA GELİYOR!", "sahne": "yagmurlu", "iller": yagisli, "tarih": tarih,
                             "ek": "Şemsiyenizi yanınıza almayı unutmayın."})
+        elif len(yagisli) >= 25:  # yağışlı hava sürüyor: yine de çok ili ilgilendiren gün
+            olaylar.append({"tur": "YAGMUR", "baslik": "YAĞMUR DEVAM EDİYOR!", "sahne": "yagmurlu", "iller": yagisli, "tarih": tarih,
+                            "ek": "Şemsiyenizi yanınıza almayı unutmayın."})
+        # Güneşli havaya dönüş: önceki gün çok ilde yağış, bu gün çok ilde açık/az bulutlu
+        acik = say({"A", "AB"})
+        if len(acik) >= 40 and len(onceki_yagisli) >= 20:
+            olaylar.append({"tur": "GUNES", "baslik": "GÜNEŞ GERİ DÖNÜYOR!", "sahne": "gunesli", "iller": acik, "tarih": tarih,
+                            "fiil": "yağışlı havanın ardından açık ve az bulutlu hava bekleniyor",
+                            "ek": "Çamaşır ve dışarıdaki işler için güzel bir gün."})
+        # Ayaz / don: gece sıcaklığı -3°C ve altına inen il sayısı
+        ayaz = sorted([il for il, x in g.items() if x["min"] is not None and x["min"] <= -3], key=lambda il: g[il]["min"])
+        if len(ayaz) >= 12:
+            e = ayaz[0]
+            olaylar.append({"tur": "AYAZ", "baslik": "AYAZ VE DON GELİYOR!", "sahne": "bulutlu", "foto": "soguk", "iller": ayaz,
+                            "tarih": tarih, "fiil": "gece sıcaklıkların sıfırın altına düşmesi bekleniyor",
+                            "ek": f"En soğuk il {e}: {g[e]['min']}°C. Buzlanma ve don olaylarına karşı dikkatli olun."})
+        sis = say({"SIS", "PUS"})
+        if len(sis) >= 8:
+            olaylar.append({"tur": "SIS", "baslik": "SİS UYARISI!", "sahne": "sisli", "iller": sis, "tarih": tarih,
+                            "fiil": "sis ve pus bekleniyor",
+                            "ek": "Sürücüler görüş mesafesine karşı dikkatli olmalı, takip mesafesini artırın."})
         ruzgar = say(RUZGAR)
         if len(ruzgar) >= 8:
             olaylar.append({"tur": "RUZGAR", "baslik": "KUVVETLİ RÜZGAR!", "sahne": "bulutlu", "foto": "ruzgarli", "iller": ruzgar, "tarih": tarih,
@@ -239,7 +260,8 @@ def kart(o, yol):
 def caption(o):
     t = o["tarih"]
     et = {"KAR": "#kar #karyağışı #kargeliyor", "YAGIS": "#sağanak #yağmur #kuvvetliyağış", "YAGMUR": "#yağmur #sağanak", "RUZGAR": "#fırtına #rüzgar",
-          "SOGUK": "#soğukhava #soğukhavadalgası", "SICAK": "#sıcakhava #havaısınıyor"}[o["tur"]]
+          "SOGUK": "#soğukhava #soğukhavadalgası", "SICAK": "#sıcakhava #havaısınıyor",
+          "GUNES": "#güneşlihava #havaaçıyor", "AYAZ": "#ayaz #don #buzlanma", "SIS": "#sis #trafik"}[o["tur"]]
     return (f"⚠️ {o['baslik']}\n\n{paragraf(o)}\n\n"
             f"📍 {len(o['iller'])} il: {', '.join(o['iller'])}\n\n"
             "💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n"
@@ -268,7 +290,7 @@ def main():
         h = g.replace(".jpg", "_hikaye.jpg")
         dikey(g, h)
         paylasim.append({"gorsel": h, "gonderi_gorsel": g, "tur": "hikaye+gonderi", "caption": caption(o)})
-        if len(paylasim) >= 2:  # bir seferde en fazla 2 gelişme
+        if len(paylasim) >= 3:  # bir seferde en fazla 3 gelişme
             break
     json.dump(paylasim, open(os.path.join(a.cikti, "paylasim.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     if not a.demo:
