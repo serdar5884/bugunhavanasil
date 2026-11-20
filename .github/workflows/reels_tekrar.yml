@@ -26,6 +26,6 @@ jobs:
           rm -f $KLASOR/reels.mp4 $KLASOR/reels_kapak.jpg $KLASOR/muzik.txt
           python -u reels_bot.py $KLASOR
           git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
-          git add $KLASOR && git commit -qm "Reels yeniden üretildi" && git pull --rebase -q origin main && git push -q
+          git add $KLASOR && git commit -qm "Reels yeniden üretildi" && for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Paylaş
         run: python -u instagram_paylas.py reels $KLASOR

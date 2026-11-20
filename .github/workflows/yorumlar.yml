@@ -33,4 +33,4 @@ jobs:
           git add yorum_durum.json; if [ -f ilceler.json ]; then git add ilceler.json; fi
           git diff --cached --quiet && exit 0
           git commit -qm "Yorum cevapları"
-          for i in 1 2 3; do git pull --rebase -q origin main && git push -q && break; sleep 3; done
+          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
