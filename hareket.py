@@ -14,7 +14,7 @@ KELIMELER = [  # sıra önemli: ilk eşleşen
     ("kar", r"\bkar\b|kar yağ|kar yag|karla|çığ|cig|buzlanma|tipi|kırağı|don\b"),
     ("yagmur", r"yağış|yagis|yağmur|yagmur|sağanak|saganak|\bsel\b|sel |su baskın|taşkın"),
     ("ruzgar", r"rüzgar|ruzgar|lodos|poyraz|kuvvetli rüzgar"),
-    ("sis", r"\bsis\b|pus"),
+    ("sis", r"\bsis\b|\bsis |sisli|\bpus\b|görüş mesafesi"),
 ]
 
 

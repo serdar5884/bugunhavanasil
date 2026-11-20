@@ -34,6 +34,7 @@ OLAYLAR = [
     ("YAĞIŞ", (60, 110, 170), r"\bkuvvetli (yağış|sağanak)|\bsağanak yağış|\bşiddetli yağış|\byoğun yağış"),
     ("DOLU", (120, 150, 170), r"\bdolu (yağışı|yağdı|vurdu)"),
     ("YILDIRIM", (200, 170, 40), r"\byıldırım (düştü|isabet)"),
+    ("SİS", (130, 140, 155), r"\b(yoğun |kesif )?sis (nedeniyle|etkili|uyarısı|bekleniyor|alarmı)|\bsis(ten| yüzünden)|\bsisli hava|\bgörüş mesafesi"),
 ]
 HARIC = (r"hava durumu|bugün hava|yarın hava|hafta sonu hava|hava nasıl olacak|"
          r"maç|lig\b|derbi|fırtına gibi|fırtına kopardı|siyasi|şehit|helikopter|kaza kırım|hikaye|hikayesi")
@@ -55,12 +56,12 @@ def bulunma(il):
 
 CUMLE = {
     "ÇIĞ": "çığ düştü", "HEYELAN": "heyelan meydana geldi", "SEL": "sel meydana geldi",
-    "HORTUM": "hortum etkili oldu", "FIRTINA": "fırtına etkili oldu", "KAR": "kar yağışı etkili oluyor",
+    "HORTUM": "hortum etkili oldu", "FIRTINA": "fırtına etkili oldu", "KAR": "kar yağışı etkili oluyor", "SİS": "yoğun sis etkili oluyor",
     "DOLU": "dolu yağışı etkili oldu", "YILDIRIM": "yıldırım düştü", "YAĞIŞ": "kuvvetli yağış etkili oluyor",
 }
 CUMLE_TAHMIN = {
     "ÇIĞ": "çığ tehlikesi var", "HEYELAN": "heyelan riski var", "SEL": "sel ve su baskını riski var",
-    "HORTUM": "hortum riski var", "FIRTINA": "fırtına bekleniyor", "KAR": "yoğun kar yağışı bekleniyor",
+    "HORTUM": "hortum riski var", "FIRTINA": "fırtına bekleniyor", "KAR": "yoğun kar yağışı bekleniyor", "SİS": "yoğun sis bekleniyor",
     "DOLU": "dolu yağışı bekleniyor", "YILDIRIM": "gök gürültülü sağanak bekleniyor", "YAĞIŞ": "kuvvetli yağış bekleniyor",
 }
 
@@ -145,7 +146,7 @@ def foto_zemin(olay, anahtar):
     """Olaya uygun fotoğraf varsa (arka_plan/), 1080x1920 kırpılmış ve koyulaştırılmış olarak döndürür."""
     import glob
     from PIL import ImageEnhance
-    klasor = {"YAĞIŞ": "yagmurlu", "SEL": "yagmurlu", "FIRTINA": "ruzgarli", "HORTUM": "firtinali", "KAR": "karli", "ÇIĞ": "karli"}.get(olay)
+    klasor = {"YAĞIŞ": "yagmurlu", "SEL": "yagmurlu", "FIRTINA": "ruzgarli", "HORTUM": "firtinali", "KAR": "karli", "ÇIĞ": "karli", "SİS": "sisli"}.get(olay)
     if not klasor:
         return None
     fotolar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan", klasor, "*.jp*g")))
