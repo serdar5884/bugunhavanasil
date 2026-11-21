@@ -166,6 +166,8 @@ FIIL = {"KAR": "kar yağışı bekleniyor", "YAGIS": "kuvvetli yağış bekleniy
 
 
 def paragraf(o):
+    if o.get("paragraf"):  # özel kartlar (ölçüm, haftalık, tatil) kendi metnini getirir
+        return o["paragraf"]
     t = o["tarih"]
     bolge = {}
     for il in o["iller"]:
@@ -239,7 +241,7 @@ def kart(o, yol):
     sat_p.append(s)
     p_h = len(sat_p) * 46
     f_b = metni_sigdir(d, o["baslik"], "ExtraBold", 108, W - 2 * M - 40)
-    alt_baslik = f"{gun_adi(o['tarih'])} {len(o['iller'])} ilde"
+    alt_baslik = o.get("alt_baslik") or f"{gun_adi(o['tarih'])} {len(o['iller'])} ilde"
     f_ab = font("ExtraBold", 46)
     y0 = cip_y - 40 - p_h - 30 - f_b.size - 20 - f_ab.size - 10
     d.rectangle([M, y0 + 8, M + 10, cip_y - 40], fill=SARI)
@@ -263,11 +265,13 @@ def kart(o, yol):
         d.text((M, y - 4), f"+ {fazla} il daha (tamamı açıklamada)", font=font("Medium", 26), fill=(255, 255, 255, 210))
     yorum_cagrisi(d, M + 40, H - 212, W - M - 40, H - 160)
     destek_bandi(d, M, H - 150, W - M, H - 55)
-    d.text((M, H - 44), "Kaynak: MGM il merkezi tahminleri", font=font("Regular", 22), fill=(255, 255, 255, 170))
+    d.text((M, H - 44), o.get("kaynak", "Kaynak: MGM il merkezi tahminleri"), font=font("Regular", 22), fill=(255, 255, 255, 170))
     img.convert("RGB").save(yol, quality=93)
 
 
 def caption(o):
+    if o.get("caption"):
+        return o["caption"]
     t = o["tarih"]
     et = {"KAR": "#kar #karyağışı #kargeliyor", "YAGIS": "#sağanak #yağmur #kuvvetliyağış", "YAGMUR": "#yağmur #sağanak", "RUZGAR": "#fırtına #rüzgar",
           "SOGUK": "#soğukhava #soğukhavadalgası", "SICAK": "#sıcakhava #havaısınıyor",
@@ -279,6 +283,38 @@ def caption(o):
             f"👉 {HESAP}\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm {et}")
 
 
+def sezon(t):
+    return f"{t.year}-{t.year + 1}" if t.month >= 7 else f"{t.year - 1}-{t.year}"
+
+
+def ilk_kar(veri, durum):
+    """Bu kış ilk kez kar yağışı tahmin edilen iller (yarın/öbür gün). Kar görmüş iller durum["kar_gordu"][sezon]."""
+    bugun = datetime.datetime.now(TR).date()
+    sz = sezon(bugun)
+    kg = durum.setdefault("kar_gordu", {})
+    if sz not in kg:
+        # İlk çalışma (sezon ortası): geçmişi bilemediğimiz için şu an kar beklenen iller ve kışı erken başlayan
+        # Doğu Anadolu "görmüş" sayılır; yanlışlıkla "ilk kar" denmesin. Yeni sezonda (Temmuz) liste sıfırlanır.
+        tum = {il for il, g in veri.items() for x in g.values() if x.get("hadise") in KAR}
+        kg[sz] = sorted(tum | ({il for il, b in IL_BOLGE.items() if b == "Doğu Anadolu"} if bugun.month in (11, 12, 1, 2, 3) else set()))
+        return []
+    gordu = set(kg[sz])
+    olaylar = []
+    for k in (1, 2):
+        tarih = bugun + datetime.timedelta(days=k)
+        yeni = sorted(il for il, g in veri.items() if g.get(tarih.isoformat(), {}).get("hadise") in KAR and il not in gordu)
+        if yeni:
+            gordu |= set(yeni)
+            ad = ", ".join(yeni[:3]) + (f" ve {len(yeni) - 3} il daha" if len(yeni) > 3 else "")
+            olaylar.append({"tur": "KAR", "anahtar": f"ILKKAR|{tarih.isoformat()}", "baslik": "BU KIŞIN İLK KARI!", "sahne": "karli",
+                            "iller": yeni, "tarih": tarih,
+                            "fiil": "bu kışın ilk kar yağışı bekleniyor",
+                            "ek": f"Kış lastiği ve zincirinizi hazırlayın. {ad} için beyaz manzara kapıda!",
+                            "caption": None})
+    kg[sz] = sorted(gordu)
+    return olaylar
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--demo", action="store_true")
@@ -287,10 +323,11 @@ def main():
     os.makedirs(a.cikti, exist_ok=True)
     durum = json.load(open(DURUM, encoding="utf-8")) if os.path.exists(DURUM) and not a.demo else {}
     gorulen = set(durum.get("paylasilan", []))
-    olaylar = tespit(demo_tahminler() if a.demo else tum_tahminler())
+    veri = demo_tahminler() if a.demo else tum_tahminler()
+    olaylar = ilk_kar(veri, durum) + tespit(veri)
     paylasim = []
     for o in olaylar:
-        anahtar = f"{o['tur']}|{o['tarih'].isoformat()}"
+        anahtar = o.get("anahtar") or f"{o['tur']}|{o['tarih'].isoformat()}"
         print("Tespit:", anahtar, len(o["iller"]), "il")
         if anahtar in gorulen:
             continue

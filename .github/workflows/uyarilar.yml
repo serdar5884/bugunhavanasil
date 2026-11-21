@@ -25,17 +25,19 @@ jobs:
           python-version: "3.12"
       - name: Font ve kütüphaneler
         run: |
-          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
           pip install -r requirements.txt
       - name: Yeni uyarıları kontrol et
         run: |
           python -u uyari_bot.py --min-seviye orange --cikti yayin/uyari
           python -u haber_bot.py --cikti yayin/uyari
+          python -u ozel_bot.py --cikti yayin/ozel || echo "Özel kart üretilemedi"
       - name: Sonuçları kaydet
         run: |
           git config user.name "hava-bot"
           git config user.email "hava-bot@users.noreply.github.com"
           git add durum.json yayin/uyari
+          git add -A yayin/ozel ozel_durum.json 2>/dev/null || true
           git commit -m "Uyarı kontrolü $(date +%F_%H%M)" || echo "yeni uyarı yok"
           for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Instagram'a paylaş
@@ -43,7 +45,9 @@ jobs:
         env:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
-        run: python -u instagram_paylas.py uyari yayin/uyari
+        run: |
+          python -u instagram_paylas.py uyari yayin/uyari
+          if [ -f yayin/ozel/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ozel || echo "Özel kart paylaşılamadı"; fi
       - name: Bilgi videosu zamanı mı? (Pzt/Çar/Cuma 12:00 sonrası, günde bir)
         env:
           GH_TOKEN: ${{ github.token }}
