@@ -65,6 +65,11 @@ def kart(hedef, ust, buyuk, alt, tarih, kapanis=False, foto=None):
     img.save(hedef, quality=92)
 
 
+KANCA_TUR = None
+KANCA_FOTO = {"kar": "karli", "firtina": "firtinali", "yagmur": "yagmurlu", "ruzgar": "ruzgarli", "soguk": "soguk", "sicak": "gunesli"}
+KANCA_HAREKET = {"kar": "kar", "firtina": "firtina", "yagmur": "yagmur", "ruzgar": "ruzgar", "soguk": None, "sicak": None}
+
+
 def kanca(klasor):
     """Reels açılışı için dikkat çeken başlık: ('YARIN', '12 İLDE\nKAR VAR!', alt yazı, caption satırı, tarih)"""
     aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -80,7 +85,7 @@ def kanca(klasor):
     else:
         tarih = f"{t.day} {aylar[t.month]} {t.year}"
     tipler = {"kar": set(), "firtina": set(), "yagmur": set()}
-    sicak, soguk = [], []
+    sicak, soguk, ruzgarli = [], [], set()
     if os.path.exists(veri_yol):
         for vs in json.load(open(veri_yol, encoding="utf-8")).values():
             for v in vs:
@@ -91,23 +96,36 @@ def kanca(klasor):
                     tip = "kar" if tip == "karla_yagmur" else tip
                     if tip in tipler:
                         tipler[tip].add(v["il"])
+                    if (x.get("ruzgar") or 0) >= 40:
+                        ruzgarli.add(v["il"])
                     if x.get("max") is not None:
                         sicak.append((x["max"], v["il"]))
                     if x.get("min") is not None:
                         soguk.append((x["min"], v["il"]))
+    global KANCA_TUR
+    KANCA_TUR = None
     kim = {1: "Bugün", 2: "Yarın", "hs": "Hafta sonu"}.get(gun, "Bugün")
     n_kar, n_fir, n_yag = len(tipler["kar"]), len(tipler["firtina"]), len(tipler["yagmur"])
     if n_kar >= 3:
+        KANCA_TUR = "kar"
         return ust, f"{n_kar} İLDE\nKAR VAR!", "Senin ilin\nlistede mi?", f"❄️ {kim} {n_kar} ilde kar yağışı var! Senin ilin listede mi?", tarih
     if n_fir >= 3:
+        KANCA_TUR = "firtina"
         return ust, f"{n_fir} İLDE\nFIRTINA!", "Gök gürültülü sağanak\nbekleniyor", f"⛈️ {kim} {n_fir} ilde gök gürültülü sağanak bekleniyor!", tarih
     if n_yag + n_fir >= 10:
         n = n_yag + n_fir
+        KANCA_TUR = "yagmur"
         return ust, f"{n} İLDE\nYAĞMUR VAR!", "Şemsiyeni\nunutma!", f"☔ {kim} {n} ilde yağmur var! Şemsiyeni unutma.", tarih
+    if len(ruzgarli) >= 8:
+        KANCA_TUR = "ruzgar"
+        n = len(ruzgarli)
+        return ust, f"{n} İLDE\nKUVVETLİ RÜZGAR!", "Çatı uçmalarına\ndikkat!", f"💨 {kim} {n} ilde kuvvetli rüzgar bekleniyor! Çatı uçmalarına dikkat.", tarih
     if soguk and min(soguk)[0] <= -5:
+        KANCA_TUR = "soguk"
         d, il = min(soguk)
         return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen soğuk ili", f"🥶 {kim} en soğuk il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
     if sicak and max(sicak)[0] >= 33:
+        KANCA_TUR = "sicak"
         d, il = max(sicak)
         return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen sıcak ili", f"🔥 {kim} en sıcak il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
     return ust, "HAVA\nNASIL?", "7 bölge · 81 il", None, tarih
@@ -123,7 +141,13 @@ def main(klasor):
     tarih = f"{bugun.day} {aylar[bugun.month]} {bugun.year}"
     kareler = [os.path.join(tmp, "00.jpg")]
     ust, buyuk, alt, satir, tarih = kanca(klasor)
-    kart(kareler[0], ust, buyuk, alt, tarih)
+    kart(kareler[0], ust, buyuk, alt, tarih, foto=KANCA_FOTO.get(KANCA_TUR))
+    if KANCA_TUR:  # habere uygun hareket: yağmur, kar, şimşek, rüzgar (yoksa hafif yakınlaşma)
+        try:
+            from hareket import hareketlendir
+            hareketlendir(kareler[0], KANCA_HAREKET.get(KANCA_TUR), kareler[0][:-4] + ".mp4", sure=3)
+        except Exception as e:
+            print("Açılış hareketlendirilemedi:", e)
     open(os.path.join(klasor, "kanca.txt"), "w", encoding="utf-8").write(satir or "")
     for i, b in enumerate(bolgeler, 1):
         k = os.path.join(tmp, f"{i:02d}.jpg")
@@ -141,6 +165,11 @@ def main(klasor):
     for i, k in enumerate(kareler):
         SURE = sureler[i]
         girdiler += ["-loop", "1", "-t", str(SURE), "-i", k]
+        if i == 0 and os.path.exists(k[:-4] + ".mp4"):  # hareketli açılış kapağı (tam ekran)
+            girdiler += ["-stream_loop", "-1", "-t", str(SURE), "-i", k[:-4] + ".mp4"]
+            filtre.append(f"[{gi + 1}:v]fps=30,scale={W}:{H},setsar=1,trim=duration={SURE},setpts=PTS-STARTPTS,format=yuv420p[v{i}]")
+            gi += 2
+            continue
         hareketli = bolgeler[i - 1][:-4] + ".mp4" if 0 < i <= len(bolgeler) else None
         if hareketli and os.path.exists(hareketli):
             # hareketli bölge kartı (yağmur/kar/bulut akar), bulanık arka planın ortasına

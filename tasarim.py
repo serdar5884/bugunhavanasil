@@ -163,12 +163,12 @@ def _tane_res(boy):
 
 
 def _damla(katman, x, y, s):
-    dm = _damla_res(max(8, int(s * .19)))
+    dm = _damla_res(max(10, int(s * (.19 if s >= 100 else .26))))  # küçük ikonlarda daha iri
     katman.alpha_composite(dm, (int(x - dm.width / 2), int(y - dm.height / 2)))
 
 
 def _tane(katman, x, y, s):
-    t = _tane_res(max(8, int(s * .2)))
+    t = _tane_res(max(10, int(s * (.2 if s >= 100 else .28))))
     katman.alpha_composite(t, (int(x - t.width / 2), int(y - t.height / 2)))
 
 
