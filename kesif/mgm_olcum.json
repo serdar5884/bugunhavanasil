@@ -1,121 +1,135 @@
 {
- "https://www.mgm.gov.tr/sondurum/en-yuksek-en-dusuk-sicakliklar.aspx": {
-  "kod": 200,
-  "js": [
-   "./Scripts/angular//angular.min.js",
-   "./Scripts/angular/angular-locale_tr-tr.js",
-   "./Scripts/angular/angular-route.min.js",
-   "https://code.jquery.com/jquery-1.12.4.min.js",
-   "/Scripts/jquery/jquery-1.12.4.min.js",
-   "./Scripts/js/Chart.js",
-   "./Scripts/js/main-page.js",
-   "./Scripts/js/circles.min.js",
-   "./popup/cookie.js",
-   "./popup/popup.js?v=3",
-   "./Scripts/ziko16_js/angularService/ilInfo.js",
-   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
-   "./Scripts/js/mainService.js?v=3",
-   "./Scripts/js/alarmService.js",
-   "./Scripts/js/haberlerService.js"
-  ],
-  "servis": []
- },
- "https://www.mgm.gov.tr/./Scripts/js/mainService.js?v=3": [
-  "sondurumlar?merkezid="
+ "satirlar": [
+  "<script type=\"text/javascript\" src=\"./Scripts/angular//angular.min.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/angular/angular-locale_tr-tr.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/angular/angular-route.min.js\"></script>",
+  "s.src = \"https://mc.yandex.ru/metrika/watch.js\";",
+  "<!-- <script src=\"https://code.jquery.com/jquery-1.12.4.min.js\" integrity=\"sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=\" crossorigin=\"anonymous\"></script> -->",
+  "<script src=\"/Scripts/jquery/jquery-1.12.4.min.js\"></script>",
+  "<script src = \"/Scripts/js/howler.js\"></script>",
+  "<section class=\"weather\" ng-controller=\"mainCtrl\">",
+  "ng-bind=\"gunlukTahmin[0].enDusukGun1 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekGun1 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enDusukNemGun1 | kaliteKontrol\"></span>-<span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekNemGun1 | kaliteKontrol\"></span>",
+  "ng-bind=\"gunlukTahmin[0].enDusukGun2 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekGun2 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enDusukNemGun2 | kaliteKontrol\"></span>-<span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekNemGun2 | kaliteKontrol\"></span>",
+  "ng-bind=\"gunlukTahmin[0].enDusukGun3 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekGun3 | kaliteKontrol\">5</span><span",
+  "ng-bind=\"gunlukTahmin[0].enDusukNemGun3 | kaliteKontrol\"></span>-<span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekNemGun3 | kaliteKontrol\"></span>",
+  "ng-bind=\"gunlukTahmin[0].enDusukGun4 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekGun4 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enDusukNemGun4 | kaliteKontrol\"></span>-<span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekNemGun4 | kaliteKontrol\"></span>",
+  "ng-bind=\"gunlukTahmin[0].enDusukGun5 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekGun5 | kaliteKontrol\"></span><span",
+  "ng-bind=\"gunlukTahmin[0].enDusukNemGun5 | kaliteKontrol\"></span>-<span",
+  "ng-bind=\"gunlukTahmin[0].enYuksekNemGun5 | kaliteKontrol\"></span>",
+  "<div class=\"announcements\" ng-controller=\"alarmCtrl\">",
+  "<div class=\"photo-container\" ng-controller=\"videoUpload\">",
+  "ng-controller=\"videoUpload\">",
+  "ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';",
+  "<script type=\"text/javascript\" src=\"./Scripts/js/Chart.js\"></script>",
+  "<script src=\"./Scripts/js/main-page.js\"></script>",
+  "<script src=\"./Scripts/js/circles.min.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./popup/cookie.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./popup/popup.js?v=3\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/ziko16_js/angularService/ilInfo.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/ziko16_js/angularService/meteoUyariService.js\"></script>-->",
+  "<script type=\"text/javascript\" src=\"./Scripts/js/mainService.js?v=3\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/js/alarmService.js\"></script>",
+  "<script type=\"text/javascript\" src=\"./Scripts/js/haberlerService.js\"></script>",
+  "})(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');"
  ],
- "https://www.mgm.gov.tr/sondurum/en-yuksek-en-dusuk.aspx": {
-  "kod": 200,
-  "js": [
-   "./Scripts/angular//angular.min.js",
-   "./Scripts/angular/angular-locale_tr-tr.js",
-   "./Scripts/angular/angular-route.min.js",
-   "https://code.jquery.com/jquery-1.12.4.min.js",
-   "/Scripts/jquery/jquery-1.12.4.min.js",
-   "./Scripts/js/Chart.js",
-   "./Scripts/js/main-page.js",
-   "./Scripts/js/circles.min.js",
-   "./popup/cookie.js",
-   "./popup/popup.js?v=3",
-   "./Scripts/ziko16_js/angularService/ilInfo.js",
-   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
-   "./Scripts/js/mainService.js?v=3",
-   "./Scripts/js/alarmService.js",
-   "./Scripts/js/haberlerService.js"
-  ],
-  "servis": []
- },
- "https://www.mgm.gov.tr/sondurum/turkiye-icin-son-durumlar.aspx": {
-  "kod": 200,
-  "js": [
-   "./Scripts/angular//angular.min.js",
-   "./Scripts/angular/angular-locale_tr-tr.js",
-   "./Scripts/angular/angular-route.min.js",
-   "https://code.jquery.com/jquery-1.12.4.min.js",
-   "/Scripts/jquery/jquery-1.12.4.min.js",
-   "./Scripts/js/Chart.js",
-   "./Scripts/js/main-page.js",
-   "./Scripts/js/circles.min.js",
-   "./popup/cookie.js",
-   "./popup/popup.js?v=3",
-   "./Scripts/ziko16_js/angularService/ilInfo.js",
-   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
-   "./Scripts/js/mainService.js?v=3",
-   "./Scripts/js/alarmService.js",
-   "./Scripts/js/haberlerService.js"
-  ],
-  "servis": []
- },
- "https://www.mgm.gov.tr/sondurum/": {
-  "kod": -1,
-  "js": [],
-  "servis": []
- },
- "/web/sondurumlar/enDusukSicakliklar": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/enYuksekSicakliklar": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/enDusuk": {
-  "kod": -1,
-  "ornek": "HTTP Error 400: Bad Request"
- },
- "/web/sondurumlar/enYuksek": {
-  "kod": -1,
-  "ornek": "HTTP Error 400: Bad Request"
- },
- "/web/sondurumlar/ekstremler": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar?merkezid=90601": {
-  "kod": 200,
-  "ornek": "[{\"aktuelBasinc\":910.8,\"denizSicaklik\":-9999,\"denizeIndirgenmisBasinc\":1012,\"gorus\":20000,\"hadiseKodu\":\"PB\",\"istNo\":17130,\"kapalilik\":4,\"karYukseklik\":-9999,\"nem\":93,\"rasatMetar\":\"-9999\",\"rasatSinoptik\":\"-9999\",\"rasatTaf\":\"-9999\",\"ruzgarHiz\":0.7200000000000001,\"ruzgarYon\":108,\"sicaklik\":8.8,\"veriZamani\":\"2026-11-21T16:34:00.000Z\",\"yagis00Now\":0.56,\"yagis10Dk\":0,\"yagis12Saat\":0.48,\"yagis1Saat\":0,\"yagis24Saat\":0.56,\"yagis6Saat\":0.04,\"denizVeriZamani\":\"2026-11-21T06:00:00.000Z\",\"hissedilenSicaklik\":8.8}]"
- },
- "/web/sondurumlar/il?il=Sivas": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/il81": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/ekstremler": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/maxmin": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/enSicakEnSoguk": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- },
- "/web/sondurumlar/enDusukEnYuksek": {
-  "kod": -1,
-  "ornek": "HTTP Error 404: Not Found"
- }
+ "https://www.mgm.gov.tr/Scripts/js/mainService.js?v=3": [
+  "diseGun3Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun3);\r\n            $scope.gunlukTahmin[0].hadiseGun4Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun4);\r\n            $scope.gunlukTahmin[0].hadiseGun5Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($sco",
+  "].hadiseGun3);\r\n            $scope.gunlukTahmin[0].hadiseGun4Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun4);\r\n            $scope.gunlukTahmin[0].hadiseGun5Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun4);\r\n\t\t\t$scope.gunlu",
+  "Tahmin[0].hadiseGun4Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun4);\r\n            $scope.gunlukTahmin[0].hadiseGun5Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun4);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun5=kaliteKontrol($sco",
+  "nlukTahmin[0].hadiseGun4);\r\n            $scope.gunlukTahmin[0].hadiseGun5Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun4);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun5=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun5);\r\n\t\t\t\r\n\t\t\t$scope.",
+  "scope.gunlukTahmin[0].hadiseGun5Adi = convertHadise($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun4);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun5=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enYuksekGun1=kaliteKontro",
+  "se($scope.gunlukTahmin[0].hadiseGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun1=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun1);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun2=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun2);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun3=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun3);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun4=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun4);\r\n\t\t\t$scope.gunlukTahmin[0].enDusukGun5=kaliteKontrol($scope.gunlukTahmin[0].enDusukGun5);\r\n\t\t\t\r\n\t\t\t$scope.gunlukTahmin[0].enYuksekGun1=kaliteKontrol($scope.gunlukTahmin[0].enYuksekGun1);\r\n\t\t\t$scop"
+ ],
+ "sondurumlar/enDusuk?sayi=10": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?sayi=10": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?adet=10": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?adet=10": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?zaman=bugun": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?zaman=bugun": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?tarih=2026-11-21": [
+  200,
+  "[{\"gun\":0,\"istNo\":18434,\"tarih\":\"2026-11-21T06:00:00.000Z\",\"deger\":16.8,\"istAd\":\"SAVAŞTEPE\",\"enlem\":39.350556,\"boylam\":27.656111,\"il\":\"Balıkesir\",\"ilce\":\"Savaştepe\"},{\"gun\":0,\"istNo\":18506,\"tarih\":\"2026-11-21T06:00:00.000Z\",\"deger\":11.6,\"istAd\":\"HAMAMÖZÜ\",\"enlem\":40.787412,\"boylam\":35.018266,\"il\":\"A"
+ ],
+ "sondurumlar/enYuksek?tarih=2026-11-21": [
+  200,
+  "[]"
+ ],
+ "sondurumlar/enDusuk?gun=0": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?gun=0": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?istno=17130": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?istno=17130": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?bolge=1": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?bolge=1": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?il=Sivas": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?il=Sivas": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?tip=0": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?tip=0": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enDusuk?sure=24": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ],
+ "sondurumlar/enYuksek?sure=24": [
+  -1,
+  "HTTP Error 400: Bad Request"
+ ]
 }
