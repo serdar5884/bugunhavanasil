@@ -1,0 +1,121 @@
+{
+ "https://www.mgm.gov.tr/sondurum/en-yuksek-en-dusuk-sicakliklar.aspx": {
+  "kod": 200,
+  "js": [
+   "./Scripts/angular//angular.min.js",
+   "./Scripts/angular/angular-locale_tr-tr.js",
+   "./Scripts/angular/angular-route.min.js",
+   "https://code.jquery.com/jquery-1.12.4.min.js",
+   "/Scripts/jquery/jquery-1.12.4.min.js",
+   "./Scripts/js/Chart.js",
+   "./Scripts/js/main-page.js",
+   "./Scripts/js/circles.min.js",
+   "./popup/cookie.js",
+   "./popup/popup.js?v=3",
+   "./Scripts/ziko16_js/angularService/ilInfo.js",
+   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
+   "./Scripts/js/mainService.js?v=3",
+   "./Scripts/js/alarmService.js",
+   "./Scripts/js/haberlerService.js"
+  ],
+  "servis": []
+ },
+ "https://www.mgm.gov.tr/./Scripts/js/mainService.js?v=3": [
+  "sondurumlar?merkezid="
+ ],
+ "https://www.mgm.gov.tr/sondurum/en-yuksek-en-dusuk.aspx": {
+  "kod": 200,
+  "js": [
+   "./Scripts/angular//angular.min.js",
+   "./Scripts/angular/angular-locale_tr-tr.js",
+   "./Scripts/angular/angular-route.min.js",
+   "https://code.jquery.com/jquery-1.12.4.min.js",
+   "/Scripts/jquery/jquery-1.12.4.min.js",
+   "./Scripts/js/Chart.js",
+   "./Scripts/js/main-page.js",
+   "./Scripts/js/circles.min.js",
+   "./popup/cookie.js",
+   "./popup/popup.js?v=3",
+   "./Scripts/ziko16_js/angularService/ilInfo.js",
+   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
+   "./Scripts/js/mainService.js?v=3",
+   "./Scripts/js/alarmService.js",
+   "./Scripts/js/haberlerService.js"
+  ],
+  "servis": []
+ },
+ "https://www.mgm.gov.tr/sondurum/turkiye-icin-son-durumlar.aspx": {
+  "kod": 200,
+  "js": [
+   "./Scripts/angular//angular.min.js",
+   "./Scripts/angular/angular-locale_tr-tr.js",
+   "./Scripts/angular/angular-route.min.js",
+   "https://code.jquery.com/jquery-1.12.4.min.js",
+   "/Scripts/jquery/jquery-1.12.4.min.js",
+   "./Scripts/js/Chart.js",
+   "./Scripts/js/main-page.js",
+   "./Scripts/js/circles.min.js",
+   "./popup/cookie.js",
+   "./popup/popup.js?v=3",
+   "./Scripts/ziko16_js/angularService/ilInfo.js",
+   "./Scripts/ziko16_js/angularService/meteoUyariService.js",
+   "./Scripts/js/mainService.js?v=3",
+   "./Scripts/js/alarmService.js",
+   "./Scripts/js/haberlerService.js"
+  ],
+  "servis": []
+ },
+ "https://www.mgm.gov.tr/sondurum/": {
+  "kod": -1,
+  "js": [],
+  "servis": []
+ },
+ "/web/sondurumlar/enDusukSicakliklar": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/enYuksekSicakliklar": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/enDusuk": {
+  "kod": -1,
+  "ornek": "HTTP Error 400: Bad Request"
+ },
+ "/web/sondurumlar/enYuksek": {
+  "kod": -1,
+  "ornek": "HTTP Error 400: Bad Request"
+ },
+ "/web/sondurumlar/ekstremler": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar?merkezid=90601": {
+  "kod": 200,
+  "ornek": "[{\"aktuelBasinc\":910.8,\"denizSicaklik\":-9999,\"denizeIndirgenmisBasinc\":1012,\"gorus\":20000,\"hadiseKodu\":\"PB\",\"istNo\":17130,\"kapalilik\":4,\"karYukseklik\":-9999,\"nem\":93,\"rasatMetar\":\"-9999\",\"rasatSinoptik\":\"-9999\",\"rasatTaf\":\"-9999\",\"ruzgarHiz\":0.7200000000000001,\"ruzgarYon\":108,\"sicaklik\":8.8,\"veriZamani\":\"2026-11-21T16:34:00.000Z\",\"yagis00Now\":0.56,\"yagis10Dk\":0,\"yagis12Saat\":0.48,\"yagis1Saat\":0,\"yagis24Saat\":0.56,\"yagis6Saat\":0.04,\"denizVeriZamani\":\"2026-11-21T06:00:00.000Z\",\"hissedilenSicaklik\":8.8}]"
+ },
+ "/web/sondurumlar/il?il=Sivas": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/il81": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/ekstremler": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/maxmin": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/enSicakEnSoguk": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ },
+ "/web/sondurumlar/enDusukEnYuksek": {
+  "kod": -1,
+  "ornek": "HTTP Error 404: Not Found"
+ }
+}
