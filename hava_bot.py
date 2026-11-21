@@ -427,11 +427,11 @@ def destek_bandi(d, x0, y0, x1, y1):
     d.text((tx, y0 + h * .56), alt, font=f2, fill=(60, 50, 0))
 
 
-YORUM_METIN = "Yoruma ilini yaz, 5 günlük tahmini al!"
+YORUM_METIN = "Yoruma il ya da ilçe yaz, tahmini hemen al!"
 
 
 def yorum_cagrisi(d, x0, y0, x1, y1):
-    """Beyaz şerit: konuşma balonu + 'Yoruma ilini yaz, 5 günlük tahmini al!'"""
+    """Beyaz şerit: konuşma balonu + YORUM_METIN"""
     h = y1 - y0
     d.rounded_rectangle([x0, y0, x1, y1], radius=h / 2, fill=(255, 255, 255, 235))
     lac = (18, 30, 55)
