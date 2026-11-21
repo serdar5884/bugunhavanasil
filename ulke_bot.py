@@ -5,7 +5,7 @@ Yurt geneli önemli hava gelişmeleri – MGM'nin 81 il tahmininden otomatik tes
   KUVVETLİ YAĞIŞ GELİYOR! en az 8 ilde MGM "kuvvetli" yağış kodu
   YAĞMURLU HAVA GELİYOR!  bir önceki gün ≤20 ilde yağış varken en az 40 ilde yağış
   SOĞUK HAVA DALGASI!     en az 30 ilde en yüksek sıcaklık bir önceki güne göre 6°C+ düşüyor
-  SICAKLIKLAR ARTIYOR!    en az 30 ilde 6°C+ artış
+  SICAKLIKLAR X DERECE YÜKSELİYOR/DÜŞÜYOR!  20+ ilde 5°C ya da 8+ ilde 8°C değişim (bir önceki güne göre)
   KUVVETLİ RÜZGAR!        en az 8 ilde kuvvetli rüzgar
 Her gelişme (tür + tarih) bir kez paylaşılır: 4:5 gönderi + hikâye.
 
@@ -123,18 +123,28 @@ def tespit(veri):
                             "ek": "Çatı uçması ve devrilmelere karşı tedbirli olun."})
         farklar = {il: g[il]["max"] - veri[il][onceki]["max"] for il in g
                    if onceki in veri[il] and g[il]["max"] is not None and veri[il][onceki]["max"] is not None}
-        dusen = [il for il, f in farklar.items() if f <= -6]
-        if len(dusen) >= 30:
-            il_max = min(dusen, key=lambda il: farklar[il])
-            ort = round(-sum(farklar[il] for il in dusen) / len(dusen))
-            olaylar.append({"tur": "SOGUK", "baslik": "SOĞUK HAVA DALGASI!", "sahne": "bulutlu", "foto": "soguk", "iller": dusen, "tarih": tarih,
-                            "fiil": f"sıcaklıklar ortalama {ort}°C düşüyor",
-                            "ek": f"En büyük düşüş {bulunma(il_max)}: {veri[il_max][onceki]['max']}°C'den {g[il_max]['max']}°C'ye."})
-        artan = [il for il, f in farklar.items() if f >= 6]
-        if len(artan) >= 30:
-            ort = round(sum(farklar[il] for il in artan) / len(artan))
-            olaylar.append({"tur": "SICAK", "baslik": "SICAKLIKLAR ARTIYOR!", "sahne": "gunesli", "iller": artan, "tarih": tarih,
-                            "fiil": f"sıcaklıklar ortalama {ort}°C artıyor", "ek": ""})
+        def ilk3(iller, isaret):
+            sec = sorted(iller, key=lambda il: farklar[il] * isaret, reverse=True)[:3]
+            return ", ".join(f"{il} {abs(farklar[il])} derece ({veri[il][onceki]['max']}°C'den {g[il]['max']}°C'ye)" for il in sec[:2]) + \
+                (f", {sec[2]} {abs(farklar[sec[2]])} derece" if len(sec) > 2 else "")
+        # Ani sıcaklık değişimi: geniş alanda (20+ il 5°C) ya da sert (8+ il 8°C) düşüş/artış
+        dusen = sorted([il for il, f in farklar.items() if f <= -5], key=lambda il: farklar[il])
+        sert_d = [il for il in dusen if farklar[il] <= -8]
+        if len(dusen) >= 20 or len(sert_d) >= 8:
+            en = -farklar[dusen[0]]
+            soguk_dalga = len(dusen) >= 30
+            olaylar.append({"tur": "SOGUK", "baslik": f"SICAKLIKLAR {en} DERECE DÜŞÜYOR!",
+                            "sahne": "bulutlu", "foto": "soguk", "iller": dusen, "tarih": tarih,
+                            "fiil": f"sıcaklıkların {en} dereceye kadar düşmesi bekleniyor" + (", soğuk hava dalgası geliyor" if soguk_dalga else ""),
+                            "ek": f"En büyük düşüşler: {ilk3(dusen, -1)}. Kalın giyinmeyi unutmayın."})
+        artan = sorted([il for il, f in farklar.items() if f >= 5], key=lambda il: -farklar[il])
+        sert_a = [il for il in artan if farklar[il] >= 8]
+        if len(artan) >= 20 or len(sert_a) >= 8:
+            en = farklar[artan[0]]
+            olaylar.append({"tur": "SICAK", "baslik": f"SICAKLIKLAR {en} DERECE YÜKSELİYOR!", "sahne": "gunesli",
+                            "iller": artan, "tarih": tarih,
+                            "fiil": f"sıcaklıkların {en} dereceye kadar yükselmesi bekleniyor",
+                            "ek": f"En büyük artışlar: {ilk3(artan, 1)}."})
     # Aynı gün hem "yağmurlu hava" hem "kuvvetli yağış" varsa tek gönderide birleştir
     birlesik = []
     for o in olaylar:
