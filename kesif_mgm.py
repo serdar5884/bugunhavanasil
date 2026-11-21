@@ -1,11 +1,11 @@
 """MGM ölçüm (son durum / en düşük-en yüksek) servislerini keşfeder; sonuçları kesif/ altına yazar."""
-import json, re, requests
+import json, re, urllib.request
 H = {"Origin": "https://www.mgm.gov.tr", "Referer": "https://www.mgm.gov.tr/", "User-Agent": "Mozilla/5.0"}
 out = {}
 def al(u):
     try:
-        r = requests.get(u, headers=H, timeout=25)
-        return r.status_code, r.text
+        with urllib.request.urlopen(urllib.request.Request(u, headers=H), timeout=25) as r:
+            return r.status, r.read().decode("utf-8", "replace")
     except Exception as e:
         return -1, str(e)
 # 1) sayfa + JS'lerden servis adreslerini topla
