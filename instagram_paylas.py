@@ -175,21 +175,12 @@ def ozel(gorsel_yolu, il, sadece=None):
     if sadece:  # elle tetiklemede sadece belirtilen sayfa(lar)a davet (ör. yeni ortak için ilk gönderi)
         ortak = [x.strip().lstrip("@") for x in sadece.split(",") if x.strip()]
     gonderi_cap = caption.split("\n\n🎵")[0]  # müzik satırı sadece Reels'te
-    isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
-    hareketli = gorsel_yolu[:-4] + "_hareketli.mp4"
-    if os.path.exists(hareketli):  # kaydırmalı gönderi: 1) hareketli kart 2) sabit görsel
-        try:
-            v = istek(f"{USER}/media", {"media_type": "VIDEO", "video_url": url(hareketli), "is_carousel_item": "true"})["id"]
-            g = istek(f"{USER}/media", {"image_url": url(gorsel_yolu), "is_carousel_item": "true"})["id"]
-            hazir_bekle(v, deneme=60)
-            hazir_bekle(g)
-            isler[0] = ("Gönderi", {"media_type": "CAROUSEL", "children": f"{v},{g}", "caption": gonderi_cap})
-        except Exception as e:
-            print("Hareketli gönderi hazırlanamadı, sabit görsel paylaşılıyor:", e)
     mp4 = gorsel_yolu[:-4] + ".mp4"
-    if os.path.exists(mp4):
-        isler.append(("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
-                                "caption": caption + " #reels", "share_to_feed": "true"}))
+    if os.path.exists(mp4):  # ortak paylaşım sadece Reels (kaydırmalı gönderi yok)
+        isler = [("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
+                            "caption": caption + " #reels", "share_to_feed": "true"})]
+    else:  # video üretilemediyse sabit görsel
+        isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
     for ad, veri in isler:
         try:
             if ortak:
