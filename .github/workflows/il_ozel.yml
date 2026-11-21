@@ -27,9 +27,10 @@ jobs:
       - name: Paylaş
         if: ${{ inputs.paylas == 'evet' }}
         run: python -u instagram_paylas.py ozel "$(cat 'yayin/il_ozel/${{ inputs.il }}/son.txt')" "${{ inputs.il }}" "${{ inputs.ortak }}"
-      - name: Videoyu indirilebilir yap
-        uses: actions/upload-artifact@v4
-        with:
-          name: il-ozel-video
-          path: yayin/il_ozel/${{ inputs.il }}/*.mp4
-          retention-days: 3
+      - name: Önizleme videosunu 'onizleme' dalına koy
+        if: ${{ inputs.paylas != 'evet' }}
+        run: |
+          export GIT_INDEX_FILE=$(mktemp -u)
+          git add -f yayin/il_ozel/${{ inputs.il }}/*.mp4
+          T=$(git write-tree); C=$(git commit-tree $T -m onizleme); unset GIT_INDEX_FILE
+          git push -q -f origin $C:refs/heads/onizleme
