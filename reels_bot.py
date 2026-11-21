@@ -25,18 +25,35 @@ def dikey(src_yol, hedef):
     arka.save(hedef, quality=92)
 
 
-def kart(hedef, ust, buyuk, alt, tarih, kapanis=False):
-    img = Image.new("RGB", (W, H))
+def foto_zemin(foto):
+    """arka_plan/<foto>/ klasöründen günün fotoğrafı, 9:16 kırpılmış ve yazı okunsun diye karartılmış."""
+    from PIL import ImageEnhance, ImageFilter
+    fotolar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "arka_plan", foto, "*.jpg")))
+    if not fotolar:
+        return None
+    src = Image.open(fotolar[datetime.date.today().toordinal() % len(fotolar)]).convert("RGB")
+    oran = max(W / src.width, H / src.height)
+    src = src.resize((int(src.width * oran + 1), int(src.height * oran + 1)))
+    x, y = (src.width - W) // 2, (src.height - H) // 2
+    return ImageEnhance.Brightness(src.crop((x, y, x + W, y + H)).filter(ImageFilter.GaussianBlur(2))).enhance(0.5)
+
+
+def kart(hedef, ust, buyuk, alt, tarih, kapanis=False, foto=None):
+    img = foto_zemin(foto) if foto else None
+    if img is None:
+        img = Image.new("RGB", (W, H))
+        d = ImageDraw.Draw(img, "RGBA")
+        for y in range(H):
+            k = y / H
+            d.line([(0, y), (W, y)], fill=(int(20 + 10 * k), int(70 - 30 * k), int(150 - 60 * k)))
     d = ImageDraw.Draw(img, "RGBA")
-    for y in range(H):
-        k = y / H
-        d.line([(0, y), (W, y)], fill=(int(20 + 10 * k), int(70 - 30 * k), int(150 - 60 * k)))
     f_u, f_b, f_a = font("ExtraBold", 110), font("ExtraBold", 150), font("Bold", 56)
     y = 560
     for metin, f, renk in ((ust, f_u, (255, 205, 0)), (buyuk, f_b, (255, 255, 255)), (alt, f_a, (255, 255, 255))):
         for s in metin.split("\n"):
             while d.textlength(s, font=f) > W - 90 and f.size > 60:  # uzun satır taşmasın
                 f = font("ExtraBold", f.size - 6)
+            d.text((W / 2 - d.textlength(s, font=f) / 2 + 4, y + 4), s, font=f, fill=(0, 0, 0, 150))  # gölge
             d.text((W / 2 - d.textlength(s, font=f) / 2, y), s, font=f, fill=renk)
             y += f.size + 30
         y += 30

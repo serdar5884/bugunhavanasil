@@ -73,17 +73,21 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     d = ImageDraw.Draw(img, "RGBA")
     M = 50
     # --- başlık
-    gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "")
-    f1, f2 = font("ExtraBold", 40), font("Bold", 28)
-    d.text((M, 36), gun_k, font=f1, fill=SARI)
-    d.text((M + d.textlength(gun_k, font=f1) + 10, 48), "HAVA NASIL?", font=f2, fill="white")
+    from tasarim import cam_kart, takvim_ikon
+    gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "BUGÜN")
+    f1 = font("ExtraBold", 40)
+    d.text((M + 2, 38), f"{gun_k} HAVA NASIL?", font=f1, fill=(0, 0, 0, 100))
+    d.text((M, 36), f"{gun_k} HAVA NASIL?", font=f1, fill=SARI)
     il_b = il.replace("i", "İ").replace("ı", "I").upper()
-    d.text((M, 82), il_b, font=font("ExtraBold", 92), fill="white")
-    d.text((M, 186), f"{tarih.day} {AYLAR[tarih.month]} {tarih.year}, {GUNLER[tarih.weekday()]}", font=font("Medium", 30),
+    f_il = metni_sigdir(d, il_b, "ExtraBold", 120, W - 2 * M - 330)
+    d.text((M + 4, 84), il_b, font=f_il, fill=(0, 0, 0, 120))
+    d.text((M, 80), il_b, font=f_il, fill="white")
+    takvim_ikon(d, M, 232, 30)
+    d.text((M + 44, 228), f"{tarih.day} {AYLAR[tarih.month]} {tarih.year}, {GUNLER[tarih.weekday()]}", font=font("Medium", 30),
            fill=(255, 255, 255, 220))
     # --- merkez: büyük ikon + sıcaklık
     metin, tip = HADISE.get(m["hadise"] or "", (m["hadise"] or "-", "bulut"))
-    ikon(d, tip, W - 250, 140, 150)
+    ikon(d, tip, W - 200, 120, 190)
     f_s = font("ExtraBold", 110)
     sic = f"{m['max']}°"
     d.text((W - M - d.textlength(sic, font=f_s), 200), sic, font=f_s, fill="white")
@@ -98,9 +102,9 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     for i, v in enumerate(ilce_v[:20]):
         c, r = i % sut, i // sut
         x, y = M + c * (kw + gap_x(1)), y0 + r * (kh + gap)
-        d.rounded_rectangle([x, y, x + kw, y + kh], radius=18, fill=(15, 30, 55, 120), outline=(255, 255, 255, 60), width=2)
+        cam_kart(img, [x, y, x + kw, y + kh], r=18)
         mt, tp = HADISE.get(v["hadise"] or "", (v["hadise"] or "-", "bulut"))
-        ikon(d, tp, x + 40, y + kh / 2, 58)
+        ikon(d, tp, x + 40, y + kh / 2, 66)
         fa = metni_sigdir(d, v["il"], "Bold", 27, kw - 84)
         d.text((x + 76, y + 16), v["il"], font=fa, fill="white")
         d.text((x + 76, y + 54), f"{v['max']}°", font=font("ExtraBold", 38), fill="white")
@@ -117,11 +121,11 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
         x = M + i * (gw + 10)
         v = merkez[k]
         dt = datetime.date.fromisoformat(k)
-        d.rounded_rectangle([x, y5, x + gw, y5 + 165], radius=18, fill=(15, 30, 55, 130))
+        cam_kart(img, [x, y5, x + gw, y5 + 165], r=18)
         ad = GUN_KISA[dt.weekday()] if i else ("Bugün" if gun_no == 1 else "Yarın")
         fg = font("Bold", 24)
         d.text((x + gw / 2 - d.textlength(ad, font=fg) / 2, y5 + 10), ad, font=fg, fill="white")
-        ikon(d, HADISE.get(v["hadise"] or "", ("", "bulut"))[1], x + gw / 2, y5 + 78, 60)
+        ikon(d, HADISE.get(v["hadise"] or "", ("", "bulut"))[1], x + gw / 2, y5 + 78, 70)
         s = f"{v['max']}°/{v['min']}°"
         fs = font("ExtraBold", 26)
         d.text((x + gw / 2 - d.textlength(s, font=fs) / 2, y5 + 120), s, font=fs, fill="white")

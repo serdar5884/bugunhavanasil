@@ -154,60 +154,9 @@ def gradient(ust, alt):
 
 
 def ikon(d, tip, cx, cy, s):
-    """Basit vektör hava ikonları (emoji fontu gerektirmez)."""
-    sari, beyaz, gri, mavi = (255, 200, 40), (255, 255, 255), (200, 210, 225), (110, 190, 255)
-
-    import math
-    faz = FAZ or 0
-    sal = math.sin(2 * math.pi * faz) * s * .03 if FAZ is not None else 0  # bulut salınımı
-
-    def gunes(x, y, r):
-        for a in range(0, 360, 45):
-            a = a + faz * 45
-            rx, ry = math.cos(math.radians(a)), math.sin(math.radians(a))
-            d.line([(x + rx * r * 1.35, y + ry * r * 1.35), (x + rx * r * 1.75, y + ry * r * 1.75)],
-                   fill=sari, width=max(2, s // 14))
-        d.ellipse([x - r, y - r, x + r, y + r], fill=sari)
-
-    def bulut(x, y, k, renk=beyaz):
-        x = x + sal
-        d.ellipse([x - k * .9, y - k * .35, x - k * .1, y + k * .45], fill=renk)
-        d.ellipse([x - k * .45, y - k * .75, x + k * .4, y + k * .3], fill=renk)
-        d.ellipse([x + k * .05, y - k * .45, x + k * .85, y + k * .45], fill=renk)
-        d.rectangle([x - k * .5, y, x + k * .45, y + k * .45], fill=renk)
-
-    if tip == "gunes":
-        gunes(cx, cy, s * .32)
-    elif tip == "az_bulut":
-        gunes(cx - s * .15, cy - s * .12, s * .24)
-        bulut(cx + s * .08, cy + s * .12, s * .42)
-    elif tip == "bulut":
-        bulut(cx - s * .12, cy - s * .08, s * .32, gri)
-        bulut(cx + s * .06, cy + s * .08, s * .45)
-    elif tip in ("yagmur", "firtina", "kar", "karla_yagmur"):
-        bulut(cx, cy - s * .12, s * .45, gri if tip == "firtina" else beyaz)
-        for i in range(3):
-            x = cx - s * .22 + i * s * .22
-            y = cy + s * .24
-            if FAZ is not None:  # damlalar/taneler aşağı akar
-                k = (faz * 4 + i * .37) % 1
-                y = cy + s * .16 + k * s * .18
-                x -= k * s * .04
-            if tip == "kar" or (tip == "karla_yagmur" and i == 1):
-                r = s * .05
-                d.ellipse([x - r, y - r + s * .06, x + r, y + r + s * .06], fill=beyaz)
-            elif tip == "firtina" and i == 1:
-                d.polygon([(x + s * .04, y - s * .02), (x - s * .07, y + s * .14), (x, y + s * .14),
-                           (x - s * .05, y + s * .28), (x + s * .1, y + s * .1), (x + s * .02, y + s * .1)],
-                          fill=sari)
-            else:
-                d.line([(x + s * .04, y), (x - s * .03, y + s * .14)], fill=mavi, width=max(3, s // 12))
-    elif tip == "sis":
-        for i in range(4):
-            y = cy - s * .24 + i * s * .16
-            off = s * .08 if i % 2 else 0
-            d.rounded_rectangle([cx - s * .36 + off, y, cx + s * .36 - (s * .08 - off), y + s * .07],
-                                radius=s * .035, fill=gri)
+    """Parlak 3D hava ikonları (tasarim.py). d: çizilen görselin ImageDraw nesnesi."""
+    from tasarim import ikon3d
+    ikon3d(d._image, tip, cx, cy, int(s), FAZ)
 
 
 # ---------------------------------------------------------------- HAVAYA GÖRE ARKA PLAN
@@ -455,29 +404,40 @@ def metni_sigdir(d, metin, f_stil, boyut, max_w):
     return font(f_stil, boyut)
 
 
+# TÜİK 2024 yaklaşık nüfusları (bin): 14'ten fazla ili olan bölgede en az nüfuslu iller karta alınmaz
+NUFUS = {"Samsun": 1377, "Trabzon": 823, "Ordu": 763, "Tokat": 596, "Zonguldak": 585, "Çorum": 527, "Giresun": 450,
+         "Düzce": 411, "Kastamonu": 388, "Rize": 345, "Amasya": 337, "Bolu": 323, "Karabük": 252, "Sinop": 221,
+         "Bartın": 204, "Artvin": 169, "Gümüşhane": 144, "Bayburt": 86}
+EN_FAZLA_IL = 14
+
+
+def kart_illeri(veriler):
+    """Kartta en fazla 14 il: fazlaysa nüfusu en az olanlar çıkar, sıralama (ör. Sivas en üstte) korunur."""
+    if len(veriler) <= EN_FAZLA_IL:
+        return veriler
+    kalan = sorted(veriler, key=lambda v: -NUFUS.get(v["il"], 10 ** 6))[:EN_FAZLA_IL]
+    return [v for v in veriler if v in kalan]
+
+
 def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
+    veriler = kart_illeri(veriler)
     sahne = baskin_sahne(veriler)
     kart_dolgu = {"yagmurlu": (255, 255, 255, 34), "firtinali": (255, 255, 255, 34),
                   "karli": (25, 45, 80, 175)}.get(sahne, (15, 30, 55, 85))
     img = sahne_ciz(sahne, bolge)
     d = ImageDraw.Draw(img, "RGBA")
 
-    # Başlık
+    # Başlık (yeni tasarım): sarı "BUGÜN HAVA NASIL?", dev bölge adı, takvimli tarih
+    from tasarim import cam_kart, takvim_ikon
     M = 56
-    # Üst satır: büyük sarı BUGÜN / YARIN + beyaz "HAVA NASIL?"
-    gun_kelime = {1: "BUGÜN", 2: "YARIN", "hs": "HAFTA SONU"}.get(gun_no, "")
-    f_gun, f_hn = font("ExtraBold", 66), font("Bold", 40)
-    if gun_kelime:
-        golge = (0, 0, 0, 110)
-        d.text((M + 3, 33), gun_kelime, font=f_gun, fill=golge)
-        d.text((M, 30), gun_kelime, font=f_gun, fill=(255, 205, 0))
-        gx = M + d.textlength(gun_kelime, font=f_gun) + 26
-    else:
-        gx = M
-    d.text((gx, 52), "HAVA NASIL?", font=f_hn, fill=(255, 255, 255, 235))
+    gun_kelime = {1: "BUGÜN", 2: "YARIN", "hs": "HAFTA SONU"}.get(gun_no, "BUGÜN")
+    f_ust = font("ExtraBold", 46)
+    d.text((M + 2, 42), f"{gun_kelime} HAVA NASIL?", font=f_ust, fill=(0, 0, 0, 100))
+    d.text((M, 40), f"{gun_kelime} HAVA NASIL?", font=f_ust, fill=(255, 205, 0))
     baslik = bolge.replace("i", "İ").replace("ı", "I").upper() + " BÖLGESİ"
-    bosluk = 250 if sahne in ("gunesli", "parcali") else 0  # güneşe yer bırak
-    d.text((M, 112), baslik, font=metni_sigdir(d, baslik, "ExtraBold", 60, W - 2 * M - bosluk), fill="white")
+    f_b = metni_sigdir(d, baslik, "ExtraBold", 96, W - 2 * M - (230 if sahne in ("gunesli", "parcali") else 0))  # güneşe yer
+    d.text((M + 4, 100), baslik, font=f_b, fill=(0, 0, 0, 120))
+    d.text((M, 96), baslik, font=f_b, fill="white")
     gunler = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
     aylar = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
              "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -487,13 +447,15 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
                 else f"{tarih.day} {aylar[tarih.month]} – {paz.day} {aylar[paz.month]}, Cumartesi–Pazar")
     else:
         tstr = f"{tarih.day} {aylar[tarih.month]} {tarih.year}, {gunler[tarih.weekday()]}"
-    d.text((M, 188), tstr, font=font("Medium", 32), fill=(255, 255, 255, 220))
+    ty = 96 + f_b.size + 22
+    takvim_ikon(d, M, ty + 4, 34)
+    d.text((M + 50, ty), tstr, font=font("Medium", 34), fill=(255, 255, 255, 225))
 
     # Kartlar: 2 sütun
     n = len(veriler)
     satir = (n + 1) // 2
-    top, bottom = 250, H - 225
-    gap = 14
+    top, bottom = 300, H - 225
+    gap = 16
     kart_h = min(150, (bottom - top - gap * (satir - 1)) / satir)
     kart_w = (W - 2 * M - gap) / 2
     blok_h = satir * kart_h + (satir - 1) * gap
@@ -503,10 +465,9 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         c, r = i % 2, i // 2
         x0 = M + c * (kart_w + gap)
         y0 = top + r * (kart_h + gap)
-        d.rounded_rectangle([x0, y0, x0 + kart_w, y0 + kart_h], radius=min(24, kart_h * .25),
-                            fill=kart_dolgu, outline=(255, 255, 255, 70), width=2)
+        cam_kart(img, [x0, y0, x0 + kart_w, y0 + kart_h], r=int(min(24, kart_h * .22)))
         metin, tip = HADISE.get(v["hadise"] or "", (v["hadise"] or "-", "bulut"))
-        ik = kart_h * .62
+        ik = kart_h * .74
         ikon(d, tip, x0 + 18 + ik / 2, y0 + kart_h / 2, int(ik))
         tx = x0 + 30 + ik
         if "paz" in v:  # hafta sonu kartı
@@ -535,6 +496,18 @@ def bolge_gorseli(bolge, veriler, tarih, cikti, gun_no=1):
         mw = d.textlength(mn, font=f_min)
         sag = x0 + kart_w - 20
         isim_w = sag - mw - sw - 16 - tx
+        if d.textlength(v["il"], font=font("Bold", int(kart_h * .34))) > isim_w * 1.12:  # belirgin küçülecekse iki satır
+            # Uzun isim (Kahramanmaraş, Afyonkarahisar...): küçültmek yerine üstte isim, altta derece + hava durumu
+            f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .34), sag - tx)
+            d.text((tx, y0 + kart_h * .08), v["il"], font=f_il, fill="white")
+            f_s2, f_m2 = font("ExtraBold", int(kart_h * .32)), font("Medium", int(kart_h * .19))
+            yy = y0 + kart_h * .5
+            s2w, m2w = d.textlength(sicak, font=f_s2), d.textlength(mn, font=f_m2)
+            d.text((sag - m2w - s2w - 6, yy), sicak, font=f_s2, fill="white")  # derece sağa yaslı
+            d.text((sag - m2w, yy + kart_h * .1), mn, font=f_m2, fill=(255, 255, 255, 190))
+            f_d2 = metni_sigdir(d, metin, "Regular", int(kart_h * .19), sag - m2w - s2w - 20 - tx)
+            d.text((tx, yy + kart_h * .1), metin, font=f_d2, fill=(255, 255, 255, 200))
+            continue
         f_il = metni_sigdir(d, v["il"], "Bold", int(kart_h * .34), isim_w)
         d.text((tx, y0 + kart_h * .1), v["il"], font=f_il, fill="white")
         f_dur = metni_sigdir(d, metin, "Regular", int(kart_h * .19), sag - tx)
