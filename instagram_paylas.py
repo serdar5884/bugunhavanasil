@@ -167,11 +167,13 @@ def uyari(klasor):
             print("Gönderi:", yayinla(g))
 
 
-def ozel(gorsel_yolu, il):
+def ozel(gorsel_yolu, il, sadece=None):
     """İle özel görseli normal gönderi + (video varsa) Reels olarak paylaşır;
     ortaklar.json'da sayfa varsa ikisine de ortak gönderi (Collab) daveti gönderir."""
     caption = open(gorsel_yolu[:-4] + ".txt", encoding="utf-8").read()
     ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
+    if sadece:  # elle tetiklemede sadece belirtilen sayfa(lar)a davet (ör. yeni ortak için ilk gönderi)
+        ortak = [x.strip().lstrip("@") for x in sadece.split(",") if x.strip()]
     gonderi_cap = caption.split("\n\n🎵")[0]  # müzik satırı sadece Reels'te
     isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
     hareketli = gorsel_yolu[:-4] + "_hareketli.mp4"
@@ -226,6 +228,6 @@ if __name__ == "__main__":
         hazir_bekle(h)
         print("Hikâye:", yayinla(h))
     elif komut == "ozel":
-        ozel(sys.argv[2], sys.argv[3])
+        ozel(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
     elif komut == "uyari":
         uyari(sys.argv[2])

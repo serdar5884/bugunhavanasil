@@ -4,18 +4,26 @@ on:
     inputs:
       il: {default: "Sivas"}
       gun: {default: "1"}
+      paylas: {description: "Instagram'da paylaş (evet/hayır)", default: "hayır"}
+      ortak: {description: "Sadece bu sayfa(lar)a davet (virgülle); boşsa ortaklar.json", default: ""}
 permissions:
   contents: write
 jobs:
   t:
     runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: |
-          sudo apt-get update -q && sudo apt-get install -y -q fonts-inter >/dev/null
+          sudo apt-get update -q && sudo apt-get install -y -q ffmpeg >/dev/null
           pip install -q -r requirements.txt
-          python -u il_ozel.py --il "${{ inputs.il }}" --gun ${{ inputs.gun }} --cikti yayin/il_ozel
+          python -u il_ozel.py --il "${{ inputs.il }}" --gun ${{ inputs.gun }} --video --cikti "yayin/il_ozel/${{ inputs.il }}"
           git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
           git add yayin/il_ozel && git commit -qm "İle özel görsel" && for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
+      - name: Paylaş
+        if: ${{ inputs.paylas == 'evet' }}
+        run: python -u instagram_paylas.py ozel "$(cat 'yayin/il_ozel/${{ inputs.il }}/son.txt')" "${{ inputs.il }}" "${{ inputs.ortak }}"
