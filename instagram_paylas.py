@@ -129,7 +129,7 @@ def reels(klasor, yayinlama=True):
 def uyari(klasor):
     """Uyarı / son dakika / yurt geneli kartları: hikâye hareketli video, gönderi hareketli Reels.
     Video hazırlanamaz ya da yüklenemezse eskisi gibi sabit görsel paylaşılır."""
-    from hareket import hareketlendir, tur_bul
+    from hareket import hareketlendir, tur_bul, guvenli_alan
     yol = os.path.join(klasor, "paylasim.json")
     if not os.path.exists(yol):
         return print("Yeni uyarı yok")
@@ -141,7 +141,6 @@ def uyari(klasor):
             # efekt türü kaydın kendisinden (ör. KAR -> kar); yoksa başlık satırından tahmin
             tur = p["hareket"] if "hareket" in p else tur_bul(p.get("caption", "").split("\n")[0])
             mp4 = hareketlendir(p["gorsel"], tur)
-            from hareket import guvenli_alan
             guvenli_alan(mp4)  # hikâye ve Reels tam ekranda kırpılmasın
         except Exception as e:
             print("Hareketli kart üretilemedi:", e)
@@ -156,8 +155,15 @@ def uyari(klasor):
         if not hik:
             hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
         print("Hikâye:", yayinla(hik))
-        if "gonderi" in p["tur"]:
+        # Tüm uyarı/haber kartları akışa Reels olarak da gider (normal görsel gönderi yok)
+        if True:
             g = None
+            if not mp4:  # efektli video üretilemediyse sade (yakınlaşan) video dene
+                try:
+                    mp4 = hareketlendir(p["gorsel"], None)
+                    guvenli_alan(mp4)
+                except Exception as e:
+                    print("Video üretilemedi:", e)
             if mp4:
                 try:
                     g = istek(f"{USER}/media", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(p["gorsel"]),
@@ -166,9 +172,10 @@ def uyari(klasor):
                 except Exception as e:
                     print("Hareketli gönderi yüklenemedi, sabit görsel:", e)
                     g = None
-            if not g:
-                g = istek(f"{USER}/media", {"image_url": url(p.get("gonderi_gorsel", p["gorsel"])), "caption": p["caption"]})["id"]
-            print("Gönderi:", yayinla(g))
+            if g:
+                print("Reels:", yayinla(g))
+            else:
+                print("Reels paylaşılamadı (normal gönderi yapılmıyor)")
 
 
 def ozel(gorsel_yolu, il, sadece=None):
@@ -183,8 +190,9 @@ def ozel(gorsel_yolu, il, sadece=None):
     if os.path.exists(mp4):  # ortak paylaşım sadece Reels (kaydırmalı gönderi yok)
         isler = [("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
                             "caption": caption + " #reels", "share_to_feed": "true"})]
-    else:  # video üretilemediyse sabit görsel
-        isler = [("Gönderi", {"image_url": url(gorsel_yolu), "caption": gonderi_cap})]
+    else:  # video yoksa paylaşma (sadece Reels)
+        print(f"{il}: video yok, paylaşılmadı")
+        isler = []
     for ad, veri in isler:
         try:
             if ortak:
