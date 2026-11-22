@@ -52,6 +52,7 @@ jobs:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
         run: |
+          python -u instagram_paylas.py karusel $KLASOR || echo "Kaydırmalı gönderi paylaşılamadı"
           if [ -f $KLASOR/reels.mp4 ]; then python -u instagram_paylas.py reels $KLASOR || echo "Reels paylaşılamadı"; fi
           if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do [ -f yayin/il_ozel/$IL/son.txt ] && python -u instagram_paylas.py ozel "$(cat yayin/il_ozel/$IL/son.txt)" $IL || echo "$IL paylaşılamadı"; done; fi
           if [ "$GUN" != "hs" ] && [ -f yayin/ulke/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi
