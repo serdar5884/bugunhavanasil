@@ -47,7 +47,8 @@ def kayit(o, klasor, ad):
     ub.kart(o, g)
     h = g.replace(".jpg", "_hikaye.jpg")
     ub.dikey(g, h)
-    return {"gorsel": h, "gonderi_gorsel": g, "tur": "hikaye+gonderi", "caption": o["caption"]}
+    return {"gorsel": h, "gonderi_gorsel": g, "tur": "hikaye+gonderi", "caption": o["caption"],
+            "hareket": {"karli": "kar", "yagmurlu": "yagmur", "firtinali": "firtina", "ruzgarli": "ruzgar", "sisli": "sis"}.get(o["sahne"])}
 
 
 # ---------------- 1) Ölçülen en düşük sıcaklıklar (kış sabahları) ----------------

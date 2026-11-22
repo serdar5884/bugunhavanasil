@@ -138,7 +138,9 @@ def uyari(klasor):
             continue
         mp4 = None
         try:
-            mp4 = hareketlendir(p["gorsel"], tur_bul(p.get("caption", "")))
+            # efekt türü kaydın kendisinden (ör. KAR -> kar); yoksa başlık satırından tahmin
+            tur = p["hareket"] if "hareket" in p else tur_bul(p.get("caption", "").split("\n")[0])
+            mp4 = hareketlendir(p["gorsel"], tur)
         except Exception as e:
             print("Hareketli kart üretilemedi:", e)
         hik = None

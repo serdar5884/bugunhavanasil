@@ -10,7 +10,7 @@ import math, os, random, re, shutil, subprocess, sys, tempfile
 from PIL import Image, ImageDraw, ImageFilter
 
 KELIMELER = [  # sıra önemli: ilk eşleşen
-    ("firtina", r"fırtına|firtina|hortum|gök gürültü|gok gurultu|yıldırım|şimşek|dolu"),
+    ("firtina", r"fırtına|firtina|hortum|gök gürültü|gok gurultu|yıldırım|şimşek|\bdolu\b"),
     ("kar", r"\bkar\b|kar yağ|kar yag|karla|çığ|cig|buzlanma|tipi|kırağı|don\b"),
     ("yagmur", r"yağış|yagis|yağmur|yagmur|sağanak|saganak|\bsel\b|sel |su baskın|taşkın"),
     ("ruzgar", r"rüzgar|ruzgar|lodos|poyraz|kuvvetli rüzgar"),

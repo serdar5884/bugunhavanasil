@@ -257,6 +257,9 @@ def main():
         dosya = os.path.join(a.cikti, f"haber_{bugun.replace('-', '')}_{len(yeni)}_{hashlib.md5(anahtar.encode()).hexdigest()[:6]}.jpg")
         haber_gorseli(x, dosya)
         kayit = {"gorsel": dosya, "tur": "hikaye",
+                 "hareket": {"ÇIĞ": "kar", "KAR": "kar", "SEL": "yagmur", "YAĞIŞ": "yagmur", "HEYELAN": "yagmur",
+                             "HORTUM": "firtina", "FIRTINA": "firtina", "DOLU": "firtina", "YILDIRIM": "firtina",
+                             "SİS": "sis"}.get(x["olay"]),
                  "caption": (f"⚠️ HAVA UYARISI | {bulunma(x['il'])} {CUMLE_TAHMIN[x['olay']]}.\nHaber kaynağı: {x['kaynak']}"
                              if x.get("tahmin") else
                              f"🔴 SON DAKİKA | {x['il']}: {x['olay'].capitalize()}\nHaber kaynağı: {x['kaynak']}")}

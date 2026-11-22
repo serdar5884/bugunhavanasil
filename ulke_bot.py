@@ -336,7 +336,8 @@ def main():
         kart(o, g)
         h = g.replace(".jpg", "_hikaye.jpg")
         dikey(g, h)
-        paylasim.append({"gorsel": h, "gonderi_gorsel": g, "tur": "hikaye+gonderi", "caption": caption(o)})
+        paylasim.append({"gorsel": h, "gonderi_gorsel": g, "tur": "hikaye+gonderi", "caption": caption(o),
+                         "hareket": {"karli": "kar", "yagmurlu": "yagmur", "firtinali": "firtina", "ruzgarli": "ruzgar", "sisli": "sis"}.get(o["sahne"])})
         if len(paylasim) >= 3:  # bir seferde en fazla 3 gelişme
             break
     json.dump(paylasim, open(os.path.join(a.cikti, "paylasim.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
