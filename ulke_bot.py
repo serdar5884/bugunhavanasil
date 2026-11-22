@@ -295,8 +295,8 @@ def ilk_kar(veri, durum):
     if sz not in kg:
         # İlk çalışma (sezon ortası): geçmişi bilemediğimiz için şu an kar beklenen iller ve kışı erken başlayan
         # Doğu Anadolu "görmüş" sayılır; yanlışlıkla "ilk kar" denmesin. Yeni sezonda (Temmuz) liste sıfırlanır.
-        tum = {il for il, g in veri.items() for x in g.values() if x.get("hadise") in KAR}
-        kg[sz] = sorted(tum | ({il for il, b in IL_BOLGE.items() if b == "Doğu Anadolu"} if bugun.month in (11, 12, 1, 2, 3) else set()))
+        # Takip sezon başında (Temmuz–Ekim) başlamadıysa geçmiş kar bilinmez: o sezon "ilk kar" kartı hiç yapılmaz
+        kg[sz] = sorted(IL_BOLGE) if bugun.month not in (7, 8, 9, 10) else []
         return []
     gordu = set(kg[sz])
     olaylar = []
