@@ -190,6 +190,8 @@ def video(gorsel_yolu, sure=12):
         komut += ["-map", f"{ses}:a", "-af", f"afade=t=in:d=0.8,afade=t=out:st={sure - 2}:d=2",
                   "-c:a", "aac", "-b:a", "128k"]
     subprocess.run(komut + ["-t", str(sure), mp4], check=True)
+    from hareket import guvenli_alan
+    guvenli_alan(mp4)  # tam ekranda kırpılmasın
     return mp4, kapak, sanatci
 
 

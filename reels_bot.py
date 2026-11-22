@@ -218,6 +218,8 @@ def main(klasor):
              "-profile:v", "high", "-pix_fmt", "yuv420p", "-r", "30", "-c:a", "aac", "-b:a", "128k",
              "-movflags", "+faststart", "-t", f"{toplam:.2f}", cikti]
     subprocess.run(komut, check=True)
+    from hareket import guvenli_alan
+    guvenli_alan(cikti)  # tam ekranda kırpılmasın
     Image.open(kareler[0]).save(os.path.join(klasor, "reels_kapak.jpg"), quality=90)
     print(f"Reels hazır: {cikti} ({toplam:.1f} sn, {os.path.getsize(cikti) // 1024} KB)")
 

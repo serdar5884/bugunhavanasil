@@ -109,3 +109,23 @@ def hareketlendir(jpg, tur=None, mp4=None, sure=6, fps=20):
 
 if __name__ == "__main__":
     print(hareketlendir(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None))
+
+
+def guvenli_alan(mp4, oran=0.82, ust=50):
+    """Reels/hikâye tam ekranda uzun telefonlarda iki yandan kırpılır ve altta yazılar/düğmeler içeriği örter.
+    İçeriği %82'ye küçültüp yatayda ortalar, biraz yukarı alır; boşluğa aynı videonun bulanık hali gelir."""
+    import json as _j
+    bilgi = _j.loads(subprocess.check_output(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                              "stream=width,height", "-of", "json", mp4]))["streams"][0]
+    W, H = bilgi["width"], bilgi["height"]
+    w, h = int(W * oran) // 2 * 2, int(H * oran) // 2 * 2
+    x = (W - w) // 2
+    y = min(ust, H - h)
+    gecici = mp4[:-4] + "_g.mp4"
+    fc = (f"[0:v]split[a][b];[a]scale={W}:{H},boxblur=28:2,eq=brightness=-0.12[z];"
+          f"[b]scale={w}:{h}[o];[z][o]overlay={x}:{y},format=yuv420p[v]")
+    komut = ["ffmpeg", "-y", "-loglevel", "error", "-i", mp4, "-filter_complex", fc, "-map", "[v]", "-map", "0:a?",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-c:a", "copy", "-movflags", "+faststart", gecici]
+    subprocess.run(komut, check=True)
+    os.replace(gecici, mp4)
+    return mp4

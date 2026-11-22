@@ -129,6 +129,8 @@ def reels(k, sure=3.5):
     out = os.path.join(k, "reels.mp4")
     komut += ["-t", str(t), "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]
     subprocess.run(komut, check=True)
+    from hareket import guvenli_alan
+    guvenli_alan(out)
     import shutil
     shutil.copy(os.path.join(k, "r0.jpg"), os.path.join(k, "reels_kapak.jpg"))
     for f in glob.glob(os.path.join(k, "r[0-9].*")):

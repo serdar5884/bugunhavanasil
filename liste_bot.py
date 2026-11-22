@@ -186,6 +186,8 @@ def video(kapak_jpg, liste_jpg, hareket, out, sure=9):
     komut += ["-t", str(sure), "-r", "30", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p",
               "-movflags", "+faststart", out]
     subprocess.run(komut, check=True)
+    from hareket import guvenli_alan
+    guvenli_alan(out)  # tam ekranda kırpılmasın
     return out, sanatci
 
 

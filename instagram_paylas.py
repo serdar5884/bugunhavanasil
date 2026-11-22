@@ -141,6 +141,8 @@ def uyari(klasor):
             # efekt türü kaydın kendisinden (ör. KAR -> kar); yoksa başlık satırından tahmin
             tur = p["hareket"] if "hareket" in p else tur_bul(p.get("caption", "").split("\n")[0])
             mp4 = hareketlendir(p["gorsel"], tur)
+            from hareket import guvenli_alan
+            guvenli_alan(mp4)  # hikâye ve Reels tam ekranda kırpılmasın
         except Exception as e:
             print("Hareketli kart üretilemedi:", e)
         hik = None
