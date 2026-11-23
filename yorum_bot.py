@@ -115,8 +115,69 @@ def tahmin(istno, tarih):
     for i in range(1, 6):
         if str(t.get(f"tarihGun{i}", ""))[:10] == tarih.isoformat():
             return (HADISE.get(t.get(f"hadiseGun{i}"), (t.get(f"hadiseGun{i}"), ""))[0],
-                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}"), t.get(f"ruzgarHizGun{i}"))
+                    t.get(f"enYuksekGun{i}"), t.get(f"enDusukGun{i}"), t.get(f"ruzgarHizGun{i}"), t.get(f"hadiseGun{i}"))
     return None
+
+
+# Haber Reels'ine gelen yorumda (ör. "KAR GELİYOR!" altına "Sivas?") cevap habere göre: Evet / Hayır
+BAGLAM_TUR = [  # (başlıkta aranan, tür, olumlu cümle, olumsuz cümle)
+    (r"\bKAR\b|ILK KARI", "kar", "kar yağışı bekleniyor", "kar beklenmiyor"),
+    (r"FIRTINA|GOK GURULTU|SAGANAK", "firtina", "gök gürültülü sağanak bekleniyor", "fırtına beklenmiyor"),
+    (r"YAGMUR|YAGIS|SEL\b", "yagmur", "yağış bekleniyor", "yağış beklenmiyor"),
+    (r"RUZGAR|LODOS|POYRAZ", "ruzgar", "kuvvetli rüzgar bekleniyor", "kuvvetli rüzgar beklenmiyor"),
+    (r"\bSIS\b", "sis", "sis bekleniyor", "sis beklenmiyor"),
+]
+AY_NO = {sade(a): i for i, a in enumerate(AYLAR) if a}
+
+
+def bulunma_eki(ad):
+    """Sivas -> Sivas'ta, Ankara -> Ankara'da, Zonguldak -> Zonguldak'ta"""
+    sesli = [c for c in ad.lower() if c in "aeıioöuü"]
+    son = sesli[-1] if sesli else "e"
+    ek_s = "a" if son in "aıou" else "e"
+    sert = ad[-1].lower() in "fstkçşhp"
+    return f"{ad}'{'t' if sert else 'd'}{ek_s}"
+
+
+def baglam_coz(caption):
+    """Gönderi açıklamasının başlığından haber türü ve tarih: (tur, tarih, olumlu, olumsuz) ya da None"""
+    if not caption:
+        return None
+    bas = sade(caption.split("\n")[0]).upper()
+    for desen, tur, olumlu, olumsuz in BAGLAM_TUR:
+        if re.search(desen, bas):
+            m = re.search(r"(\d{1,2}) (ocak|subat|mart|nisan|mayis|haziran|temmuz|agustos|eylul|ekim|kasim|aralik)", sade(caption))
+            if not m:
+                return None
+            bugun = datetime.datetime.now(TR).date()
+            ay = AY_NO.get(m.group(2))
+            if not ay:
+                return None
+            yil = bugun.year + (1 if ay < bugun.month - 6 else 0)
+            try:
+                t = datetime.date(yil, ay, int(m.group(1)))
+            except ValueError:
+                return None
+            if t < bugun or (t - bugun).days > 4:
+                return None
+            return tur, t, olumlu, olumsuz
+    return None
+
+
+def baglam_uyar(tur, v):
+    """Tahmin (metin, max, min, rüzgar, kod) haberdeki olayı içeriyor mu?"""
+    tip = HADISE.get(v[4], ("", ""))[1] if len(v) > 4 else ""
+    if tur == "kar":
+        return tip in ("kar", "karla_yagmur")
+    if tur == "firtina":
+        return tip == "firtina"
+    if tur == "yagmur":
+        return tip in ("yagmur", "firtina", "karla_yagmur")
+    if tur == "ruzgar":
+        return (v[3] or 0) >= 40
+    if tur == "sis":
+        return v[4] in ("SIS", "PUS")
+    return False
 
 
 GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
@@ -177,7 +238,7 @@ def istenen_gun(s, bugun, haric=()):
 GUN_UZUN = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
 
 
-def cevap_metni(yorum, kullanici):
+def cevap_metni(yorum, kullanici, baglam=None):
     iller = hedefleri_bul(yorum)
     if not iller:
         return None
@@ -208,6 +269,9 @@ def cevap_metni(yorum, kullanici):
     elif "hafta sonu" in s or "haftasonu" in s:
         cmt = bugun + datetime.timedelta(days=(5 - bugun.weekday()) % 7)
         gunler = [(cmt, "Cumartesi"), (cmt + datetime.timedelta(days=1), "Pazar")]
+    elif baglam:  # gün belirtilmemiş, haber gönderisine yorum: haberdeki günün tahmini
+        t = baglam[1]
+        gunler = [(t, "bugün" if t == bugun else "yarın" if (t - bugun).days == 1 else GUN_UZUN[t.weekday()])]
     else:
         gunler = [(bugun, "bugün")]
     satirlar = []
@@ -221,6 +285,14 @@ def cevap_metni(yorum, kullanici):
             if v:
                 parcalar.append(f"{simge(v[0])} {ad.capitalize()} ({tarih.day} {AYLAR[tarih.month]}): {v[0]}\n🌡️ En yüksek {v[1]}° · En düşük {v[2]}°"
                                 + (f"\n💨 Rüzgar {v[3]} km/sa" if v[3] is not None else ""))
+        if parcalar and baglam and len(gunler) == 1 and gunler[0][0] == baglam[1] and v:
+            tur, t, olumlu, olumsuz = baglam
+            yer = bulunma_eki(il.split(" (")[0])
+            ad = gunler[0][1]
+            ad = ad.capitalize() if ad in ("bugün", "yarın") else ad
+            cevap = (f"✅ Evet, {ad} ({t.day} {AYLAR[t.month]}) {yer} {olumlu}." if baglam_uyar(tur, v)
+                     else f"❌ Hayır, {ad} ({t.day} {AYLAR[t.month]}) {yer} {olumsuz}.")
+            parcalar.insert(0, cevap)
         if parcalar:
             satirlar.append(f"📍 {il}\n" + "\n".join(parcalar))
     if not satirlar:
@@ -242,13 +314,13 @@ def main():
     yanitlar = set(durum.get("cevaplanan_yanitlar", []))  # yorumlara yazılan yanıtlar ayrı tutulur
     sayilar = durum.get("yorum_sayilari", {})
     # 1 istek: son gönderiler + yorum sayıları. Sadece yorumu artan gönderilere bakılır (API sınırı için)
-    medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count", "limit": SON_GONDERI}, "GET").get("data", [])
+    medya = ig.istek(f"{ig.USER}/media", {"fields": "id,comments_count,caption", "limit": SON_GONDERI}, "GET").get("data", [])
     # profilde sabitlenen gönderiler eskise de her zaman kontrol edilsin
     son_idler = {m["id"] for m in medya}
     for sid in durum.get("sabit_gonderiler", []):
         if sid not in son_idler:
             try:
-                medya.append(ig.istek(sid, {"fields": "id,comments_count"}, "GET"))
+                medya.append(ig.istek(sid, {"fields": "id,comments_count,caption"}, "GET"))
             except Exception as e:
                 print("Sabit gönderi okunamadı:", sid, e)
     tam_kontrol = datetime.datetime.now(TR).minute % 15 == 0  # 15 dakikada bir tüm yorumlara bak
@@ -273,14 +345,26 @@ def main():
                 if r.get("timestamp", "") >= sinir:  # eski yanıtlara toplu cevap yağmasın
                     yorumlar.append(dict(r, ust=y["id"]))  # yanıta cevap, ana yorumun altına yazılır
         print(f"Gönderi {m['id']}: {len(ham)} yorum, {len(yorumlar) - len(ham)} yeni yanıt")
+        baglam = baglam_coz(m.get("caption", ""))
+        # Çift cevap koruması: bu yorum dizisinde hesabımızın o kişiye yazdığı cevaplar (zaman damgasıyla)
+        bizim = {}
+        for y0 in ham:
+            for r in (y0.get("replies") or {}).get("data", []):
+                if r.get("username") == hesap:
+                    mm = re.match(r"@([\w.]+)", r.get("text", ""))
+                    if mm:
+                        bizim.setdefault((y0["id"], mm.group(1)), []).append(r.get("timestamp", ""))
         for y in yorumlar:
             yanit = y["id"] != y["ust"]
             kume = yanitlar if yanit else cevaplanan
             if y["id"] in kume or y.get("username") == hesap:
                 continue
             kume.add(y["id"])
+            if any(ts >= y.get("timestamp", "") for ts in bizim.get((y["ust"], y.get("username")), [])):
+                print("Zaten cevaplanmış, atlandı:", y.get("username"))
+                continue
             try:
-                metin = cevap_metni(y.get("text", ""), y.get("username", ""))
+                metin = cevap_metni(y.get("text", ""), y.get("username", ""), baglam)
             except Exception as e:
                 print("Tahmin alınamadı:", e)
                 continue
