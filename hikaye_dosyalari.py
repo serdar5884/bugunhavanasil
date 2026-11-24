@@ -13,7 +13,6 @@ var = []
 for il in iller:
     son = f"yayin/il_ozel/{il}/son.txt"
     if not os.path.exists(son):
-        il_yolu = None
         continue
     jpg = open(son).read().strip()
     mp4, kapak = jpg[:-4] + ".mp4", jpg[:-4] + "_kapak.jpg"
@@ -23,9 +22,10 @@ for il in iller:
         shutil.copy(kapak, os.path.join(tmp, f"{il}_hikaye.jpg")); var.append(f"{il}_hikaye.jpg")
 if not var:
     raise SystemExit("Hikâye dosyası yok")
-env = dict(os.environ, GIT_INDEX_FILE=os.path.join(tmp, "index"), GIT_WORK_TREE=tmp)
-subprocess.run(["git", "add", "-f", *var], env=env, check=True)
-agac = subprocess.check_output(["git", "write-tree"], env=env, text=True).strip()
+git_dir = os.path.abspath(subprocess.check_output(["git", "rev-parse", "--git-dir"], text=True).strip())
+env = dict(os.environ, GIT_INDEX_FILE=os.path.join(tmp, "index"), GIT_DIR=git_dir, GIT_WORK_TREE=tmp)
+subprocess.run(["git", "add", "-f", *var], env=env, cwd=tmp, check=True)
+agac = subprocess.check_output(["git", "write-tree"], env=env, cwd=tmp, text=True).strip()
 c = subprocess.check_output(["git", "-c", "user.name=hava-bot", "-c", "user.email=hava-bot@users.noreply.github.com",
                              "commit-tree", agac, "-m", "hikaye"], text=True).strip()
 subprocess.run(["git", "push", "-q", "-f", "origin", f"{c}:refs/heads/hikaye"], check=True)
