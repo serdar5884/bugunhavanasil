@@ -59,7 +59,7 @@ def main():
     satirlar.sort(key=lambda x: -(x[2].get("views") or 0))
     toplam = sum(x[2].get("views") or 0 for x in satirlar)
     md = [f"# Günlük istatistik – {simdi:%d.%m.%Y %H:%M}", "",
-          f"Son 24 saatte {len(satirlar)} paylaşım, toplam {toplam:,} izlenme.".replace(",", "."), ""]
+          f"Son 24 saatte {len(satirlar)} paylaşım, toplam {f'{toplam:,}'.replace(',', '.')} izlenme.", ""]
     if ortak_ozet:
         md += ["## Ortak sayfalar (Sivas)", "", "| Sayfa | Reels | İzlenme | Beğeni | Paylaşım | Kaydetme |", "|---|---|---|---|---|---|"]
         for u, oz in sorted(ortak_ozet.items(), key=lambda x: -x[1]["views"]):
