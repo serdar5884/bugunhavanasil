@@ -22,6 +22,19 @@ jobs:
               exp = d.get("expires_at", 0)
               print("Tür:", d.get("type"), "| Geçerli:", d.get("is_valid"),
                     "| Bitiş:", "süresiz" if not exp else datetime.datetime.utcfromtimestamp(exp).isoformat())
+              print("Uygulama:", d.get("application"), "| İzinler:", ", ".join(d.get("scopes", [])))
+              for g in d.get("granular_scopes", []):
+                  print("  ", g.get("scope"), "->", g.get("target_ids"))
+              u2 = "https://graph.facebook.com/v21.0/me/accounts?" + urllib.parse.urlencode({"fields": "name,instagram_business_account{id,username}", "access_token": t})
+              try:
+                  print("Sayfalar:", json.loads(urllib.request.urlopen(u2, timeout=30).read()).get("data"))
+              except Exception as e:
+                  print("Sayfa listesi yok (sayfa anahtarı olabilir):", getattr(e, "read", lambda: b"")()[:300])
+              u3 = "https://graph.facebook.com/v21.0/me?" + urllib.parse.urlencode({"fields": "id,name,instagram_business_account{id,username}", "access_token": t})
+              try:
+                  print("Ben:", json.loads(urllib.request.urlopen(u3, timeout=30).read()))
+              except Exception as e:
+                  print("me okunamadı:", getattr(e, "read", lambda: b"")()[:300])
           except Exception as e:
               print("Süre okunamadı:", e)
           PY
