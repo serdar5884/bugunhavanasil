@@ -193,21 +193,23 @@ def ozel(gorsel_yolu, il, sadece=None):
     else:  # video yoksa paylaşma (sadece Reels)
         print(f"{il}: video yok, paylaşılmadı")
         isler = []
+    # Her ortak sayfa için ayrı Reels (ortak sayfalar birbirinin adını görmez); ortak yoksa tek paylaşım
+    gruplar = [[o] for o in ortak] or [[]]
     for ad, veri in isler:
-        try:
-            if ortak:
-                try:
-                    cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(ortak[:3])))["id"]
-                    print(f"{ad}: ortak gönderi daveti ->", ", ".join(ortak))
-                except RuntimeError as e:
-                    print(f"{ad}: ortak gönderi kurulamadı, tek başına paylaşılıyor:", e)
+        for grup in gruplar:
+            try:
+                if grup:
+                    try:
+                        cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(grup)))["id"]
+                    except RuntimeError as e:  # tek başına kopya paylaşmamak için bu sayfayı atla
+                        print(f"{ad}: @{grup[0]} için ortak gönderi kurulamadı, atlandı:", e)
+                        continue
+                else:
                     cid = istek(f"{USER}/media", veri)["id"]
-            else:
-                cid = istek(f"{USER}/media", veri)["id"]
-            hazir_bekle(cid, deneme=60)
-            print(f"{il} {ad} paylaşıldı:", yayinla(cid))
-        except Exception as e:
-            print(f"{il} {ad} paylaşılamadı:", e)
+                hazir_bekle(cid, deneme=60)
+                print(f"{il} {ad} paylaşıldı" + (f" (ortak: @{grup[0]})" if grup else "") + ":", yayinla(cid))
+            except Exception as e:
+                print(f"{il} {ad} paylaşılamadı" + (f" (@{grup[0]})" if grup else "") + ":", e)
 
 
 if __name__ == "__main__":
