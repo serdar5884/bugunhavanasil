@@ -21,7 +21,7 @@ jobs:
           print("Anahtar türü:", t[:4], "| uzunluk:", len(t), "| IG_USER_ID uzunluğu:", len(os.environ.get("IG_USER_ID", "").strip()))
           for taban in ("https://graph.instagram.com/v21.0", "https://graph.facebook.com/v21.0"):
               try:
-                  r = json.loads(urllib.request.urlopen(taban + "/me?" + urllib.parse.urlencode({"fields": "id,user_id,username,name", "access_token": t}), timeout=30).read())
+                  r = json.loads(urllib.request.urlopen(taban + "/me?" + urllib.parse.urlencode({"fields": "id,name", "access_token": t}), timeout=30).read())
                   print(taban, "-> me:", {k: (v if k in ("username", "name") else ("aynı" if str(v) == os.environ.get("IG_USER_ID", "").strip() else "farklı")) for k, v in r.items()})
               except Exception as e:
                   print(taban, "-> me hatası:", getattr(e, "read", lambda: b"")()[:200])
