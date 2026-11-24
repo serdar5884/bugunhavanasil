@@ -10,7 +10,7 @@ Kullanım:
   python instagram_paylas.py reels yayin/gunluk        -> reels.mp4'i Reels olarak paylaşır
   python instagram_paylas.py kontrol                  -> anahtar çalışıyor mu, hesap adı ne
 """
-import glob, json, os, subprocess, sys, time, urllib.parse, urllib.request
+import re, glob, json, os, subprocess, sys, time, urllib.parse, urllib.request
 
 TOKEN = os.environ.get("IG_TOKEN", "").strip().strip('"').strip("'").strip()
 USER = os.environ.get("IG_USER_ID", "").strip().strip('"').strip() or "me"
@@ -193,23 +193,55 @@ def ozel(gorsel_yolu, il, sadece=None):
     else:  # video yoksa paylaşma (sadece Reels)
         print(f"{il}: video yok, paylaşılmadı")
         isler = []
-    # Her ortak sayfa için ayrı Reels (ortak sayfalar birbirinin adını görmez); ortak yoksa tek paylaşım
+    # Her ortak sayfa için ayrı Reels (ortaklar birbirinin adını görmez). Bizim profilde tekrar görünmesin diye
+    # sadece ilki ana akışa (ızgaraya) düşer, diğerleri yalnız Reels sekmesinde; her biri farklı müzikli ve 10 dk arayla.
+    import time
     gruplar = [[o] for o in ortak] or [[]]
     for ad, veri in isler:
-        for grup in gruplar:
+        for k, grup in enumerate(gruplar):
+            if k:
+                time.sleep(600)
+            v = dict(veri, share_to_feed="true" if k == 0 else "false")
+            if k:
+                yeni = muzik_degistir(mp4, k)
+                if yeni:
+                    v["video_url"], sanatci = url(yeni[0]), yeni[1]
+                    v["caption"] = re.sub(r"🎵 Müzik: .*\(Pixabay\)", f"🎵 Müzik: {sanatci} (Pixabay)", v["caption"])
             try:
                 if grup:
                     try:
-                        cid = istek(f"{USER}/media", dict(veri, collaborators=json.dumps(grup)))["id"]
+                        cid = istek(f"{USER}/media", dict(v, collaborators=json.dumps(grup)))["id"]
                     except RuntimeError as e:  # tek başına kopya paylaşmamak için bu sayfayı atla
                         print(f"{ad}: @{grup[0]} için ortak gönderi kurulamadı, atlandı:", e)
                         continue
                 else:
-                    cid = istek(f"{USER}/media", veri)["id"]
+                    cid = istek(f"{USER}/media", v)["id"]
                 hazir_bekle(cid, deneme=60)
                 print(f"{il} {ad} paylaşıldı" + (f" (ortak: @{grup[0]})" if grup else "") + ":", yayinla(cid))
             except Exception as e:
                 print(f"{il} {ad} paylaşılamadı" + (f" (@{grup[0]})" if grup else "") + ":", e)
+
+
+def muzik_degistir(mp4, k):
+    """Aynı videonun farklı müzikli kopyası (k. ortak için). Döner: (yol, sanatçı) ya da None"""
+    parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
+    if not parcalar:
+        return None
+    import datetime
+    parca = parcalar[(datetime.date.today().toordinal() + 5 + k * 3) % len(parcalar)]
+    out = mp4[:-4] + f"_m{k}.mp4"
+    try:
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", mp4, "-ss", "8", "-i", parca, "-map", "0:v", "-map", "1:a",
+                        "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-af", "afade=t=in:d=0.8", "-shortest",
+                        "-movflags", "+faststart", out], check=True)
+    except Exception as e:
+        print("Müzik değiştirilemedi:", e)
+        return None
+    global _MEDYA_SHA
+    _MEDYA_SHA = None  # yeni dosya medya dalına yüklensin
+    ad = os.path.basename(parca)[3:-4].split("-")[0]
+    return out, {"alex": "Alex Morgan", "atlasaudio": "AtlasAudio", "nastelbom": "Nastelbom",
+                 "velariomusic": "VelarioMusic", "andriig": "AndriiG"}.get(ad, ad)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,10 @@ jobs:
           # yurt geneli önemli gelişmeler (kar geliyor, soğuk hava dalgası...)
           # ortak sayfalı illere özel görsel (sadece sabah)
           if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do python -u il_ozel.py --il $IL --gun 1 --video --cikti yayin/il_ozel/$IL || echo "$IL görseli üretilemedi"; done; fi
+          # Sadece hikâye isteyen sayfalar: günün videosu ve görseli sabit adreste ('hikaye' dalı)
+          if [ "$GUN" = "1" ] && [ -f hikaye_ortaklar.json ]; then
+            python -u hikaye_dosyalari.py || echo "Hikâye dosyaları hazırlanamadı"
+          fi
           if [ "$GUN" != "hs" ]; then python -u ulke_bot.py --cikti yayin/ulke || echo "Yurt geneli kontrol hatası"; fi
       - name: Görselleri depoya kaydet
         run: |
