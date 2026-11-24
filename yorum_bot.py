@@ -14,7 +14,7 @@ from hava_bot import BOLGELER, HADISE, mgm_get, merkezleri_yukle
 import instagram_paylas as ig
 
 DURUM = "yorum_durum.json"  # uyarı botuyla çakışmasın diye ayrı dosya
-SON_GONDERI = 10  # dakikada bir çalıştığı için API sınırını aşmamak adına son 6 gönderi        # son kaç gönderinin yorumlarına bakılsın
+SON_GONDERI = 40  # tüm paylaşımlar Reels olduğu için günde 10+ gönderi var; son 40 gönderi (2-3 gün) izlenir
 TUR_BASINA_EN_FAZLA = 25
 TR = datetime.timezone(datetime.timedelta(hours=3))
 AYLAR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
