@@ -24,7 +24,7 @@ jobs:
                   r = json.loads(urllib.request.urlopen(taban + "/me?" + urllib.parse.urlencode({"fields": "id,name", "access_token": t}), timeout=30).read())
                   print(taban, "-> me:", {k: (v if k in ("username", "name") else ("aynı" if str(v) == os.environ.get("IG_USER_ID", "").strip() else "farklı")) for k, v in r.items()})
               except Exception as e:
-                  print(taban, "-> me hatası:", getattr(e, "read", lambda: b"")()[:200])
+                  print(taban, "-> me hatası:", type(e).__name__, str(e)[:100], (e.read()[:300] if hasattr(e, "read") else ""))
           u = "https://graph.facebook.com/v21.0/debug_token?" + urllib.parse.urlencode({"input_token": t, "access_token": t})
           try:
               d = json.loads(urllib.request.urlopen(u, timeout=30).read())["data"]
