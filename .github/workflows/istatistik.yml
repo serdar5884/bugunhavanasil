@@ -1,0 +1,23 @@
+name: Günlük istatistik raporu
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "37 18 * * *"   # 21:37 (TR); GitHub zamanlayıcısı gecikebilir, sorun değil
+permissions:
+  contents: write
+jobs:
+  rapor:
+    runs-on: ubuntu-latest
+    env:
+      IG_TOKEN: ${{ secrets.IG_TOKEN }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q -r requirements.txt
+      - run: python -u istatistik_bot.py
+      - run: |
+          git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
+          git add rapor && git commit -qm "Günlük istatistik" || true
+          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
