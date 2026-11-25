@@ -235,7 +235,7 @@ def ikon3d(img, tip, cx, cy, s, faz=None):
         img.paste(katman, (0, 0), katman)
 
 
-def cam_kart(img, box, r=26):
+def cam_kart(img, box, r=26, renk=None, opak=150):
     """Buzlu cam kart: yarı saydam koyu dolgu, üstte ışık, ince parlak kenar, hafif gölge."""
     x0, y0, x1, y1 = [int(v) for v in box]
     w, h = x1 - x0, y1 - y0
@@ -245,8 +245,8 @@ def cam_kart(img, box, r=26):
     k.alpha_composite(g.filter(ImageFilter.GaussianBlur(10)), (x0 - 20, y0 - 20))
     m = Image.new("L", (w, h), 0)
     ImageDraw.Draw(m).rounded_rectangle([0, 0, w - 1, h - 1], radius=r, fill=255)
-    dolgu = _dikey_degrade(w, h, (70, 86, 118), (34, 44, 68))
-    dolgu.putalpha(m.point(lambda v: v * 150 // 255))
+    dolgu = _dikey_degrade(w, h, *(renk or ((70, 86, 118), (34, 44, 68))))
+    dolgu.putalpha(m.point(lambda v: v * opak // 255))
     k.alpha_composite(dolgu, (x0, y0))
     d = ImageDraw.Draw(k)
     d.rounded_rectangle([x0, y0, x1, y1], radius=r, outline=(255, 255, 255, 70), width=2)

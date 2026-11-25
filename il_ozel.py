@@ -13,6 +13,15 @@ from hava_bot import (HADISE, mgm_get, merkezleri_yukle, sahne_ciz, baskin_sahne
 
 TR = datetime.timezone(datetime.timedelta(hours=3))
 SARI = (255, 205, 0)
+# Ortak sayfalara aynı içerik farklı görünümle gitsin (Instagram kopya saymasın): renk tonu, kart rengi, düzen
+TEMALAR = [
+    dict(ad="klasik"),
+    dict(ad="gece", ton=((45, 20, 110), (150, 45, 160)), vurgu=(255, 214, 90), kart=((110, 70, 190), (55, 25, 110))),
+    dict(ad="gunbatimi", ton=((250, 130, 60), (130, 25, 85)), vurgu=(255, 240, 160), kart=((170, 60, 80), (95, 20, 65)),
+         duzen="liste"),
+    dict(ad="zumrut", ton=((20, 160, 135), (10, 45, 80)), vurgu=(170, 255, 205), kart=((25, 120, 115), (10, 60, 85)),
+         baslik="orta"),
+]
 AYLAR = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 GUNLER = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"]
 GUN_KISA = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
@@ -61,7 +70,7 @@ def demo_veri():
     return g(), {ilce: g() for ilce in SIVAS_ILCELER}
 
 
-def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
+def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     t = tarih.isoformat()
     m = merkez.get(t)
     if not m:
@@ -70,21 +79,34 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
               if t in d]
     sahne = baskin_sahne([{"hadise": m["hadise"]}] * 3 + [{"hadise": v["hadise"]} for v in ilce_v])
     img = sahne_ciz(sahne, il)
+    T = TEMALAR[tema % len(TEMALAR)]
+    SARI = T.get("vurgu", (255, 205, 0))
+    if T.get("ton"):  # sahne (yağmur/kar efekti) korunur, üstüne renk tonu
+        from tasarim import _dikey_degrade
+        ton = _dikey_degrade(img.width, img.height, *T["ton"]).convert(img.mode)
+        img = Image.blend(img, ton, .5)
+    kr = T.get("kart")
+    from tasarim import cam_kart as _ck
+    cam_kart = lambda im, box, r=26: _ck(im, box, r, renk=kr, opak=175 if kr else 150)
     d = ImageDraw.Draw(img, "RGBA")
     M = 50
     # --- başlık
-    from tasarim import cam_kart, takvim_ikon
+    from tasarim import takvim_ikon
     gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no) or GUNLER[tarih.weekday()].replace("i", "İ").upper()
     f1 = font("ExtraBold", 40)
-    d.text((M + 2, 38), f"{gun_k} HAVA NASIL?", font=f1, fill=(0, 0, 0, 100))
-    d.text((M, 36), f"{gun_k} HAVA NASIL?", font=f1, fill=SARI)
+    orta = T.get("baslik") == "orta"
+    def X(metin, f, x=M):  # ortalı başlık temasında yatay konum
+        return (W - d.textlength(metin, font=f)) / 2 if orta else x
+    d.text((X(f"{gun_k} HAVA NASIL?", f1) + 2, 38), f"{gun_k} HAVA NASIL?", font=f1, fill=(0, 0, 0, 100))
+    d.text((X(f"{gun_k} HAVA NASIL?", f1), 36), f"{gun_k} HAVA NASIL?", font=f1, fill=SARI)
     il_b = il.replace("i", "İ").replace("ı", "I").upper()
     f_il = metni_sigdir(d, il_b, "ExtraBold", 120, W - 2 * M)
-    d.text((M + 4, 84), il_b, font=f_il, fill=(0, 0, 0, 120))
-    d.text((M, 80), il_b, font=f_il, fill="white")
-    takvim_ikon(d, M, 232, 30)
-    d.text((M + 44, 228), f"{tarih.day} {AYLAR[tarih.month]} {tarih.year}, {GUNLER[tarih.weekday()]}", font=font("Medium", 30),
-           fill=(255, 255, 255, 220))
+    d.text((X(il_b, f_il) + 4, 84), il_b, font=f_il, fill=(0, 0, 0, 120))
+    d.text((X(il_b, f_il), 80), il_b, font=f_il, fill="white")
+    tr = f"{tarih.day} {AYLAR[tarih.month]} {tarih.year}, {GUNLER[tarih.weekday()]}"
+    tx = X(tr, font("Medium", 30)) + (22 if orta else 0)
+    takvim_ikon(d, tx - 44 if orta else M, 232, 30)
+    d.text((tx if orta else M + 44, 228), tr, font=font("Medium", 30), fill=(255, 255, 255, 220))
     # --- merkez: bugün ve yarın (yan yana iki cam kart)
     yarin = (tarih + datetime.timedelta(days=1)).isoformat()
     gunler2 = [(t, {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "BUGÜN"), tarih)]
@@ -110,15 +132,26 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     y0, sut = yk + kh2 + 62, 4
     d.text((M, y0 - 44), f"İlçeler · {gunler2[0][1].capitalize().replace('Bugün', 'Bugün')}", font=font("Bold", 28), fill=SARI)
     alt_sinir = H - 230  # yorum çağrısı + destek bandı
+    if T.get("duzen") == "liste":  # 2 sütunlu satır listesi: ikon · ilçe · sıcaklık (sağa yaslı)
+        sut = 2
     satir_n = (min(len(ilce_v), 24) + sut - 1) // sut
     gap = 12
     kh = min(118, (alt_sinir - y0) / max(1, satir_n) - gap)
-    kw = (W - 2 * M - gap_x(3)) / sut
+    kw = (W - 2 * M - gap_x(sut - 1)) / sut
     for i, v in enumerate(ilce_v[:24]):
         c, r = i % sut, i // sut
         x, y = M + c * (kw + gap_x(1)), y0 + r * (kh + gap)
         cam_kart(img, [x, y, x + kw, y + kh], r=18)
         mt, tp = HADISE.get(v["hadise"] or "", (v["hadise"] or "-", "bulut"))
+        if sut == 2:
+            ikon(d, tp, x + 44, y + kh / 2, min(70, kh * .9))
+            d.text((x + 90, y + kh / 2), v["il"], font=metni_sigdir(d, v["il"], "Bold", 30, kw - 250), fill="white", anchor="lm")
+            fb, fk = font("ExtraBold", 36), font("Medium", 24)
+            mn = f" / {v['min']}°"
+            sx = x + kw - 20 - d.textlength(mn, font=fk)
+            d.text((sx, y + kh / 2 + 4), mn, font=fk, fill=(255, 255, 255, 190), anchor="lm")
+            d.text((sx, y + kh / 2), f"{v['max']}°", font=fb, fill="white", anchor="rm")
+            continue
         ikon(d, tp, x + 40, y + kh / 2, 66)
         fa = metni_sigdir(d, v["il"], "Bold", 27, kw - 84)
         d.text((x + 76, y + kh / 2 - 40), v["il"], font=fa, fill="white")
@@ -136,7 +169,7 @@ def gap_x(n):
     return 12 * n
 
 
-def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20):
+def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20, tema=0):
     """Görselin hareketli hali (kar/yağmur/bulut akar): <ad>_hareketli.mp4, 6 sn kesintisiz döngü."""
     import shutil, subprocess, tempfile
     import hava_bot
@@ -145,7 +178,7 @@ def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20):
     try:
         for i in range(n):
             hava_bot.FAZ = i / n
-            gorsel(il, merkez, ilceler, tarih, os.path.join(tmp, f"k{i:03d}.jpg"), gun_no)
+            gorsel(il, merkez, ilceler, tarih, os.path.join(tmp, f"k{i:03d}.jpg"), gun_no, tema)
     finally:
         hava_bot.FAZ = None
     mp4 = yol[:-4] + "_hareketli.mp4"
@@ -205,13 +238,13 @@ def main():
     ascii_ad = a.il.translate(str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU"))
     etiket = ascii_ad.lower()
     yollar = []
-    # Her ortak sayfaya farklı içerik (kopya Reels olmasın): bugün, yarın, sonraki günler
-    for k in range(max(1, min(a.varyant, 5))):
-        gun = a.gun + k
-        tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=gun - 1)
-        yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}.jpg")
+    # Her ortak sayfaya aynı içerik, farklı renk/tasarım (kopya Reels sayılmasın)
+    gun = a.gun
+    tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=gun - 1)
+    for k in range(max(1, min(a.varyant, len(TEMALAR)))):
+        yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}" + (f"_t{k}" if k else "") + ".jpg")
         try:
-            gorsel(a.il, merkez, ilceler, tarih, yol, gun)
+            gorsel(a.il, merkez, ilceler, tarih, yol, gun, k)
         except Exception as e:
             print(f"{tarih} görseli üretilemedi:", e)
             continue
@@ -223,7 +256,7 @@ def main():
                f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
         if a.video:
             try:
-                print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun))
+                print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun, tema=k))
             except Exception as e:
                 print("Hareketli görsel üretilemedi:", e)
             mp4, kapak, sanatci = video(yol)
