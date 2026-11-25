@@ -79,56 +79,52 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     d.text((M + 2, 38), f"{gun_k} HAVA NASIL?", font=f1, fill=(0, 0, 0, 100))
     d.text((M, 36), f"{gun_k} HAVA NASIL?", font=f1, fill=SARI)
     il_b = il.replace("i", "İ").replace("ı", "I").upper()
-    f_il = metni_sigdir(d, il_b, "ExtraBold", 120, W - 2 * M - 330)
+    f_il = metni_sigdir(d, il_b, "ExtraBold", 120, W - 2 * M)
     d.text((M + 4, 84), il_b, font=f_il, fill=(0, 0, 0, 120))
     d.text((M, 80), il_b, font=f_il, fill="white")
     takvim_ikon(d, M, 232, 30)
     d.text((M + 44, 228), f"{tarih.day} {AYLAR[tarih.month]} {tarih.year}, {GUNLER[tarih.weekday()]}", font=font("Medium", 30),
            fill=(255, 255, 255, 220))
-    # --- merkez: büyük ikon + sıcaklık
-    metin, tip = HADISE.get(m["hadise"] or "", (m["hadise"] or "-", "bulut"))
-    ikon(d, tip, W - 200, 120, 190)
-    f_s = font("ExtraBold", 110)
-    sic = f"{m['max']}°"
-    d.text((W - M - d.textlength(sic, font=f_s), 200), sic, font=f_s, fill="white")
-    alt = f"En düşük {m['min']}° · {metin}"
-    f_a = metni_sigdir(d, alt, "SemiBold", 28, 420)
-    d.text((W - M - d.textlength(alt, font=f_a), 320), alt, font=f_a, fill=(255, 255, 255, 230))
-    # --- ilçeler (4 sütun)
-    y0, sut = 380, 4
-    satir_n = (min(len(ilce_v), 20) + sut - 1) // sut
-    kh = min(112, (H - 225 - 225 - y0) / max(1, satir_n) - 12)  # alttan: 5 günlük (≈225) + bantlar (≈225)
-    kw, gap = (W - 2 * M - gap_x(3)) / sut, 12
-    for i, v in enumerate(ilce_v[:20]):
+    # --- merkez: bugün ve yarın (yan yana iki cam kart)
+    yarin = (tarih + datetime.timedelta(days=1)).isoformat()
+    gunler2 = [(t, {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "BUGÜN"), tarih)]
+    if merkez.get(yarin):
+        gunler2.append((yarin, {1: "YARIN", 2: "ÖBÜR GÜN"}.get(gun_no, "YARIN"), tarih + datetime.timedelta(days=1)))
+    yk, kh2, gap2 = 285, 170, 20
+    kw2 = (W - 2 * M - gap2 * (len(gunler2) - 1)) / len(gunler2)
+    for i, (k, etk, dt) in enumerate(gunler2):
+        v = merkez[k]
+        x = M + i * (kw2 + gap2)
+        cam_kart(img, [x, yk, x + kw2, yk + kh2], r=24)
+        mt, tp = HADISE.get(v["hadise"] or "", (v["hadise"] or "-", "bulut"))
+        ikon(d, tp, x + 85, yk + kh2 / 2 + 6, 120)
+        d.text((x + 170, yk + 16), f"{il.upper().replace('I', 'I')} · {etk}" if False else f"{etk} · {GUN_KISA[dt.weekday()]}",
+               font=font("ExtraBold", 28), fill=SARI)
+        fs = font("ExtraBold", 72)
+        d.text((x + 168, yk + 48), f"{v['max']}°", font=fs, fill="white")
+        d.text((x + 172 + d.textlength(f"{v['max']}°", font=fs), yk + 80), f"/ {v['min']}°", font=font("Medium", 32),
+               fill=(255, 255, 255, 200))
+        fm = metni_sigdir(d, mt, "SemiBold", 26, kw2 - 185)
+        d.text((x + 170, yk + 128), mt, font=fm, fill=(255, 255, 255, 230))
+    # --- ilçeler (bugün, 4 sütun)
+    y0, sut = yk + kh2 + 62, 4
+    d.text((M, y0 - 44), f"İlçeler · {gunler2[0][1].capitalize().replace('Bugün', 'Bugün')}", font=font("Bold", 28), fill=SARI)
+    alt_sinir = H - 230  # yorum çağrısı + destek bandı
+    satir_n = (min(len(ilce_v), 24) + sut - 1) // sut
+    gap = 12
+    kh = min(118, (alt_sinir - y0) / max(1, satir_n) - gap)
+    kw = (W - 2 * M - gap_x(3)) / sut
+    for i, v in enumerate(ilce_v[:24]):
         c, r = i % sut, i // sut
         x, y = M + c * (kw + gap_x(1)), y0 + r * (kh + gap)
         cam_kart(img, [x, y, x + kw, y + kh], r=18)
         mt, tp = HADISE.get(v["hadise"] or "", (v["hadise"] or "-", "bulut"))
         ikon(d, tp, x + 40, y + kh / 2, 66)
         fa = metni_sigdir(d, v["il"], "Bold", 27, kw - 84)
-        d.text((x + 76, y + 16), v["il"], font=fa, fill="white")
-        d.text((x + 76, y + 54), f"{v['max']}°", font=font("ExtraBold", 38), fill="white")
-        d.text((x + 76 + d.textlength(f"{v['max']}°", font=font("ExtraBold", 38)) + 6, y + 68), f"/{v['min']}°",
+        d.text((x + 76, y + kh / 2 - 40), v["il"], font=fa, fill="white")
+        d.text((x + 76, y + kh / 2 - 2), f"{v['max']}°", font=font("ExtraBold", 38), fill="white")
+        d.text((x + 76 + d.textlength(f"{v['max']}°", font=font("ExtraBold", 38)) + 6, y + kh / 2 + 12), f"/{v['min']}°",
                font=font("Medium", 22), fill=(255, 255, 255, 190))
-    satir = (min(len(ilce_v), 20) + sut - 1) // sut
-    # --- 5 günlük şerit
-    y5 = y0 + satir * (kh + gap) + 14
-    d.text((M, y5), f"{il} merkez · 5 günlük", font=font("Bold", 26), fill=SARI)
-    y5 += 40
-    gunler = sorted(k for k in merkez if k >= t)[:5]
-    gw = (W - 2 * M - 4 * 10) / 5
-    for i, k in enumerate(gunler):
-        x = M + i * (gw + 10)
-        v = merkez[k]
-        dt = datetime.date.fromisoformat(k)
-        cam_kart(img, [x, y5, x + gw, y5 + 165], r=18)
-        ad = GUN_KISA[dt.weekday()] if i else {1: "Bugün", 2: "Yarın"}.get(gun_no, GUN_KISA[dt.weekday()])
-        fg = font("Bold", 24)
-        d.text((x + gw / 2 - d.textlength(ad, font=fg) / 2, y5 + 10), ad, font=fg, fill="white")
-        ikon(d, HADISE.get(v["hadise"] or "", ("", "bulut"))[1], x + gw / 2, y5 + 78, 70)
-        s = f"{v['max']}°/{v['min']}°"
-        fs = font("ExtraBold", 26)
-        d.text((x + gw / 2 - d.textlength(s, font=fs) / 2, y5 + 120), s, font=fs, fill="white")
     yorum_cagrisi(d, M + 40, H - 212, W - M - 40, H - 160)
     destek_bandi(d, M, H - 150, W - M, H - 50)
     d.text((M, H - 40), "Kaynak: Meteoroloji Genel Müdürlüğü (MGM) · ilçe tahminleri", font=font("Regular", 22),
@@ -220,7 +216,7 @@ def main():
             print(f"{tarih} görseli üretilemedi:", e)
             continue
         gun_ad = {1: "bugün", 2: "yarın"}.get(gun, f"{GUNLER[tarih.weekday()]} ({tarih.day} {AYLAR[tarih.month]})")
-        cap = (f"📍 {a.il} – {gun_ad} hava nasıl? Merkez, tüm ilçeler ve 5 günlük tahmin 👇\n\n"
+        cap = (f"📍 {a.il} – {gun_ad} hava nasıl? Merkezde bugün ve yarın, tüm ilçelerde bugün 👇\n\n"
                f"💬 Yorumlara \"{a.il} 5 günlük\" yaz, tahmini hemen gönderelim!\n"
                f"📤 Hemşehrilerine gönder, hazırlıklı olsunlar!\n\n"
                f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
