@@ -133,6 +133,7 @@ def uyari(klasor):
     yol = os.path.join(klasor, "paylasim.json")
     if not os.path.exists(yol):
         return print("Yeni uyarı yok")
+    sayac = 0
     for p in json.load(open(yol, encoding="utf-8")):
         if p.get("paylasildi"):
             continue
@@ -144,6 +145,21 @@ def uyari(klasor):
             guvenli_alan(mp4)  # hikâye ve Reels tam ekranda kırpılmasın
         except Exception as e:
             print("Hareketli kart üretilemedi:", e)
+        if not mp4:  # efektli video üretilemediyse sade (yakınlaşan) video dene
+            try:
+                mp4 = hareketlendir(p["gorsel"], None)
+                guvenli_alan(mp4)
+            except Exception as e:
+                print("Video üretilemedi:", e)
+        if mp4:  # sel, hortum, kapalı yol dahil tüm uyarı/haber videolarına müzik
+            ilk = p.get("caption", "").split("\n")[0]
+            ciddi = bool(re.search(r"SEL|HORTUM|FIRTINA|KAPAN|KAPALI|ÇIĞ|DOLU|TURUNCU|KIRMIZI|TAŞKIN|HEYELAN", ilk.upper()))
+            yeni = muzik_degistir(mp4, sayac, ciddi)
+            sayac += 1
+            if yeni:
+                mp4 = yeni[0]
+                if "🎵" not in p["caption"]:
+                    p["caption"] += f"\n\n🎵 Müzik: {yeni[1]} (Pixabay)"
         hik = None
         if mp4:
             try:
@@ -158,12 +174,6 @@ def uyari(klasor):
         # Tüm uyarı/haber kartları akışa Reels olarak da gider (normal görsel gönderi yok)
         if True:
             g = None
-            if not mp4:  # efektli video üretilemediyse sade (yakınlaşan) video dene
-                try:
-                    mp4 = hareketlendir(p["gorsel"], None)
-                    guvenli_alan(mp4)
-                except Exception as e:
-                    print("Video üretilemedi:", e)
             if mp4:
                 try:
                     g = istek(f"{USER}/media", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(p["gorsel"]),
@@ -222,9 +232,12 @@ def ozel(gorsel_yolu, il, sadece=None):
                 print(f"{il} {ad} paylaşılamadı" + (f" (@{grup[0]})" if grup else "") + ":", e)
 
 
-def muzik_degistir(mp4, k):
-    """Aynı videonun farklı müzikli kopyası (k. ortak için). Döner: (yol, sanatçı) ya da None"""
+def muzik_degistir(mp4, k, ciddi=False):
+    """Aynı videonun farklı müzikli kopyası (k. ortak / k. uyarı için). Döner: (yol, sanatçı) ya da None.
+    ciddi=True (sel, hortum, kapalı yol...): neşeli ("happy/cheerful") parçalar kullanılmaz."""
     parcalar = sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)), "muzik", "*.mp3")))
+    if ciddi:
+        parcalar = [p for p in parcalar if not re.search(r"happy|cheerful", os.path.basename(p))] or parcalar
     if not parcalar:
         return None
     import datetime
