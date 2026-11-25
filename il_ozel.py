@@ -145,14 +145,16 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
         fm = metni_sigdir(d, mt, "SemiBold", 26, kw2 - 185)
         d.text((x + 170, yk + 128), mt, font=fm, fill=(255, 255, 255, 230))
     # --- ilçeler (bugün, 4 sütun)
-    y0, sut = yk + kh2 + 62, 4
-    d.text((M, y0 - 44), f"İlçeler · {gunler2[0][1].capitalize().replace('Bugün', 'Bugün')}", font=font("Bold", 28), fill=SARI)
+    y0 = yk + kh2 + 62
+    sut = 4 if len(ilce_v) > 9 else 3 if len(ilce_v) > 4 else 2  # az ilçeli illerde kartlar büyür, boşluk kalmaz
+    etk = {"BUGÜN": "Bugün", "YARIN": "Yarın", "ÖBÜR GÜN": "Öbür gün"}.get(gunler2[0][1], gunler2[0][1].title())
+    d.text((M, y0 - 44), f"İlçeler · {etk}", font=font("Bold", 28), fill=SARI)
     alt_sinir = H - 230  # yorum çağrısı + destek bandı
     if T.get("duzen") == "liste":  # 2 sütunlu satır listesi: ikon · ilçe · sıcaklık (sağa yaslı)
         sut = 2
     satir_n = (min(len(ilce_v), 24) + sut - 1) // sut
     gap = 12
-    kh = min(118, (alt_sinir - y0) / max(1, satir_n) - gap)
+    kh = min(118 if sut == 4 else 150, (alt_sinir - y0) / max(1, satir_n) - gap)
     kw = (W - 2 * M - gap_x(sut - 1)) / sut
     for i, v in enumerate(ilce_v[:24]):
         c, r = i % sut, i // sut
@@ -168,12 +170,14 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
             d.text((sx, y + kh / 2 + 4), mn, font=fk, fill=(255, 255, 255, 190), anchor="lm")
             d.text((sx, y + kh / 2), f"{v['max']}°", font=fb, fill="white", anchor="rm")
             continue
-        ikon(d, tp, x + 40, y + kh / 2, 66)
-        fa = metni_sigdir(d, v["il"], "Bold", 27, kw - 84)
-        d.text((x + 76, y + kh / 2 - 40), v["il"], font=fa, fill="white")
-        d.text((x + 76, y + kh / 2 - 2), f"{v['max']}°", font=font("ExtraBold", 38), fill="white")
-        d.text((x + 76 + d.textlength(f"{v['max']}°", font=font("ExtraBold", 38)) + 6, y + kh / 2 + 12), f"/{v['min']}°",
-               font=font("Medium", 22), fill=(255, 255, 255, 190))
+        k = max(1.0, min(1.35, kh / 112))  # büyük kartlarda içerik de büyür
+        ikon(d, tp, x + 40 * k, y + kh / 2, int(66 * k))
+        fa = metni_sigdir(d, v["il"], "Bold", int(27 * k), kw - 84 * k)
+        d.text((x + 76 * k, y + kh / 2 - 40 * k), v["il"], font=fa, fill="white")
+        fb = font("ExtraBold", int(38 * k))
+        d.text((x + 76 * k, y + kh / 2 - 2 * k), f"{v['max']}°", font=fb, fill="white")
+        d.text((x + 76 * k + d.textlength(f"{v['max']}°", font=fb) + 6, y + kh / 2 + 12 * k), f"/{v['min']}°",
+               font=font("Medium", int(22 * k)), fill=(255, 255, 255, 190))
     yorum_cagrisi(d, M + 40, H - 212, W - M - 40, H - 160)
     destek_bandi(d, M, H - 150, W - M, H - 50)
     d.text((M, H - 40), "Kaynak: Meteoroloji Genel Müdürlüğü (MGM) · ilçe tahminleri", font=font("Regular", 22),
