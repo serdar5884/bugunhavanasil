@@ -1,7 +1,25 @@
 [
  {
-  "gorsel": "yayin/uyari/20261125_1501_kapali_yollar.jpg",
+  "gorsel": "yayin/uyari/20261125_1531_kapali_yollar.jpg",
   "tur": "hikaye",
   "caption": "🚧 Hava koşulları nedeniyle ulaşıma kapalı yollar\nKaynak: Karayolları Genel Müdürlüğü"
+ },
+ {
+  "gorsel": "yayin/uyari/haber_20261125_1_64eb0f.jpg",
+  "tur": "hikaye",
+  "hareket": "kar",
+  "caption": "🔴 SON DAKİKA | İstanbul: Kar\nHaber kaynağı: AA"
+ },
+ {
+  "gorsel": "yayin/uyari/haber_20261125_2_9ee306.jpg",
+  "tur": "hikaye",
+  "hareket": "yagmur",
+  "caption": "🔴 SON DAKİKA | Trabzon: Heyelan\nHaber kaynağı: AA"
+ },
+ {
+  "gorsel": "yayin/uyari/haber_20261125_3_771af6.jpg",
+  "tur": "hikaye",
+  "hareket": "kar",
+  "caption": "⚠️ HAVA UYARISI | İstanbul'da yoğun kar yağışı bekleniyor.\nHaber kaynağı: NTV"
  }
 ]
