@@ -259,8 +259,16 @@ def main():
     tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=gun - 1)
     for k in range(max(1, min(a.varyant, len(TEMALAR)))):
         yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}" + (f"_t{k}" if k else "") + ".jpg")
+        import hazir_tasarim
+        hazir = hazir_tasarim.var_mi(a.il)  # ile özel hazır tasarımlar (tasarimlar/<İl>/) varsa onlar
         try:
-            gorsel(a.il, merkez, ilceler, tarih, yol, gun, k)
+            if hazir:
+                t_ = tarih.isoformat()
+                iv = [{"il": ad, **d[t_]} for ad, d in sorted(ilceler.items(), key=lambda x: x[0].replace("Ş", "Sz").replace("İ", "Iz"))
+                      if t_ in d]
+                hazir_tasarim.kart(a.il, k % hazir_tasarim.sayi(a.il), merkez, iv, tarih, yol)
+            else:
+                gorsel(a.il, merkez, ilceler, tarih, yol, gun, k)
         except Exception as e:
             print(f"{tarih} görseli üretilemedi:", e)
             continue
@@ -272,10 +280,13 @@ def main():
                f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
         if a.video:
             try:
-                print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun, tema=k))
+                if hazir:  # hazır tasarım: ikonlar ve arka plandaki güneş hareketli
+                    print("Hareketli:", hazir_tasarim.animasyon(a.il, k % hazir_tasarim.sayi(a.il), merkez, iv, tarih, yol))
+                else:
+                    print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun, tema=k))
             except Exception as e:
                 print("Hareketli görsel üretilemedi:", e)
-            mp4, kapak, sanatci = video(yol)
+            mp4, kapak, sanatci = hazir_tasarim.video(yol) if hazir else video(yol)
             if sanatci:
                 cap += f"\n\n🎵 Müzik: {sanatci} (Pixabay)"
             print("Video:", mp4)
