@@ -93,4 +93,15 @@ def sivas(gen=720, yuk=330):
     return img
 
 
-SIMGELER = {"Sivas": sivas}
+def _dosyadan(il):
+    """simgeler/<İl>.png varsa (siyah zeminli beyaz çizimden saydama çevrilmiş) onu kullan."""
+    import os
+    yol = os.path.join(os.path.dirname(os.path.abspath(__file__)), "simgeler", f"{il}.png")
+    if os.path.exists(yol):
+        if il not in _ONBELLEK:
+            _ONBELLEK[il] = Image.open(yol).convert("RGBA")
+        return _ONBELLEK[il]
+    return None
+
+
+SIMGELER = {"Sivas": lambda: _dosyadan("Sivas") or sivas()}

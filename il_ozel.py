@@ -96,9 +96,9 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     from sehir_simge import SIMGELER
     if il in SIMGELER:
         sm = SIMGELER[il]()
-        sg = 760 if orta else 480  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
+        sg = 760 if orta else 520  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
         sm = sm.resize((sg, int(sm.height * sg / sm.width)), Image.LANCZOS)
-        sm.putalpha(sm.getchannel("A").point(lambda v: v * (55 if orta else 150) // 255))
+        sm.putalpha(sm.getchannel("A").point(lambda v: v * (60 if orta else 185) // 255))
         katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
         katman.alpha_composite(sm, ((W - sg) // 2 if orta else W - M - sm.width, 272 - sm.height))
         if img.mode == "RGBA":
