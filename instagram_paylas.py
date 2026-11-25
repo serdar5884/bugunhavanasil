@@ -313,7 +313,7 @@ def ozel(gorsel_yolu, il, sadece=None):
     if not varyantlar:
         return print(f"{il}: video yok, paylaşılmadı")
     n = max(1, len(ortak))
-    kay = datetime.date.today().toordinal() % n  # hangi sayfa hangi günü alır: her gün döner (herkese sırayla 'bugün')
+    kay = 0  # her sayfanın tasarımı sabit: ortaklar.json'daki sırası = tasarım (1. sayfa klasik, 2. gökyüzü...)
     for k in range(n):
         grup = [ortak[(k + kay) % n]] if ortak else []
         g = varyantlar[k % len(varyantlar)]
