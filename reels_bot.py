@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 from hava_bot import font, destek_bandi, HESAP, HADISE
 
 W, H = 1080, 1920
-ACILIS, BOLGE, KAPANIS, GECIS = 2.5, 6.0, 3.5, 0.5  # saniye: bölge görselleri okunabilsin diye uzun
+ACILIS, BOLGE, KAPANIS, GECIS = 1.6, 1.6, 1.0, 0.2  # saniye: ~12 sn kısa döngü (tekrar izlenme), duraklatıp okunur
 
 
 def dikey(src_yol, hedef):
@@ -104,27 +104,28 @@ def kanca(klasor):
                         soguk.append((x["min"], v["il"]))
     global KANCA_TUR
     KANCA_TUR = None
+    import konu
     kim = {1: "Bugün", 2: "Yarın", "hs": "Hafta sonu"}.get(gun, "Bugün")
     n_kar, n_fir, n_yag = len(tipler["kar"]), len(tipler["firtina"]), len(tipler["yagmur"])
-    if n_kar >= 3:
+    if n_kar >= 3 and not konu.dolu_mu("kar"):  # aynı konu gün içinde en fazla 2 kez
         KANCA_TUR = "kar"
         return ust, f"{n_kar} İLDE\nKAR VAR!", "Senin ilin\nlistede mi?", f"❄️ {kim} {n_kar} ilde kar yağışı var! Senin ilin listede mi?", tarih
-    if n_fir >= 3:
+    if n_fir >= 3 and not konu.dolu_mu("firtina"):  # aynı konu gün içinde en fazla 2 kez
         KANCA_TUR = "firtina"
         return ust, f"{n_fir} İLDE\nFIRTINA!", "Gök gürültülü sağanak\nbekleniyor", f"⛈️ {kim} {n_fir} ilde gök gürültülü sağanak bekleniyor!", tarih
-    if n_yag + n_fir >= 10:
+    if n_yag + n_fir >= 10 and not konu.dolu_mu("yagmur"):  # aynı konu gün içinde en fazla 2 kez
         n = n_yag + n_fir
         KANCA_TUR = "yagmur"
         return ust, f"{n} İLDE\nYAĞMUR VAR!", "Şemsiyeni\nunutma!", f"☔ {kim} {n} ilde yağmur var! Şemsiyeni unutma.", tarih
-    if len(ruzgarli) >= 8:
+    if len(ruzgarli) >= 8 and not konu.dolu_mu("ruzgar"):  # aynı konu gün içinde en fazla 2 kez
         KANCA_TUR = "ruzgar"
         n = len(ruzgarli)
         return ust, f"{n} İLDE\nKUVVETLİ RÜZGAR!", "Çatı uçmalarına\ndikkat!", f"💨 {kim} {n} ilde kuvvetli rüzgar bekleniyor! Çatı uçmalarına dikkat.", tarih
-    if soguk and min(soguk)[0] <= -5:
+    if soguk and min(soguk)[0] <= -5 and not konu.dolu_mu("soguk"):  # aynı konu gün içinde en fazla 2 kez
         KANCA_TUR = "soguk"
         d, il = min(soguk)
         return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen soğuk ili", f"🥶 {kim} en soğuk il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
-    if sicak and max(sicak)[0] >= 33:
+    if sicak and max(sicak)[0] >= 33 and not konu.dolu_mu("sicak"):  # aynı konu gün içinde en fazla 2 kez
         KANCA_TUR = "sicak"
         d, il = max(sicak)
         return ust, f"{il.upper()}\n{d}°C!", "Türkiye'nin\nen sıcak ili", f"🔥 {kim} en sıcak il {il}: {d}°C! Senin ilinde hava nasıl?", tarih
@@ -141,6 +142,8 @@ def main(klasor):
     tarih = f"{bugun.day} {aylar[bugun.month]} {bugun.year}"
     kareler = [os.path.join(tmp, "00.jpg")]
     ust, buyuk, alt, satir, tarih = kanca(klasor)
+    import konu
+    konu.kaydet(KANCA_TUR)
     kart(kareler[0], ust, buyuk, alt, tarih, foto=KANCA_FOTO.get(KANCA_TUR))
     if KANCA_TUR:  # habere uygun hareket: yağmur, kar, şimşek, rüzgar (yoksa hafif yakınlaşma)
         try:

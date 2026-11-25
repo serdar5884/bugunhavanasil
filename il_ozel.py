@@ -74,7 +74,7 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
     M = 50
     # --- başlık
     from tasarim import cam_kart, takvim_ikon
-    gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no, "BUGÜN")
+    gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no) or GUNLER[tarih.weekday()].replace("i", "İ").upper()
     f1 = font("ExtraBold", 40)
     d.text((M + 2, 38), f"{gun_k} HAVA NASIL?", font=f1, fill=(0, 0, 0, 100))
     d.text((M, 36), f"{gun_k} HAVA NASIL?", font=f1, fill=SARI)
@@ -122,7 +122,7 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1):
         v = merkez[k]
         dt = datetime.date.fromisoformat(k)
         cam_kart(img, [x, y5, x + gw, y5 + 165], r=18)
-        ad = GUN_KISA[dt.weekday()] if i else ("Bugün" if gun_no == 1 else "Yarın")
+        ad = GUN_KISA[dt.weekday()] if i else {1: "Bugün", 2: "Yarın"}.get(gun_no, GUN_KISA[dt.weekday()])
         fg = font("Bold", 24)
         d.text((x + gw / 2 - d.textlength(ad, font=fg) / 2, y5 + 10), ad, font=fg, fill="white")
         ikon(d, HADISE.get(v["hadise"] or "", ("", "bulut"))[1], x + gw / 2, y5 + 78, 70)
@@ -202,32 +202,45 @@ def main():
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--cikti", default="yayin/il_ozel")
     ap.add_argument("--video", action="store_true", help="Reels videosu da üret")
+    ap.add_argument("--varyant", type=int, default=1, help="Kaç farklı gün (her ortak sayfaya ayrı içerik)")
     a = ap.parse_args()
     os.makedirs(a.cikti, exist_ok=True)
-    tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=a.gun - 1)
     merkez, ilceler = demo_veri() if a.demo else veri_cek(a.il)
     ascii_ad = a.il.translate(str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU"))
-    yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}.jpg")
-    gorsel(a.il, merkez, ilceler, tarih, yol, a.gun)
-    gun_ad = "Bugün" if a.gun == 1 else "Yarın"
     etiket = ascii_ad.lower()
-    cap = (f"📍 {a.il} – {gun_ad.lower()} hava nasıl? Merkez, tüm ilçeler ve 5 günlük tahmin 👇\n\n"
-           f"💬 Yorumlara \"{a.il} 5 günlük\" yaz, tahmini hemen gönderelim!\n"
-           f"🔁 Hemşehrilerinle paylaş, takip edip bildirimleri açarak destek ol!\n\n"
-           f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
-           f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
-    if a.video:
+    yollar = []
+    # Her ortak sayfaya farklı içerik (kopya Reels olmasın): bugün, yarın, sonraki günler
+    for k in range(max(1, min(a.varyant, 5))):
+        gun = a.gun + k
+        tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=gun - 1)
+        yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}.jpg")
         try:
-            print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, a.gun))
+            gorsel(a.il, merkez, ilceler, tarih, yol, gun)
         except Exception as e:
-            print("Hareketli görsel üretilemedi:", e)
-        mp4, kapak, sanatci = video(yol)
-        if sanatci:
-            cap += f"\n\n🎵 Müzik: {sanatci} (Pixabay)"
-        print("Video:", mp4)
-    open(yol[:-4] + ".txt", "w", encoding="utf-8").write(cap)
-    open(os.path.join(a.cikti, "son.txt"), "w").write(yol)
-    print("Hazır:", yol, len(ilceler), "ilçe")
+            print(f"{tarih} görseli üretilemedi:", e)
+            continue
+        gun_ad = {1: "bugün", 2: "yarın"}.get(gun, f"{GUNLER[tarih.weekday()]} ({tarih.day} {AYLAR[tarih.month]})")
+        cap = (f"📍 {a.il} – {gun_ad} hava nasıl? Merkez, tüm ilçeler ve 5 günlük tahmin 👇\n\n"
+               f"💬 Yorumlara \"{a.il} 5 günlük\" yaz, tahmini hemen gönderelim!\n"
+               f"📤 Hemşehrilerine gönder, hazırlıklı olsunlar!\n\n"
+               f"Kaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n"
+               f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
+        if a.video:
+            try:
+                print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun))
+            except Exception as e:
+                print("Hareketli görsel üretilemedi:", e)
+            mp4, kapak, sanatci = video(yol)
+            if sanatci:
+                cap += f"\n\n🎵 Müzik: {sanatci} (Pixabay)"
+            print("Video:", mp4)
+        open(yol[:-4] + ".txt", "w", encoding="utf-8").write(cap)
+        yollar.append(yol)
+        print("Hazır:", yol, len(ilceler), "ilçe")
+    if not yollar:
+        raise SystemExit("Görsel üretilemedi")
+    open(os.path.join(a.cikti, "son.txt"), "w").write(yollar[0])
+    open(os.path.join(a.cikti, "liste.txt"), "w").write("\n".join(yollar))
 
 
 if __name__ == "__main__":

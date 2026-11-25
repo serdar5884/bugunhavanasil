@@ -300,6 +300,16 @@ def cevap_metni(yorum, kullanici, baglam=None):
     return f"@{kullanici}\n" + "\n\n".join(satirlar) + "\n\nKaynak: MGM"
 
 
+SORU_KELIME = re.compile(r"\?|\bhava\b|\bkar\b|yağmur|yagmur|yağış|yagis|derece|soğuk|soguk|sıcak|sicak|"
+                         r"var m[ıi]|olacak m[ıi]|yağacak|yagacak|\byarın\b|\byarin\b|nasıl|nasil|tahmin", re.I)
+
+
+def soru_mu(metin):
+    """İl/ilçe yazılmamış ama hava sorusu gibi görünen yorum mu? (teşekkür, emoji vb. hariç)"""
+    t = (metin or "").strip()
+    return len(t) >= 6 and not t.startswith("@") and bool(SORU_KELIME.search(t))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dene")
@@ -335,8 +345,16 @@ def main():
     yeni = 0
     for m in degisen:
         sayilar[m["id"]] = m.get("comments_count", 0)
-        ham = ig.istek(f"{m['id']}/comments", {"fields": "id,text,username,timestamp,replies{id,text,username,timestamp}",
-                                              "limit": 50}, "GET").get("data", [])
+        ham, sonraki = [], None
+        for _ in range(6):  # 50'şerli sayfalar: en fazla 300 yorum
+            prm = {"fields": "id,text,username,timestamp,replies{id,text,username,timestamp}", "limit": 50}
+            if sonraki:
+                prm["after"] = sonraki
+            cvp = ig.istek(f"{m['id']}/comments", prm, "GET")
+            ham += cvp.get("data", [])
+            sonraki = (cvp.get("paging") or {}).get("cursors", {}).get("after") if (cvp.get("paging") or {}).get("next") else None
+            if not sonraki:
+                break
         yorumlar = []
         sinir = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=12)).strftime("%Y-%m-%dT%H:%M:%S")
         for y in ham:
@@ -359,24 +377,35 @@ def main():
             kume = yanitlar if yanit else cevaplanan
             if y["id"] in kume or y.get("username") == hesap:
                 continue
-            kume.add(y["id"])
             if any(ts >= y.get("timestamp", "") for ts in bizim.get((y["ust"], y.get("username")), [])):
+                kume.add(y["id"])
                 print("Zaten cevaplanmış, atlandı:", y.get("username"))
                 continue
             try:
                 metin = cevap_metni(y.get("text", ""), y.get("username", ""), baglam)
-            except Exception as e:
+            except Exception as e:  # işaretlenmez: sonraki turda tekrar denenir
                 print("Tahmin alınamadı:", e)
                 continue
+            if not metin and not yanit and soru_mu(y.get("text", "")):
+                metin = (f"@{y.get('username', '')}\n📍 Hangi il ya da ilçe için sormuştun? Yoruma yazman yeterli, "
+                         f"MGM tahminini hemen gönderelim 🙂\n(Örnek: \"Sivas yarın\", \"Kadıköy\", \"Erzurum cumartesi\")")
             if not metin:
+                kume.add(y["id"])
                 if yanit:
                     print("Yanıtta yer bulunamadı:", y.get("username"), "|", y.get("text", "")[:80])
                 continue
-            ig.istek(f"{y['ust']}/replies", {"message": metin[:2000]})
+            try:
+                ig.istek(f"{y['ust']}/replies", {"message": metin[:2000]})
+            except Exception as e:  # işaretlenmez: sonraki turda tekrar denenir
+                print("Cevap gönderilemedi:", e)
+                continue
+            kume.add(y["id"])
             print("Cevaplandı:", y.get("username"), "|", y.get("text", "")[:60], "->", metin[:90])
             yeni += 1
             if yeni >= TUR_BASINA_EN_FAZLA:
                 break
+        if yeni >= TUR_BASINA_EN_FAZLA:  # sınır çalışma başına
+            break
     durum["yorum_sayilari"] = {k: v for k, v in sayilar.items() if k in {m["id"] for m in medya}}
     durum["cevaplanan_yorumlar"] = list(cevaplanan)[-5000:]
     durum["cevaplanan_yanitlar"] = list(yanitlar)[-3000:]

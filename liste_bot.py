@@ -216,6 +216,8 @@ def main():
     if len(veri) < 60:
         sys.exit(f"Yeterli veri yok ({len(veri)} il)")
     k = konu_sec(veri, tarih)
+    import konu
+    konu.kaydet(k["tur"])
     kap = kapak(k, tarih, os.path.join(a.cikti, "reels_kapak.jpg"))
     lst = liste(k, tarih, os.path.join(a.cikti, "liste.jpg"))
     mp4, sanatci = video(kap, lst, k["hareket"], os.path.join(a.cikti, "reels.mp4"))

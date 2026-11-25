@@ -1,7 +1,7 @@
 name: Bölge hava durumu (sabah bugün, akşam yarın, cuma hafta sonu)
 
 on:
-  # Zamanlama cron-job.org'dan yapılıyor (07:17 gun=1, 20:13 gun=2, uyarılar her 30 dk)
+  # Zamanlama cron-job.org'dan yapılıyor (06:43 gun=1, 20:13 gun=2, uyarılar her 30 dk)
   workflow_dispatch:        # Actions sekmesinden elle çalıştırma
     inputs:
       gun:
@@ -37,7 +37,7 @@ jobs:
           python -u reels_bot.py $KLASOR || echo "Reels üretilemedi"
           # yurt geneli önemli gelişmeler (kar geliyor, soğuk hava dalgası...)
           # ortak sayfalı illere özel görsel (sadece sabah)
-          if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do python -u il_ozel.py --il $IL --gun 1 --video --cikti yayin/il_ozel/$IL || echo "$IL görseli üretilemedi"; done; fi
+          if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do python -u il_ozel.py --il $IL --gun 1 --video --varyant $(python -c "import json;print(len(json.load(open('ortaklar.json'))['$IL']))") --cikti yayin/il_ozel/$IL || echo "$IL görseli üretilemedi"; done; fi
           # Sadece hikâye isteyen sayfalar: günün videosu ve görseli sabit adreste ('hikaye' dalı)
           if [ "$GUN" = "1" ] && [ -f hikaye_ortaklar.json ]; then
             python -u hikaye_dosyalari.py || echo "Hikâye dosyaları hazırlanamadı"
@@ -59,4 +59,10 @@ jobs:
           python -u instagram_paylas.py karusel $KLASOR || echo "Kaydırmalı gönderi paylaşılamadı"
           if [ -f $KLASOR/reels.mp4 ]; then python -u instagram_paylas.py reels $KLASOR || echo "Reels paylaşılamadı"; fi
           if [ "$GUN" = "1" ]; then for IL in $(python -c "import json;print(' '.join(json.load(open('ortaklar.json'))))"); do [ -f yayin/il_ozel/$IL/son.txt ] && python -u instagram_paylas.py ozel "$(cat yayin/il_ozel/$IL/son.txt)" $IL || echo "$IL paylaşılamadı"; done; fi
-          if [ "$GUN" != "hs" ] && [ -f yayin/ulke/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi
+          if [ "$GUN" != "hs" ]; then python -u instagram_paylas.py uyari yayin/ulke || echo "Yurt geneli paylaşılamadı"; fi
+      - name: Kuyruğu kaydet
+        if: always()
+        run: |
+          for f in yayin/ulke/kuyruk.json yayin/ulke/akis.json konu.json; do [ -f $f ] && git add $f; done; true
+          git commit -qm "Yurt geneli kuyruğu $(date +%F_%H%M)" || echo "kuyruk değişmedi"
+          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done

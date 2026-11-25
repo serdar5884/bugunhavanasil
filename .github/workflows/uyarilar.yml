@@ -1,7 +1,7 @@
 name: Uyarılar, kapalı yollar ve son dakika hava haberleri
 
 on:
-  # Zamanlama cron-job.org'dan yapılıyor (07:17 gun=1, 20:13 gun=2, uyarılar her 30 dk)
+  # Zamanlama cron-job.org'dan yapılıyor (06:43 gun=1, 20:13 gun=2, uyarılar her 30 dk)
   workflow_dispatch:
 
 permissions:
@@ -46,9 +46,16 @@ jobs:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
         run: |
-          python -u instagram_paylas.py uyari yayin/uyari
-          if [ -f yayin/ozel/paylasim.json ]; then python -u instagram_paylas.py uyari yayin/ozel || echo "Özel kart paylaşılamadı"; fi
+          python -u instagram_paylas.py uyari yayin/uyari || echo "Uyarılar paylaşılamadı"
+          python -u instagram_paylas.py uyari yayin/ozel || echo "Özel kart paylaşılamadı"
+      - name: Kuyruğu kaydet (bekleyen / tekrar denenecek kartlar)
+        if: always()
+        run: |
+          for f in yayin/uyari/kuyruk.json yayin/uyari/akis.json yayin/ozel/kuyruk.json yayin/ozel/akis.json; do [ -f $f ] && git add $f; done; true
+          git commit -qm "Uyarı kuyruğu $(date +%F_%H%M)" || echo "kuyruk değişmedi"
+          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Bilgi videosu zamanı mı? (Pzt/Çar/Cuma 12:00 sonrası, günde bir)
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

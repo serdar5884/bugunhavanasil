@@ -332,6 +332,11 @@ def main():
         if anahtar in gorulen:
             continue
         gorulen.add(anahtar)
+        import konu
+        if konu.dolu_mu(o["tur"]):  # liste/akşam kancasında zaten 2 kez işlendi
+            print("Konu bugün yeterince paylaşıldı, atlandı:", anahtar)
+            continue
+        konu.kaydet(o["tur"])
         g = os.path.join(a.cikti, f"{o['tarih']:%Y%m%d}_{o['tur'].lower()}.jpg")
         kart(o, g)
         h = g.replace(".jpg", "_hikaye.jpg")

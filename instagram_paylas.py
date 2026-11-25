@@ -19,7 +19,45 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "serdar5884/bugunhavanasil")
 API = "https://graph.facebook.com/v21.0" if TOKEN.startswith("EAA") else "https://graph.instagram.com/v21.0"
 
 
+GENEL_ETIKET = {"#hava", "#meteoroloji", "#mgm", "#reels", "#havadurumureels", "#bugunhavanasil", "#türkiye"}
+OLAY = re.compile(r"kar|yağ|yag|sel|çığ|fırtına|rüzgar|soğuk|sıcak|ayaz|don|sis|dolu|hortum|uyarı|sondakika|kapalı", re.I)
+
+
+def etiket_sinirla(metin, n=5):
+    """Instagram en fazla 5 hashtag'e izin veriyor: en ilgili 5'i kalır (havadurumu > olay > il > genel)."""
+    etiketler = list(dict.fromkeys(re.findall(r"#[\wçğıöşüÇĞİÖŞÜ]+", metin)))
+    if len(etiketler) <= n:
+        return metin
+    def puan(e):
+        k = e.lower()
+        return 0 if k == "#havadurumu" else 4 if k in GENEL_ETIKET else 2 if k.endswith("havadurumu") else 1 if OLAY.search(k) else 3
+    kalan = set(sorted(etiketler, key=puan)[:n])
+    metin = re.sub(r"#[\wçğıöşüÇĞİÖŞÜ]+", lambda m: m.group(0) if m.group(0) in kalan and not kalan.discard(m.group(0)) else "", metin)
+    return re.sub(r"[ \t]{2,}", " ", re.sub(r"[ \t]+\n", "\n", metin))
+
+
+def caption_duzenle(c, reels=False):
+    """Tüm açıklamalar: paylaşma çağrısı en üstte (algoritmanın en güçlü sinyali), kısa takip satırı, en fazla 5 hashtag."""
+    satirlar = c.split("\n")
+    paylas = next((x for x in satirlar if x.startswith(("📤", "🔁"))), "")
+    paylas = re.split(r",\s*takip", paylas)[0].rstrip(" .!") if paylas else ""
+    if not paylas or "gönderiyi sevdiklerinle" in paylas:
+        paylas = "📤 Ailene ve arkadaşlarına gönder, hazırlıklı olsunlar"
+    paylas = "📤 " + paylas.lstrip("📤🔁 ").replace("Hemşehrilerinle paylaş", "Hemşehrilerine gönder") + "!"
+    at = re.compile(r"^(📤|🔁)|bildirim|^👉 @bugun|^🔔")
+    satirlar = [x for x in satirlar if not at.search(x) and not (reels and "kaydır" in x.lower())]
+    takip = "🔔 Takipte kal 👉 @bugun.hava.nasil"
+    k = next((i for i, x in enumerate(satirlar) if x.startswith(("Kaynak", "#"))), len(satirlar))
+    satirlar[k:k] = ["", takip, ""]
+    i = satirlar.index("", 1) if "" in satirlar[1:k] else 1
+    satirlar[i:i] = ["", paylas, ""]
+    c = re.sub(r"\n{3,}", "\n\n", "\n".join(satirlar)).strip()
+    return etiket_sinirla(c)
+
+
 def istek(yol, veri=None, yontem="POST"):
+    if veri and veri.get("caption") and yontem == "POST":
+        veri = dict(veri, caption=caption_duzenle(veri["caption"], reels=veri.get("media_type") == "REELS"))
     veri = dict(veri or {}, access_token=TOKEN)
     if yontem == "GET":
         req = urllib.request.Request(f"{API}/{yol}?{urllib.parse.urlencode(veri)}")
@@ -106,7 +144,7 @@ def reels(klasor, yayinlama=True):
     video = os.path.join(klasor, "reels.mp4")
     if not os.path.exists(video):
         sys.exit("reels.mp4 yok")
-    caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read() + " #reels #havadurumureels"
+    caption = open(os.path.join(klasor, "caption.txt"), encoding="utf-8").read()
     kc = os.path.join(klasor, "kanca.txt")
     if os.path.exists(kc) and open(kc, encoding="utf-8").read().strip():  # dikkat çeken ilk satır
         caption = open(kc, encoding="utf-8").read().strip() + "\n\n" + caption
@@ -126,110 +164,182 @@ def reels(klasor, yayinlama=True):
     return mid
 
 
-def uyari(klasor):
-    """Uyarı / son dakika / yurt geneli kartları: hikâye hareketli video, gönderi hareketli Reels.
-    Video hazırlanamaz ya da yüklenemezse eskisi gibi sabit görsel paylaşılır."""
-    from hareket import hareketlendir, tur_bul, guvenli_alan
-    yol = os.path.join(klasor, "paylasim.json")
-    if not os.path.exists(yol):
-        return print("Yeni uyarı yok")
-    sayac = 0
-    for p in json.load(open(yol, encoding="utf-8")):
-        if p.get("paylasildi"):
-            continue
-        mp4 = None
+AKIS_SINIRI = 3          # uyarı/haber/yurt geneli kartlarından günde en fazla bu kadarı akışa (Reels) düşer, gerisi sadece hikâye
+SESSIZ = (23, 0), (6, 30)  # bu saatler arası paylaşım yok (kırmızı uyarı hikâyesi hariç); kartlar kuyrukta bekler
+KUYRUK_OMRU = 14 * 3600    # saniye: bundan eski kartlar artık paylaşılmaz
+UYARI_KLASORLERI = ("yayin/uyari", "yayin/ozel", "yayin/ulke")
+
+
+def _simdi():
+    import datetime
+    return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=3)))
+
+
+def akis_sayisi():
+    bugun = _simdi().date().isoformat()
+    n = 0
+    for k in UYARI_KLASORLERI:
         try:
-            # efekt türü kaydın kendisinden (ör. KAR -> kar); yoksa başlık satırından tahmin
-            tur = p["hareket"] if "hareket" in p else tur_bul(p.get("caption", "").split("\n")[0])
-            mp4 = hareketlendir(p["gorsel"], tur)
-            guvenli_alan(mp4)  # hikâye ve Reels tam ekranda kırpılmasın
-        except Exception as e:
-            print("Hareketli kart üretilemedi:", e)
-        if not mp4:  # efektli video üretilemediyse sade (yakınlaşan) video dene
-            try:
-                mp4 = hareketlendir(p["gorsel"], None)
-                guvenli_alan(mp4)
-            except Exception as e:
-                print("Video üretilemedi:", e)
-        if mp4:  # sel, hortum, kapalı yol dahil tüm uyarı/haber videolarına müzik
-            ilk = p.get("caption", "").split("\n")[0]
-            ciddi = bool(re.search(r"SEL|HORTUM|FIRTINA|KAPAN|KAPALI|ÇIĞ|DOLU|TURUNCU|KIRMIZI|TAŞKIN|HEYELAN", ilk.upper()))
-            yeni = muzik_degistir(mp4, sayac, ciddi)
-            sayac += 1
-            if yeni:
-                mp4 = yeni[0]
-                if "🎵" not in p["caption"]:
-                    p["caption"] += f"\n\n🎵 Müzik: {yeni[1]} (Pixabay)"
-        hik = None
-        if mp4:
-            try:
-                hik = istek(f"{USER}/media", {"video_url": url(mp4), "media_type": "STORIES"})["id"]
-                hazir_bekle(hik, deneme=60)
-            except Exception as e:
-                print("Hareketli hikâye yüklenemedi, sabit görsel:", e)
-                hik = None
-        if not hik:
-            hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
-        print("Hikâye:", yayinla(hik))
-        # Tüm uyarı/haber kartları akışa Reels olarak da gider (normal görsel gönderi yok)
-        if True:
-            g = None
-            if mp4:
-                try:
-                    g = istek(f"{USER}/media", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(p["gorsel"]),
-                                                "caption": p["caption"], "share_to_feed": "true"})["id"]
-                    hazir_bekle(g, deneme=60)
-                except Exception as e:
-                    print("Hareketli gönderi yüklenemedi, sabit görsel:", e)
-                    g = None
-            if g:
-                print("Reels:", yayinla(g))
+            d = json.load(open(os.path.join(k, "akis.json"), encoding="utf-8"))
+            n += d.get("n", 0) if d.get("tarih") == bugun else 0
+        except Exception:
+            pass
+    return n
+
+
+def akis_say(klasor):
+    yol, bugun = os.path.join(klasor, "akis.json"), _simdi().date().isoformat()
+    d = json.load(open(yol, encoding="utf-8")) if os.path.exists(yol) else {}
+    d = d if d.get("tarih") == bugun else {"tarih": bugun, "n": 0}
+    d["n"] += 1
+    json.dump(d, open(yol, "w", encoding="utf-8"))
+
+
+def uyari(klasor):
+    """Uyarı / son dakika / yurt geneli kartları kuyruğa girer; her çalışmada kuyruk paylaşılır:
+    hikâye hareketli müzikli video, akışa Reels (günde en fazla AKIS_SINIRI). Gece sessiz saatlerde beklenir,
+    hata olursa sonraki çalışmada tekrar denenir (en fazla 3 kez)."""
+    from hareket import hareketlendir, tur_bul, guvenli_alan
+    kyol = os.path.join(klasor, "kuyruk.json")
+    kuyruk = json.load(open(kyol, encoding="utf-8")) if os.path.exists(kyol) else []
+    yol = os.path.join(klasor, "paylasim.json")
+    simdi = _simdi()
+    if os.path.exists(yol):
+        mevcut = {p["gorsel"] for p in kuyruk}
+        for p in json.load(open(yol, encoding="utf-8")):
+            if p.get("paylasildi") or p["gorsel"] in mevcut:
+                continue
+            if "kapali_yollar" in p["gorsel"]:  # kapalı yollar: sadece en güncel liste beklesin
+                kuyruk = [q for q in kuyruk if "kapali_yollar" not in q["gorsel"]]
+            kuyruk.append(dict(p, eklendi=simdi.timestamp(), deneme=0))
+    kuyruk = [p for p in kuyruk if simdi.timestamp() - p.get("eklendi", 0) < KUYRUK_OMRU and p.get("deneme", 0) < 3]
+
+    def kaydet():
+        json.dump(kuyruk, open(kyol, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    kaydet()
+    if not kuyruk:
+        return print("Bekleyen uyarı yok")
+    sa = (simdi.hour, simdi.minute)
+    gece = sa >= SESSIZ[0] or sa < SESSIZ[1]
+    sayac = 0
+    for p in list(kuyruk):
+        kirmizi = "_red" in p["gorsel"] or "KIRMIZI" in p.get("caption", "").upper()
+        if gece and not kirmizi:
+            print("Sessiz saat, sabaha bekliyor:", os.path.basename(p["gorsel"]))
+            continue
+        reels_ister = p.get("tur") != "hikaye" and not p.get("reels_ok")
+        if reels_ister and (gece or (akis_sayisi() >= AKIS_SINIRI and not kirmizi)):
+            if gece:
+                reels_ister = False  # kırmızı uyarı gece: şimdi hikâye, Reels sabah
             else:
-                print("Reels paylaşılamadı (normal gönderi yapılmıyor)")
+                print("Günlük akış sınırı dolu, sadece hikâye:", os.path.basename(p["gorsel"]))
+                p["reels_ok"] = "sinir"
+                reels_ister = False
+        if p.get("hikaye_ok") and not reels_ister:
+            if not gece:
+                kuyruk.remove(p)
+            kaydet()
+            continue
+        p["deneme"] = p.get("deneme", 0) + 1
+        kaydet()
+        try:
+            mp4 = None
+            try:
+                # efekt türü kaydın kendisinden (ör. KAR -> kar); yoksa başlık satırından tahmin
+                tur = p["hareket"] if "hareket" in p else tur_bul(p.get("caption", "").split("\n")[0])
+                mp4 = hareketlendir(p["gorsel"], tur)
+                guvenli_alan(mp4)  # hikâye ve Reels tam ekranda kırpılmasın
+            except Exception as e:
+                print("Hareketli kart üretilemedi:", e)
+                try:  # sade (yakınlaşan) video
+                    mp4 = hareketlendir(p["gorsel"], None)
+                    guvenli_alan(mp4)
+                except Exception as e:
+                    print("Video üretilemedi:", e)
+                    mp4 = None
+            caption = p["caption"]
+            if mp4:  # sel, hortum, kapalı yol dahil tüm uyarı/haber videolarına müzik
+                ilk = caption.split("\n")[0]
+                ciddi = bool(re.search(r"SEL|HORTUM|FIRTINA|KAPAN|KAPALI|ÇIĞ|DOLU|TURUNCU|KIRMIZI|TAŞKIN|HEYELAN", ilk.upper()))
+                yeni = muzik_degistir(mp4, sayac, ciddi)
+                sayac += 1
+                if yeni:
+                    mp4 = yeni[0]
+                    if "🎵" not in caption:
+                        caption += f"\n\n🎵 Müzik: {yeni[1]} (Pixabay)"
+            if not p.get("hikaye_ok"):
+                hik = None
+                if mp4:
+                    try:
+                        hik = istek(f"{USER}/media", {"video_url": url(mp4), "media_type": "STORIES"})["id"]
+                        hazir_bekle(hik, deneme=60)
+                    except Exception as e:
+                        print("Hareketli hikâye yüklenemedi, sabit görsel:", e)
+                        hik = None
+                if not hik:
+                    hik = istek(f"{USER}/media", {"image_url": url(p["gorsel"]), "media_type": "STORIES"})["id"]
+                print("Hikâye:", yayinla(hik))
+                p["hikaye_ok"] = True
+                kaydet()
+            if reels_ister:
+                if not mp4:
+                    raise RuntimeError("video yok, Reels sonra tekrar denenecek")
+                g = istek(f"{USER}/media", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(p["gorsel"]),
+                                            "caption": caption, "share_to_feed": "true"})["id"]
+                hazir_bekle(g, deneme=60)
+                print("Reels:", yayinla(g))
+                p["reels_ok"] = True
+                akis_say(klasor)
+            if not (gece and p.get("tur") != "hikaye" and not p.get("reels_ok")):
+                kuyruk.remove(p)
+        except Exception as e:
+            print("Paylaşılamadı, sonraki çalışmada tekrar denenecek:", os.path.basename(p["gorsel"]), e)
+        kaydet()
 
 
 def ozel(gorsel_yolu, il, sadece=None):
-    """İle özel görseli normal gönderi + (video varsa) Reels olarak paylaşır;
-    ortaklar.json'da sayfa varsa ikisine de ortak gönderi (Collab) daveti gönderir."""
-    caption = open(gorsel_yolu[:-4] + ".txt", encoding="utf-8").read()
+    """İle özel Reels'i ortak sayfalarla Collab olarak paylaşır. Her ortak sayfaya AYRI ve FARKLI içerik
+    (bugün / yarın / sonraki günler; liste.txt) gider: ortaklar birbirini görmez, Instagram kopya saymaz.
+    Bizim ızgarada yalnız 'bugün' Reels'i görünür; diğerleri sadece Reels sekmesinde. 10 dk arayla, farklı müzikle."""
+    import datetime, time
     ortak = json.load(open("ortaklar.json", encoding="utf-8")).get(il, []) if os.path.exists("ortaklar.json") else []
     if sadece:  # elle tetiklemede sadece belirtilen sayfa(lar)a davet (ör. yeni ortak için ilk gönderi)
         ortak = [x.strip().lstrip("@") for x in sadece.split(",") if x.strip()]
-    gonderi_cap = caption.split("\n\n🎵")[0]  # müzik satırı sadece Reels'te
-    mp4 = gorsel_yolu[:-4] + ".mp4"
-    if os.path.exists(mp4):  # ortak paylaşım sadece Reels (kaydırmalı gönderi yok)
-        isler = [("Reels", {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(gorsel_yolu[:-4] + "_kapak.jpg"),
-                            "caption": caption + " #reels", "share_to_feed": "true"})]
-    else:  # video yoksa paylaşma (sadece Reels)
-        print(f"{il}: video yok, paylaşılmadı")
-        isler = []
-    # Her ortak sayfa için ayrı Reels (ortaklar birbirinin adını görmez). Bizim profilde tekrar görünmesin diye
-    # sadece ilki ana akışa (ızgaraya) düşer, diğerleri yalnız Reels sekmesinde; her biri farklı müzikli ve 10 dk arayla.
-    import time
-    gruplar = [[o] for o in ortak] or [[]]
-    for ad, veri in isler:
-        for k, grup in enumerate(gruplar):
-            if k:
-                time.sleep(600)
-            v = dict(veri, share_to_feed="true" if k == 0 else "false")
-            if k:
-                yeni = muzik_degistir(mp4, k)
-                if yeni:
-                    v["video_url"], sanatci = url(yeni[0]), yeni[1]
-                    v["caption"] = re.sub(r"🎵 Müzik: .*\(Pixabay\)", f"🎵 Müzik: {sanatci} (Pixabay)", v["caption"])
-            try:
-                if grup:
-                    try:
-                        cid = istek(f"{USER}/media", dict(v, collaborators=json.dumps(grup)))["id"]
-                    except RuntimeError as e:  # tek başına kopya paylaşmamak için bu sayfayı atla
-                        print(f"{ad}: @{grup[0]} için ortak gönderi kurulamadı, atlandı:", e)
-                        continue
-                else:
-                    cid = istek(f"{USER}/media", v)["id"]
-                hazir_bekle(cid, deneme=60)
-                print(f"{il} {ad} paylaşıldı" + (f" (ortak: @{grup[0]})" if grup else "") + ":", yayinla(cid))
-            except Exception as e:
-                print(f"{il} {ad} paylaşılamadı" + (f" (@{grup[0]})" if grup else "") + ":", e)
+    lst = os.path.join(os.path.dirname(gorsel_yolu), "liste.txt")
+    varyantlar = [x for x in open(lst).read().split() if os.path.exists(x)] if os.path.exists(lst) else []
+    if gorsel_yolu not in varyantlar:
+        varyantlar = [gorsel_yolu] + varyantlar
+    varyantlar = [v for v in varyantlar if os.path.exists(v[:-4] + ".mp4")]
+    if not varyantlar:
+        return print(f"{il}: video yok, paylaşılmadı")
+    n = max(1, len(ortak))
+    kay = datetime.date.today().toordinal() % n  # hangi sayfa hangi günü alır: her gün döner (herkese sırayla 'bugün')
+    for k in range(n):
+        grup = [ortak[(k + kay) % n]] if ortak else []
+        g = varyantlar[k % len(varyantlar)]
+        mp4 = g[:-4] + ".mp4"
+        caption = open(g[:-4] + ".txt", encoding="utf-8").read()
+        v = {"media_type": "REELS", "video_url": url(mp4), "cover_url": url(g[:-4] + "_kapak.jpg"), "caption": caption,
+             "share_to_feed": "true" if k == 0 else "false"}
+        if k:
+            time.sleep(600)
+            yeni = muzik_degistir(mp4, k)
+            if yeni:
+                v["video_url"], sanatci = url(yeni[0]), yeni[1]
+                v["caption"] = re.sub(r"🎵 Müzik: .*\(Pixabay\)", f"🎵 Müzik: {sanatci} (Pixabay)", v["caption"])
+        try:
+            if grup:
+                try:
+                    cid = istek(f"{USER}/media", dict(v, collaborators=json.dumps(grup)))["id"]
+                except RuntimeError as e:  # tek başına kopya paylaşmamak için bu sayfayı atla
+                    print(f"Reels: @{grup[0]} için ortak gönderi kurulamadı, atlandı:", e)
+                    continue
+            else:
+                cid = istek(f"{USER}/media", v)["id"]
+            hazir_bekle(cid, deneme=60)
+            print(f"{il} Reels ({os.path.basename(g)}) paylaşıldı" + (f" (ortak: @{grup[0]})" if grup else "") + ":", yayinla(cid))
+        except Exception as e:
+            print(f"{il} Reels paylaşılamadı" + (f" (@{grup[0]})" if grup else "") + ":", e)
 
 
 def muzik_degistir(mp4, k, ciddi=False):
