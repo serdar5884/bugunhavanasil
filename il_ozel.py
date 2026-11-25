@@ -16,7 +16,8 @@ SARI = (255, 205, 0)
 # Ortak sayfalara aynı içerik farklı görünümle gitsin (Instagram kopya saymasın): renk tonu, kart rengi, düzen
 TEMALAR = [
     dict(ad="klasik"),
-    dict(ad="gece", ton=((45, 20, 110), (150, 45, 160)), vurgu=(255, 214, 90), kart=((110, 70, 190), (55, 25, 110))),
+    dict(ad="gokyuzu", ton=((135, 205, 255), (45, 135, 225)), oran=.6, vurgu=(255, 236, 110),
+         kart=((80, 160, 235), (45, 115, 205))),
     dict(ad="gunbatimi", ton=((250, 130, 60), (130, 25, 85)), vurgu=(255, 240, 160), kart=((170, 60, 80), (95, 20, 65)),
          duzen="liste"),
     dict(ad="zumrut", ton=((20, 160, 135), (10, 45, 80)), vurgu=(170, 255, 205), kart=((25, 120, 115), (10, 60, 85)),
@@ -84,7 +85,7 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     if T.get("ton"):  # sahne (yağmur/kar efekti) korunur, üstüne renk tonu
         from tasarim import _dikey_degrade
         ton = _dikey_degrade(img.width, img.height, *T["ton"]).convert(img.mode)
-        img = Image.blend(img, ton, .5)
+        img = Image.blend(img, ton, T.get("oran", .5))
     kr = T.get("kart")
     from tasarim import cam_kart as _ck
     cam_kart = lambda im, box, r=26: _ck(im, box, r, renk=kr, opak=175 if kr else 150)
