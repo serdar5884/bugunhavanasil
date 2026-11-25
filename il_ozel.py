@@ -91,6 +91,21 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     cam_kart = lambda im, box, r=26: _ck(im, box, r, renk=kr, opak=175 if kr else 150)
     d = ImageDraw.Draw(img, "RGBA")
     M = 50
+    orta = T.get("baslik") == "orta"
+    # --- ile özel simgeler (sade beyaz silüet, sağ üstte, soluk)
+    from sehir_simge import SIMGELER
+    if il in SIMGELER:
+        sm = SIMGELER[il]()
+        sg = 760 if orta else 480  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
+        sm = sm.resize((sg, int(sm.height * sg / sm.width)), Image.LANCZOS)
+        sm.putalpha(sm.getchannel("A").point(lambda v: v * (55 if orta else 150) // 255))
+        katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        katman.alpha_composite(sm, ((W - sg) // 2 if orta else W - M - sm.width, 272 - sm.height))
+        if img.mode == "RGBA":
+            img.alpha_composite(katman)
+        else:
+            img.paste(katman, (0, 0), katman)
+        d = ImageDraw.Draw(img, "RGBA")
     # --- başlık
     from tasarim import takvim_ikon
     gun_k = {1: "BUGÜN", 2: "YARIN"}.get(gun_no) or GUNLER[tarih.weekday()].replace("i", "İ").upper()
