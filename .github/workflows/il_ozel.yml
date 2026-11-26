@@ -23,7 +23,7 @@ jobs:
           pip install -q -r requirements.txt
           python -u il_ozel.py --il "${{ inputs.il }}" --gun ${{ inputs.gun }} --video --cikti "yayin/il_ozel/${{ inputs.il }}"
           git config user.name hava-bot && git config user.email hava-bot@users.noreply.github.com
-          git add yayin/il_ozel; git commit -qm "İle özel görsel" || true; for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
+          git add yayin/il_ozel; git commit -qm "İle özel görsel" || true; for i in 1 2 3 4 5 6; do git pull --rebase --autostash -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Paylaş
         if: ${{ inputs.paylas == 'evet' }}
         run: python -u instagram_paylas.py ozel "$(cat 'yayin/il_ozel/${{ inputs.il }}/son.txt')" "${{ inputs.il }}" "${{ inputs.ortak }}"

@@ -39,7 +39,7 @@ jobs:
           git add durum.json yayin/uyari
           git add -A yayin/ozel ozel_durum.json 2>/dev/null || true
           git commit -m "Uyarı kontrolü $(date +%F_%H%M)" || echo "yeni uyarı yok"
-          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
+          for i in 1 2 3 4 5 6; do git pull --rebase --autostash -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Instagram'a paylaş
         if: ${{ env.IG_TOKEN != '' }}
         env:
@@ -53,7 +53,7 @@ jobs:
         run: |
           for f in yayin/uyari/kuyruk.json yayin/uyari/akis.json yayin/ozel/kuyruk.json yayin/ozel/akis.json; do [ -f $f ] && git add $f; done; true
           git commit -qm "Uyarı kuyruğu $(date +%F_%H%M)" || echo "kuyruk değişmedi"
-          for i in 1 2 3 4 5 6; do git pull --rebase -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
+          for i in 1 2 3 4 5 6; do git pull --rebase --autostash -q origin main && git push -q && break; sleep $((RANDOM % 5 + 2)); done
       - name: Bilgi videosu zamanı mı? (Pzt/Çar/Cuma 12:00 sonrası, günde bir)
         if: always()
         env:
