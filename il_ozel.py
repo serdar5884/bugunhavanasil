@@ -20,7 +20,7 @@ TEMALAR = [
          kart=((80, 160, 235), (45, 115, 205))),
     dict(ad="gunbatimi", ton=((250, 130, 60), (130, 25, 85)), vurgu=(255, 240, 160), kart=((170, 60, 80), (95, 20, 65)),
          duzen="liste"),
-    dict(ad="acik", ton=((236, 241, 248), (205, 214, 228)), oran=.2, kart=((104, 122, 156), (66, 82, 114)), simge=False),
+    dict(ad="acik", ton=((236, 241, 248), (205, 214, 228)), oran=.2, kart=((104, 122, 156), (66, 82, 114)), simge="alt"),
     dict(ad="zumrut", ton=((20, 160, 135), (10, 45, 80)), vurgu=(170, 255, 205), kart=((25, 120, 115), (10, 60, 85)),
          baslik="orta"),
 ]
@@ -97,11 +97,13 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     from sehir_simge import SIMGELER
     if il in SIMGELER and T.get("simge", True):
         sm = SIMGELER[il]()
-        sg = 760 if orta else 520  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
+        alt = T.get("simge") == "alt"  # altta, bantların arkasında geniş silüet
+        sg = W - 2 * M if alt else 760 if orta else 520  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
         sm = sm.resize((sg, int(sm.height * sg / sm.width)), Image.LANCZOS)
-        sm.putalpha(sm.getchannel("A").point(lambda v: v * (60 if orta else 185) // 255))
+        sm.putalpha(sm.getchannel("A").point(lambda v: v * (150 if alt else 60 if orta else 185) // 255))
         katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        katman.alpha_composite(sm, ((W - sg) // 2 if orta else W - M - sm.width, 272 - sm.height))
+        katman.alpha_composite(sm, (M if alt else (W - sg) // 2 if orta else W - M - sm.width,
+                                    H - 120 - sm.height if alt else 272 - sm.height))
         if img.mode == "RGBA":
             img.alpha_composite(katman)
         else:
