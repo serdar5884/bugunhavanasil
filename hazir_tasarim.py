@@ -129,6 +129,9 @@ def kart(il, n, merkez, ilce_v, tarih, yol, faz=None, _ikonlar=None):
     cfg = json.load(open(os.path.join(KLASOR, il, "kutular.json"), encoding="utf-8"))[n]
     img = Image.open(os.path.join(KLASOR, il, f"{n}.png")).convert("RGB")
     bugun = merkez.get(tarih.isoformat()) or {}
+    if cfg.get("canli") or cfg.get("kontras"):  # daha canlı renkler
+        from PIL import ImageEnhance
+        img = ImageEnhance.Contrast(ImageEnhance.Color(img).enhance(cfg.get("canli", 1))).enhance(cfg.get("kontras", 1))
     img = hava_uygula(img, cfg, hava_turu(bugun))  # arka plan o günün havasına göre (kartlar hariç)
     yazi = tuple(cfg["yazi"])
     # tarih (takvim ikonu kalır, yanındaki yazı yenilenir)
@@ -176,6 +179,11 @@ def kart(il, n, merkez, ilce_v, tarih, yol, faz=None, _ikonlar=None):
         d.text((tx, y0 + h * .68), f"{v['max']}°", font=fb, fill=yazi, anchor="lm")
         d.text((tx + d.textlength(f"{v['max']}°", font=fb) + 4, y0 + h * .71), f"/ {v['min']}°",
                font=font("SemiBold", int(h * .17)), fill=yazi, anchor="lm")
+    if cfg.get("kontur"):  # kart çevrelerine belirgin çizgi
+        d = ImageDraw.Draw(img, "RGBA")
+        for b in cfg["mk"] + cfg["ilce"]:
+            d.rounded_rectangle([b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2], radius=max(10, (b[3] - b[1]) // 7),
+                                outline=tuple(cfg["kontur"]), width=3)
     img.save(yol, quality=93)
     return yol
 
