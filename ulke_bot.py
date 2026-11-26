@@ -333,10 +333,13 @@ def main():
             continue
         gorulen.add(anahtar)
         import konu
-        if konu.dolu_mu(o["tur"]):  # liste/akşam kancasında zaten 2 kez işlendi
+        if konu.dolu_mu(o["tur"]) or konu.dolu_mu("ulke_" + o["tur"], 1):
+            # liste/akşam kancasında zaten 2 kez işlendi ya da aynı tür kart (ör. bugün ve yarın için iki ayrı
+            # SİS UYARISI) bugün zaten paylaşıldı: aynı gün aynı türden tek yurt geneli kartı
             print("Konu bugün yeterince paylaşıldı, atlandı:", anahtar)
             continue
         konu.kaydet(o["tur"])
+        konu.kaydet("ulke_" + o["tur"])
         g = os.path.join(a.cikti, f"{o['tarih']:%Y%m%d}_{o['tur'].lower()}.jpg")
         kart(o, g)
         h = g.replace(".jpg", "_hikaye.jpg")

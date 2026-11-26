@@ -20,11 +20,13 @@ def _oku():
 
 
 def _ad(k):
+    if (k or "").startswith("ulke_"):
+        return k
     return ESLE.get(k, (k or "").lower())
 
 
-def dolu_mu(k):
-    return _oku()["konular"].get(_ad(k), 0) >= SINIR
+def dolu_mu(k, sinir=SINIR):
+    return _oku()["konular"].get(_ad(k), 0) >= sinir
 
 
 def kaydet(k):
