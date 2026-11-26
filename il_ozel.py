@@ -95,7 +95,18 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     orta = T.get("baslik") == "orta"
     # --- ile özel simgeler (sade beyaz silüet, sağ üstte, soluk)
     from sehir_simge import SIMGELER
-    if il in SIMGELER and T.get("simge", True):
+    renkli = os.path.join(os.path.dirname(os.path.abspath(__file__)), "simgeler", f"{il}_renkli.png")
+    if T.get("simge") == "alt" and os.path.exists(renkli):  # altta renkli bina şeridi (hazır tasarımlardaki gibi)
+        sm = Image.open(renkli).convert("RGBA")
+        sm = sm.resize((W, int(sm.height * W / sm.width)), Image.LANCZOS)
+        katman = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        katman.alpha_composite(sm, (0, H - 312))  # ilçe kartlarının altı ile yorum bandı arası
+        if img.mode == "RGBA":
+            img.alpha_composite(katman)
+        else:
+            img.paste(katman, (0, 0), katman)
+        d = ImageDraw.Draw(img, "RGBA")
+    elif il in SIMGELER and T.get("simge", True):
         sm = SIMGELER[il]()
         alt = T.get("simge") == "alt"  # altta, bantların arkasında geniş silüet
         sg = W - 2 * M if alt else 760 if orta else 520  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
