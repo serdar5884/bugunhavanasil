@@ -234,6 +234,27 @@ def dikey(img, H=1920):
     return tuval
 
 
+def guvenli(kare, zemin=None, oran=0.8):
+    """Telefonda tam ekranda (20:9) Instagram 9:16 videonun yanlarını kırpar: içerik %80'e küçültülüp ortalanır,
+    kenarlar aynı karenin bulanık hali ile dolar (yakınlaşma yok). zemin: önceden hazırlanmış bulanık arka plan."""
+    W, H = kare.size
+    if zemin is None:
+        zemin = guvenli_zemin(kare)
+    w, h = int(W * oran), int(H * oran)
+    out = zemin.copy()
+    m = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(m).rounded_rectangle([0, 0, w - 1, h - 1], radius=28, fill=255)
+    out.paste(kare.resize((w, h), Image.LANCZOS), ((W - w) // 2, (H - h) // 2), m.filter(ImageFilter.GaussianBlur(1.5)))
+    return out
+
+
+def guvenli_zemin(kare):
+    from PIL import ImageEnhance
+    W, H = kare.size
+    z = kare.resize((W // 8, H // 8)).filter(ImageFilter.GaussianBlur(6)).resize((W, H), Image.BICUBIC)
+    return ImageEnhance.Brightness(z).enhance(.85)
+
+
 def animasyon(il, n, merkez, ilce_v, tarih, yol, sure=6, fps=20, tam_ekran=True):
     """Hareketli kart: ikonlardaki güneş/bulut/yağmur/kar/rüzgar hareket eder; arka plan o günün havasına göre:
     güneşli gün parlayan güneş, yağmurlu gün yağmur, karlı gün kar, sisli gün sis, rüzgarlı gün rüzgar çizgileri
@@ -288,8 +309,13 @@ def animasyon(il, n, merkez, ilce_v, tarih, yol, sure=6, fps=20, tam_ekran=True)
         for tp, cx, cy, s in ikonlar:
             tasarim.ikon3d(im, tp, cx, cy + dy, s, f)
         if i == 0:
-            im.save(yol[:-4] + "_kapak.jpg", quality=93)
             im.crop((0, dy, W, dy + Image.open(yol).height)).save(yol, quality=93)
+        if tam_ekran:
+            if i == 0:
+                zemin = guvenli_zemin(im)
+            im = guvenli(im, zemin)
+            if i == 0:
+                im.save(yol[:-4] + "_kapak.jpg", quality=93)
         im.save(os.path.join(tmp, f"k{i:03d}.jpg"), quality=90)
     mp4 = yol[:-4] + "_hareketli.mp4"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-framerate", str(fps), "-i", os.path.join(tmp, "k%03d.jpg"),

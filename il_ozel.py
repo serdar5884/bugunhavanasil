@@ -234,6 +234,10 @@ def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20, tema=0,
                     ImageDraw.Draw(mk).rectangle([0, dy + 20, kare.width, dy + h0 - 20], fill=0)
                     kat.putalpha(Image.composite(kat.getchannel("A"), Image.new("L", kare.size, 0), mk))
                     kare.paste(kat, (0, 0), kat)
+                from hazir_tasarim import guvenli, guvenli_zemin
+                if i == 0:
+                    zemin_g = guvenli_zemin(kare)
+                kare = guvenli(kare, zemin_g)
                 if i == 0:
                     kare.save(yol[:-4] + "_kapak.jpg", quality=93)
                 kare.save(k_yol, quality=90)
