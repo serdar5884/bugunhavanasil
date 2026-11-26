@@ -15,6 +15,13 @@ def var_mi(il):
     return os.path.exists(os.path.join(KLASOR, il, "kutular.json"))
 
 
+def ayar(il, n):
+    if not var_mi(il):
+        return {}
+    c = json.load(open(os.path.join(KLASOR, il, "kutular.json"), encoding="utf-8"))
+    return c[n % len(c)]
+
+
 def sayi(il):
     return len(json.load(open(os.path.join(KLASOR, il, "kutular.json"), encoding="utf-8"))) if var_mi(il) else 0
 

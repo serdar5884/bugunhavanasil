@@ -20,6 +20,7 @@ TEMALAR = [
          kart=((80, 160, 235), (45, 115, 205))),
     dict(ad="gunbatimi", ton=((250, 130, 60), (130, 25, 85)), vurgu=(255, 240, 160), kart=((170, 60, 80), (95, 20, 65)),
          duzen="liste"),
+    dict(ad="acik", ton=((236, 241, 248), (205, 214, 228)), oran=.2, kart=((104, 122, 156), (66, 82, 114)), simge=False),
     dict(ad="zumrut", ton=((20, 160, 135), (10, 45, 80)), vurgu=(170, 255, 205), kart=((25, 120, 115), (10, 60, 85)),
          baslik="orta"),
 ]
@@ -94,7 +95,7 @@ def gorsel(il, merkez, ilceler, tarih, yol, gun_no=1, tema=0):
     orta = T.get("baslik") == "orta"
     # --- ile özel simgeler (sade beyaz silüet, sağ üstte, soluk)
     from sehir_simge import SIMGELER
-    if il in SIMGELER:
+    if il in SIMGELER and T.get("simge", True):
         sm = SIMGELER[il]()
         sg = 760 if orta else 520  # ortalı başlıkta: başlığın arkasında, geniş ve daha soluk
         sm = sm.resize((sg, int(sm.height * sg / sm.width)), Image.LANCZOS)
@@ -189,16 +190,40 @@ def gap_x(n):
     return 12 * n
 
 
-def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20, tema=0):
-    """Görselin hareketli hali (kar/yağmur/bulut akar): <ad>_hareketli.mp4, 6 sn kesintisiz döngü."""
-    import shutil, subprocess, tempfile
-    import hava_bot
+def animasyon(il, merkez, ilceler, tarih, yol, gun_no=1, sure=6, fps=20, tema=0, tam_ekran=False):
+    """Görselin hareketli hali (kar/yağmur/bulut akar): <ad>_hareketli.mp4, 6 sn kesintisiz döngü.
+    tam_ekran: 9:16 (üst/alt kenar sahnenin renkleriyle uzatılır, yağmur/kar oraya da yağar), yakınlaşma yok."""
+    import random, shutil, subprocess, tempfile
+    import hava_bot, hareket
+    from hazir_tasarim import dikey
     tmp = tempfile.mkdtemp()
     n = sure * fps
+    t = tarih.isoformat()
+    ilce_v = [dict(v[t]) for v in ilceler.values() if t in v]
+    m = merkez.get(t) or {}
+    sahne = baskin_sahne([{"hadise": m.get("hadise")}] * 3 + [{"hadise": v["hadise"]} for v in ilce_v])
+    efekt = {"karli": "kar", "yagmurlu": "yagmur", "firtina": "yagmur", "saganak": "yagmur", "sisli": None}.get(sahne)
     try:
         for i in range(n):
             hava_bot.FAZ = i / n
-            gorsel(il, merkez, ilceler, tarih, os.path.join(tmp, f"k{i:03d}.jpg"), gun_no, tema)
+            k_yol = os.path.join(tmp, f"k{i:03d}.jpg")
+            gorsel(il, merkez, ilceler, tarih, k_yol, gun_no, tema)
+            if tam_ekran:
+                kare = Image.open(k_yol).convert("RGB")
+                h0 = kare.height
+                kare = dikey(kare)
+                dy = (kare.height - h0) // 2
+                if efekt:  # uzatılan şeritlere de aynı efekt
+                    kat = Image.new("RGBA", kare.size, (0, 0, 0, 0))
+                    fn = {"kar": hareket._kar, "yagmur": hareket._yagmur}[efekt]
+                    fn(ImageDraw.Draw(kat), kare.width, kare.height, i / n, random.Random(7))
+                    mk = Image.new("L", kare.size, 255)
+                    ImageDraw.Draw(mk).rectangle([0, dy + 20, kare.width, dy + h0 - 20], fill=0)
+                    kat.putalpha(Image.composite(kat.getchannel("A"), Image.new("L", kare.size, 0), mk))
+                    kare.paste(kat, (0, 0), kat)
+                if i == 0:
+                    kare.save(yol[:-4] + "_kapak.jpg", quality=93)
+                kare.save(k_yol, quality=90)
     finally:
         hava_bot.FAZ = None
     mp4 = yol[:-4] + "_hareketli.mp4"
@@ -261,12 +286,16 @@ def main():
     # Her ortak sayfaya aynı içerik, farklı renk/tasarım (kopya Reels sayılmasın)
     gun = a.gun
     tarih = datetime.datetime.now(TR).date() + datetime.timedelta(days=gun - 1)
-    for k in range(max(1, min(a.varyant, len(TEMALAR)))):
+    for k in range(max(1, min(a.varyant, 8))):
         yol = os.path.join(a.cikti, f"{ascii_ad}_{tarih:%Y%m%d}" + (f"_t{k}" if k else "") + ".jpg")
         import hazir_tasarim
         hazir = hazir_tasarim.var_mi(a.il)  # ile özel hazır tasarımlar (tasarimlar/<İl>/) varsa onlar
         try:
-            if hazir:
+            kod = hazir and hazir_tasarim.ayar(a.il, k).get("kod")  # bu sayfa için kodla çizilen tema (ör. "acik")
+            tema_k = next((i for i, x in enumerate(TEMALAR) if x["ad"] == kod), k) if kod else k
+            if kod:
+                gorsel(a.il, merkez, ilceler, tarih, yol, gun, tema_k)
+            elif hazir:
                 t_ = tarih.isoformat()
                 iv = [{"il": ad, **d[t_]} for ad, d in sorted(ilceler.items(), key=lambda x: x[0].replace("Ş", "Sz").replace("İ", "Iz"))
                       if t_ in d]
@@ -284,7 +313,9 @@ def main():
                f"#{etiket} #{etiket}havadurumu #{etiket}haber #havadurumu #bugunhavanasil #mgm")
         if a.video:
             try:
-                if hazir:  # hazır tasarım: ikonlar ve arka plandaki güneş hareketli
+                if kod:  # kodla çizilen tema, tam ekran
+                    print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun, tema=tema_k, tam_ekran=True))
+                elif hazir:  # hazır tasarım: ikonlar ve arka plandaki güneş hareketli
                     print("Hareketli:", hazir_tasarim.animasyon(a.il, k % hazir_tasarim.sayi(a.il), merkez, iv, tarih, yol))
                 else:
                     print("Hareketli:", animasyon(a.il, merkez, ilceler, tarih, yol, gun, tema=k))
