@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 from hava_bot import font, destek_bandi, HESAP, HADISE
 
 W, H = 1080, 1920
-ACILIS, BOLGE, KAPANIS, GECIS = 1.6, 1.6, 1.0, 0.2  # saniye: ~12 sn kısa döngü (tekrar izlenme), duraklatıp okunur
+ACILIS, BOLGE, KAPANIS, GECIS = 1.6, 3.0, 1.0, 0.25  # saniye: bölge başına 3 sn (okunabilir), toplam ~22 sn
 
 
 def dikey(src_yol, hedef):
