@@ -1,1 +1,16 @@
-[]
+[
+ {
+  "gorsel": "yayin/ulke/20261129_kar_hikaye.jpg",
+  "gonderi_gorsel": "yayin/ulke/20261129_kar.jpg",
+  "tur": "hikaye+gonderi",
+  "caption": "⚠️ KAR GELİYOR!\n\nMGM tahminlerine göre Pazar (29 Kasım) 5 il merkezinde kar yağışı bekleniyor. En çok etkilenecek bölgeler: Doğu Anadolu (4 il) ve Marmara (1 il). En düşük sıcaklık Ardahan'da -2°C olacak.\n\n📍 5 il: Edirne, Ağrı, Ardahan, Erzurum, Kars\n\n💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş\n👉 @bugun.hava.nasil\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm #kar #karyağışı #kargeliyor",
+  "hareket": "kar"
+ },
+ {
+  "gorsel": "yayin/ulke/20261129_yagmur_hikaye.jpg",
+  "gonderi_gorsel": "yayin/ulke/20261129_yagmur.jpg",
+  "tur": "hikaye+gonderi",
+  "caption": "⚠️ YAĞMURLU HAVA GELİYOR!\n\nMGM tahminlerine göre Pazar (29 Kasım) 51 il merkezinde yağmur ve sağanak bekleniyor. En çok etkilenecek bölgeler: Karadeniz (13 il) ve Doğu Anadolu (12 il). Şemsiyenizi yanınıza almayı unutmayın.\n\n📍 51 il: Balıkesir, Bilecik, Bursa, Çanakkale, Edirne, İstanbul, Kırklareli, Kocaeli, Sakarya, Tekirdağ, Yalova, Adana, Antalya, Hatay, Kahramanmaraş, Mersin, Osmaniye, Artvin, Bartın, Bayburt, Bolu, Düzce, Giresun, Gümüşhane, Ordu, Rize, Samsun, Sinop, Trabzon, Zonguldak, Ağrı, Ardahan, Bingöl, Bitlis, Elazığ, Erzurum, Hakkari, Iğdır, Kars, Muş, Tunceli, Van, Adıyaman, Batman, Diyarbakır, Gaziantep, Kilis, Mardin, Siirt, Şanlıurfa, Şırnak\n\n💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş\n👉 @bugun.hava.nasil\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm #yağmur #sağanak",
+  "hareket": "yagmur"
+ }
+]
