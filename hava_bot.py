@@ -316,14 +316,16 @@ def sahne_ciz(sahne, bolge):
             isik = Image.new("RGBA", (W, H), (0, 0, 0, 0))
             d = ImageDraw.Draw(isik)
             gx, gy = W - 170, 150
-            for r, a in [(520, 40), (360, 60), (230, 90), (150, 160)]:
-                d.ellipse([gx - r, gy - r, gx + r, gy + r], fill=(255, 230, 150, a))
-            for i in range(12):
-                ang = math.radians(i * 30 + 8 + (FAZ or 0) * 30)
-                d.polygon([(gx, gy), (gx + math.cos(ang - .05) * 1500, gy + math.sin(ang - .05) * 1500),
-                           (gx + math.cos(ang + .05) * 1500, gy + math.sin(ang + .05) * 1500)],
-                          fill=(255, 240, 190, 18))
-            img.alpha_composite(isik.filter(ImageFilter.GaussianBlur(30)))
+            nabiz = .5 + .5 * math.sin(2 * math.pi * (FAZ or 0))
+            for r, a in [(520, 45), (360, 70), (230, 105), (150, 180)]:
+                d.ellipse([gx - r, gy - r, gx + r, gy + r], fill=(255, 230, 150, int(a * (.85 + .3 * nabiz))))
+            for i in range(12):  # ışınlar: döngü başına 60° (iki ışın aralığı) döner, kesintisiz
+                ang = math.radians(i * 30 + 8 + (FAZ or 0) * 60)
+                gen = .07 if i % 2 else .045
+                d.polygon([(gx, gy), (gx + math.cos(ang - gen) * 1500, gy + math.sin(ang - gen) * 1500),
+                           (gx + math.cos(ang + gen) * 1500, gy + math.sin(ang + gen) * 1500)],
+                          fill=(255, 240, 190, int(28 + 20 * nabiz)))
+            img.alpha_composite(isik.filter(ImageFilter.GaussianBlur(18)))
             d2 = ImageDraw.Draw(img)
             d2.ellipse([gx - 95, gy - 95, gx + 95, gy + 95], fill=(255, 245, 205, 255))
 

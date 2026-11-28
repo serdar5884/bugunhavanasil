@@ -81,9 +81,9 @@ def _gunes(r):
     c = s / 2
     p = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     pd = ImageDraw.Draw(p)
-    pd.ellipse([c - r * 1.6, c - r * 1.6, c + r * 1.6, c + r * 1.6], fill=(255, 150, 20, 90))
-    pd.ellipse([c - r * 1.25, c - r * 1.25, c + r * 1.25, c + r * 1.25], fill=(255, 190, 40, 140))
-    k.alpha_composite(p.filter(ImageFilter.GaussianBlur(r * .35)))
+    pd.ellipse([c - r * 1.6, c - r * 1.6, c + r * 1.6, c + r * 1.6], fill=(255, 160, 30, 130))
+    pd.ellipse([c - r * 1.25, c - r * 1.25, c + r * 1.25, c + r * 1.25], fill=(255, 205, 60, 190))
+    k.alpha_composite(p.convert("RGBa").filter(ImageFilter.GaussianBlur(r * .35)).convert("RGBA"))
     # ışınlar (süper örnekleme ile yumuşak)
     S = s * OL
     im = Image.new("L", (S, S), 0)
@@ -97,11 +97,11 @@ def _gunes(r):
         tx, ty = C + math.cos(a) * R * 1.52, C + math.sin(a) * R * 1.52
         d.ellipse([tx - R * .05, ty - R * .05, tx + R * .05, ty + R * .05], fill=255)
     im = im.resize((s, s), Image.LANCZOS)
-    isin = _radyal(s, s, (255, 215, 60), (245, 120, 10), merkez=(.5, .5))
+    isin = _radyal(s, s, (255, 235, 90), (255, 140, 15), merkez=(.5, .5))
     k.paste(isin, (0, 0), im)
     # gövde
     D = int(r * 2.1)
-    govde = _radyal(D, D, (255, 252, 200), (248, 150, 15), merkez=(.38, .34))
+    govde = _radyal(D, D, (255, 255, 225), (255, 170, 25), merkez=(.38, .34))
     m = Image.new("L", (D * OL, D * OL), 0)
     ImageDraw.Draw(m).ellipse([0, 0, D * OL - 1, D * OL - 1], fill=255)
     m = m.resize((D, D), Image.LANCZOS)
@@ -184,8 +184,16 @@ def ikon3d(img, tip, cx, cy, s, faz=None):
         r = int(s * (.3 if tip == "gunes" else .22))
         g = _gunes(r)
         gx, gy = (cx, cy) if tip == "gunes" else (cx - s * .14, cy - s * .12)
-        if faz is not None and tip == "gunes":  # ışınlar yavaşça döner
-            g = g.rotate(-faz * 36, resample=Image.BICUBIC)
+        if faz is not None:  # ışınlar belirgin döner (döngü başına 2 ışın aralığı = 60°, kesintisiz) + nabız gibi parıltı
+            g = g.convert("RGBa").rotate(-faz * 60, resample=Image.BICUBIC).convert("RGBA")  # önçarpımlı: kenarda koyu hale olmasın
+            nabiz = .5 + .5 * math.sin(2 * math.pi * faz)
+            pad = int(r * 1.2)  # parıltı kutu kenarında kesilmesin
+            p = Image.new("RGBA", (g.width + 2 * pad, g.height + 2 * pad), (0, 0, 0, 0))
+            c, rr = p.width / 2, r * (1.45 + .25 * nabiz)
+            ImageDraw.Draw(p).ellipse([c - rr, c - rr, c + rr, c + rr], fill=(255, 220, 90, int(70 + 80 * nabiz)))
+            p = p.convert("RGBa").filter(ImageFilter.GaussianBlur(r * .4)).convert("RGBA")
+            p.alpha_composite(g, (pad, pad))
+            g = p
         yapistir(g, gx - g.width / 2, gy - g.height / 2)
         if tip == "az_bulut":
             b = _bulut(int(s * .68), int(s * .44))
