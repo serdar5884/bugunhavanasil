@@ -1,1 +1,23 @@
-[]
+[
+ {
+  "gorsel": "yayin/ulke/20261130_kar_hikaye.jpg",
+  "gonderi_gorsel": "yayin/ulke/20261130_kar.jpg",
+  "tur": "hikaye+gonderi",
+  "caption": "⚠️ KAR GELİYOR!\n\nMGM tahminlerine göre Pazartesi (30 Kasım) 12 il merkezinde kar yağışı bekleniyor. En çok etkilenecek bölgeler: Karadeniz (5 il) ve Doğu Anadolu (5 il). En düşük sıcaklık Kırklareli'de -2°C olacak.\n\n📍 12 il: Kırklareli, Sivas, Bayburt, Bolu, Çorum, Gümüşhane, Tokat, Ağrı, Ardahan, Bitlis, Erzurum, Kars\n\n💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş\n👉 @bugun.hava.nasil\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm #kar #karyağışı #kargeliyor",
+  "hareket": "kar"
+ },
+ {
+  "gorsel": "yayin/ulke/20261130_yagmur_hikaye.jpg",
+  "gonderi_gorsel": "yayin/ulke/20261130_yagmur.jpg",
+  "tur": "hikaye+gonderi",
+  "caption": "⚠️ YAĞMUR DEVAM EDİYOR!\n\nMGM tahminlerine göre Pazartesi (30 Kasım) 46 il merkezinde yağmur ve sağanak bekleniyor. En çok etkilenecek bölgeler: Karadeniz (15 il) ve Doğu Anadolu (10 il). Şemsiyenizi yanınıza almayı unutmayın.\n\n📍 46 il: Balıkesir, Bilecik, Bursa, Çanakkale, İstanbul, Kocaeli, Sakarya, Tekirdağ, Yalova, Muğla, Antalya, Kahramanmaraş, Sivas, Amasya, Artvin, Bartın, Bolu, Çorum, Düzce, Giresun, Karabük, Ordu, Rize, Samsun, Sinop, Tokat, Trabzon, Zonguldak, Bingöl, Bitlis, Elazığ, Erzincan, Hakkari, Iğdır, Malatya, Muş, Tunceli, Van, Adıyaman, Batman, Diyarbakır, Gaziantep, Kilis, Mardin, Siirt, Şırnak\n\n💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş\n👉 @bugun.hava.nasil\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm #yağmur #sağanak",
+  "hareket": "yagmur"
+ },
+ {
+  "gorsel": "yayin/ulke/20261130_soguk_hikaye.jpg",
+  "gonderi_gorsel": "yayin/ulke/20261130_soguk.jpg",
+  "tur": "hikaye+gonderi",
+  "caption": "⚠️ SICAKLIKLAR 9 DERECE DÜŞÜYOR!\n\nMGM tahminlerine göre Pazartesi (30 Kasım) 34 il merkezinde sıcaklıkların 9 dereceye kadar düşmesi bekleniyor, soğuk hava dalgası geliyor. En çok etkilenecek bölgeler: İç Anadolu (13 il) ve Karadeniz (9 il). En büyük düşüşler: Karaman 9 derece (15°C'den 6°C'ye), Afyonkarahisar 8 derece (13°C'den 5°C'ye), Kırşehir 8 derece. Kalın giyinmeyi unutmayın.\n\n📍 34 il: Karaman, Afyonkarahisar, Kırşehir, Konya, Yozgat, Çanakkale, Kütahya, Uşak, Ankara, Kırıkkale, Nevşehir, Artvin, Çorum, Karabük, Kırklareli, Sivas, Aksaray, Çankırı, Niğde, Amasya, Kastamonu, Tokat, Balıkesir, Bilecik, Bursa, İzmir, Manisa, Isparta, Eskişehir, Kayseri, Bolu, Giresun, Gümüşhane, Kars\n\n💬 Kendi ilinin tahmini için yorumlara ilini yaz, hemen cevaplayalım!\n🔔 Takip edip bildirimleri açarak destek olun · 📤 Sevdiklerinle paylaş\n👉 @bugun.hava.nasil\n\nKaynak: Meteoroloji Genel Müdürlüğü (MGM)\n\n#havadurumu #meteoroloji #mgm #soğukhava #soğukhavadalgası",
+  "hareket": null
+ }
+]
